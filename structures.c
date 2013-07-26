@@ -6,6 +6,7 @@
  *
  * */
 
+#include <assert.h>
 #include <stdlib.h>
 #include <string.h>
 
@@ -29,6 +30,8 @@ static const float electronegativies[] = {2.2, 0, 0.98, 1.57, 2.04, 2.55, 3.04, 
 /* Convert atomic symbol to atomic number */
 int convert_symbol_to_Z(const char * const symb) {
 
+	assert(symb != NULL);
+
 	for(int i = 0; i < 100; i++)
 		if(!strcmp(symb, elems[i]))
 			return i + 1;
@@ -49,12 +52,16 @@ const char *convert_Z_to_symbol(int Z) {
 /* Destroy content of the molecule */
 void m_destroy(struct molecule * const m) {
 
+	assert(m != NULL);
+
 	free(m->atoms);
 	free(m->name);
 }
 
 /* Destroy content of the atom type */
 void at_destroy(struct atom_type * const at) {
+
+	assert(at != NULL);
 
 	free(at->atoms_molecule_idx);
 	free(at->atoms_atom_idx);
@@ -157,6 +164,8 @@ static void fill_atom_types(void) {
 /* Calculate average electronegativity of a molecule (harmonic mean) */
 static void m_calculate_avg_electronegativity(struct molecule * const m) {
 
+	assert(m != NULL);
+
 	double hsum = 0.0;
 	for(int i = 0; i < m->atoms_count; i++)
 		hsum += 1.0 / electronegativies[m->atoms[i].Z - 1];
@@ -166,6 +175,8 @@ static void m_calculate_avg_electronegativity(struct molecule * const m) {
 
 /* Calculate sum and average charge of atoms in the molecule */
 static void m_calculate_charge_stats(struct molecule * const m) {
+
+	assert(m != NULL);
 
 	double sum = 0.0;
 	for(int i = 0; i < m->atoms_count; i++)

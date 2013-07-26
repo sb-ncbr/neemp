@@ -6,6 +6,7 @@
  *
  * */
 
+#include <assert.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -115,6 +116,9 @@ void load_parameters(void) {
 
 /* Load one molecule from a .sd file */
 static int load_molecule(FILE * const f, struct molecule * const m) {
+
+	assert(f != NULL);
+	assert(m != NULL);
 
 	/* Each molecule is stored in MOL format;
 	 * for reference, see http://c4.cabrillo.edu/404/ctfile.pdf */
@@ -232,6 +236,8 @@ static int load_molecule(FILE * const f, struct molecule * const m) {
 
 /* Find index of the molecule with given name */
 static int find_molecule_by_name(const char * const name) {
+
+	assert(name != NULL);
 
 	for(int i = 0; i < ts.molecules_count; i++)
 		if(!strcmp(name, ts.molecules[i].name))
