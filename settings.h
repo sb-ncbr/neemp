@@ -18,4 +18,7 @@ struct settings {
 	char par_filename[MAX_PATH_LEN];
 };
 
+void parse_options(int argc, char **argv);
+void check_settings(void);
+
 #endif /* __SETTINGS_H__ */

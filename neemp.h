@@ -16,9 +16,10 @@
 #define APP_VERSION "1.1-git"
 
 #define RETURN_OK 0
-#define MEM_ERROR 1
-#define IO_ERROR  2
-#define RUN_ERROR 3
+#define ARG_ERROR 1
+#define MEM_ERROR 2
+#define IO_ERROR  3
+#define RUN_ERROR 4
 
 #define NOT_FOUND -1
 

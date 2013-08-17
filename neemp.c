@@ -18,8 +18,8 @@ struct settings s;
 
 int main(int argc, char **argv) {
 
-	strcpy(s.sdf_filename, "../molecules.sdf");
-	strcpy(s.chg_filename, "../B3LYP_STO-3G.mchrg");
+	parse_options(argc, argv);
+	check_settings();
 
 	load_molecules();
 	load_charges();
