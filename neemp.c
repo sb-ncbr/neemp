@@ -18,13 +18,23 @@ struct settings s;
 
 int main(int argc, char **argv) {
 
+	s_init();
+
 	parse_options(argc, argv);
 	check_settings();
 
-	load_molecules();
-	load_charges();
+	if(s.mode == MODE_PARAMS) {
+		load_molecules();
+		load_charges();
+		preprocess_molecules();
 
-	preprocess_molecules();
+	} else if(s.mode == MODE_CHARGES) {
+		load_molecules();
+		load_parameters();
+
+	} else if(s.mode == MODE_INFO) {
+		load_molecules();
+	}
 
 	ts_destroy();
 
