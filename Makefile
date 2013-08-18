@@ -14,7 +14,7 @@ objects=$(sources:.c=.o)
 all: $(sources) $(headers) neemp
 
 neemp: $(objects)
-	$(CC) $(objects) -o neemp
+	$(CC) $(objects) -mkl -o neemp
 .c.o: $(headers) $(sources)
 	$(CC) $(CFLAGS) -c $<
 clean:
