@@ -7,6 +7,7 @@
  * */
 
 #include <assert.h>
+#include <math.h>
 #include <stdlib.h>
 #include <string.h>
 
@@ -18,10 +19,14 @@
 extern const struct settings s;
 extern struct training_set ts;
 
+static void a_destroy(struct atom * const a);
+static double rdist(const struct atom * const a1, const struct atom * const a2);
+static void m_calculate_rdists(struct molecule * const m);
 static void m_calculate_avg_electronegativity(struct molecule * const m);
 static void m_calculate_charge_stats(struct molecule * const m);
 static void fill_atom_types(void);
 static void discard_molecules_without_charges(void);
+static void calculate_y(void);
 
 /* Symbols for chemical elements */
 static const char * const elems[] = {"H","He","Li","Be","B","C","N","O","F","Ne","Na","Mg","Al","Si","P","S","Cl","Ar","K","Ca","Sc","Ti","V","Cr","Mn","Fe","Co","Ni","Cu","Zn","Ga","Ge","As","Se","Br","Kr","Rb","Sr","Y","Zr","Nb","Mo","Tc","Ru","Rh","Pd","Ag","Cd","In","Sn","Sb","Te","I","Xe","Cs","Ba","La","Ce","Pr","Nd","Pm","Sm","Eu","Gd","Tb","Dy","Ho","Er","Tm","Yb","Lu","Hf","Ta","W","Re","Os","Ir","Pt","Au","Hg","Tl","Pb","Bi","Po","At","Rn","Fr","Ra","Ac","Th","Pa","U","Np","Pu","Am","Cm","Bk","Cf","Es","Fm","Md","No","Lr"};
@@ -51,10 +56,50 @@ const char *convert_Z_to_symbol(int Z) {
 		return "??";
 }
 
+/* Destroy contents of an atom */
+static void a_destroy(struct atom * const a) {
+
+	assert(a != NULL);
+
+	free(a->rdists);
+}
+
+/* Calculates reciprocal distance between two atoms */
+static double rdist(const struct atom * const a1, const struct atom * const a2) {
+
+	assert(a1 != NULL);
+	assert(a2 != NULL);
+
+	double dx = a1->position[0] - a2->position[0];
+	double dy = a1->position[1] - a2->position[1];
+	double dz = a1->position[2] - a2->position[2];
+
+	return 1.0 / sqrt(dx * dx + dy * dy + dz * dz);
+}
+
+/* Calculate reciprocal distances for all atoms in the molecule */
+static void m_calculate_rdists(struct molecule * const m) {
+
+	assert(m != NULL);
+
+	for(int i = 0; i < m->atoms_count; i++) {
+		m->atoms[i].rdists[i] = 0.0;
+		for(int j = i + 1; j < m->atoms_count; j++) {
+			double rd = rdist(&m->atoms[i], &m->atoms[j]);
+			/* Distance is symmetrical */
+			m->atoms[i].rdists[j] = rd;
+			m->atoms[j].rdists[i] = rd;
+		}
+	}
+}
+
 /* Destroy content of the molecule */
 void m_destroy(struct molecule * const m) {
 
 	assert(m != NULL);
+
+	for(int i = 0; i < m->atoms_count; i++)
+		a_destroy(&m->atoms[i]);
 
 	free(m->atoms);
 	free(m->name);
@@ -191,6 +236,22 @@ static void m_calculate_charge_stats(struct molecule * const m) {
 	m->average_charge = m->sum_of_charges / m->atoms_count;
 }
 
+/* Calculate y sums for all molecules */
+static void calculate_y(void) {
+
+	for(int i = 0; i < ts.molecules_count; i++)
+		for(int j = 0; j < ts.molecules[i].atoms_count; j++) {
+			#define ATOM(x) ts.molecules[i].atoms[x]
+			ATOM(j).y = 0.0;
+			for(int k = 0; k < ts.molecules[i].atoms_count; k++) {
+				if(j == k)
+					continue;
+				ATOM(j).y = ATOM(k).reference_charge * ATOM(j).rdists[k];
+			}
+			#undef ATOM
+		}
+}
+
 /* Find atom type for a particular atom */
 int get_atom_type_idx(const struct atom * const a) {
 
@@ -212,16 +273,26 @@ void preprocess_molecules(void) {
 	if(s.mode == MODE_PARAMS)
 		discard_molecules_without_charges();
 
+	/* Calculate reciprocal distances of atoms for all molecules */
+	for(int i = 0; i < ts.molecules_count; i++)
+		m_calculate_rdists(&ts.molecules[i]);
+
 	/* Calculate average electronegativies */
 	for(int i = 0; i < ts.molecules_count; i++)
 		m_calculate_avg_electronegativity(&ts.molecules[i]);
 
 	/* Calculate sum and average of the charges in the molecule */
-	for(int i = 0; i < ts.molecules_count; i++)
-		m_calculate_charge_stats(&ts.molecules[i]);
+	if(s.mode == MODE_PARAMS)
+		for(int i = 0; i < ts.molecules_count; i++)
+			m_calculate_charge_stats(&ts.molecules[i]);
+
+	/* Calculate auxiliary sum */
+	if(s.mode == MODE_PARAMS)
+		calculate_y();
 
 	/* Finally, fill indices to atoms of a particular kind */
 	fill_atom_types();
+
 }
 
 /* Prints information about the training set */

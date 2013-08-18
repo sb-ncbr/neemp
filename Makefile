@@ -3,7 +3,7 @@
 # 2013
 
 CC=icc
-CFLAGS=-Wall -Wcheck -Wremarks -std=c99 -g -ipo -Xhost -wd981 #-Ofast
+CFLAGS=-Wall -Wcheck -Wremarks -std=c99 -g -ipo -Xhost -wd981 -DDEBUG #-Ofast
 
 # -wd981 disables warning about operands evaluated in an unspecified order
 

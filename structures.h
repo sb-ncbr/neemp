@@ -15,6 +15,9 @@ struct atom {
 	int bond_order;
 	float position[3];		/* x, y, z position */
 	float reference_charge;
+
+	double *rdists;
+	double y;			/* sum of charges/distance over all atoms in the molecule */
 };
 
 int convert_symbol_to_Z(const char * const symb);

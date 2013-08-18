@@ -68,6 +68,7 @@ void load_charges(void) {
 		EXIT_ERROR(IO_ERROR, "Cannot open .chg file \"%s\".\n", s.chg_filename);
 
 	char line[MAX_LINE_LEN];
+	memset(line, 0x0, MAX_LINE_LEN * sizeof(char));
 
 	while(1) {
 		/* Break if no data is available */
@@ -184,6 +185,10 @@ static int load_molecule(FILE * const f, struct molecule * const m) {
 			char atom_symbol[3];
 			fgets(line, MAX_LINE_LEN, f);
 			sscanf(line, "%f %f %f %s", &m->atoms[i].position[0], &m->atoms[i].position[1], &m->atoms[i].position[2], atom_symbol);
+
+			m->atoms[i].rdists = (double *) calloc(m->atoms_count, sizeof(double));
+			if(!m->atoms[i].rdists)
+				EXIT_ERROR(MEM_ERROR, "%s", "Cannot allocate memory for atom distances.\n");
 
 			m->atoms[i].Z = convert_symbol_to_Z(atom_symbol);
 			if(m->atoms[i].Z == 0)
