@@ -63,6 +63,7 @@ struct training_set {
 };
 
 void ts_destroy(void);
+void ts_info(void);
 
 void preprocess_molecules(void);
 

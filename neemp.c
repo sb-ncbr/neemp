@@ -34,6 +34,8 @@ int main(int argc, char **argv) {
 
 	} else if(s.mode == MODE_INFO) {
 		load_molecules();
+		preprocess_molecules();
+		ts_info();
 	}
 
 	ts_destroy();

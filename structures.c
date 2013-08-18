@@ -12,8 +12,10 @@
 
 #include "config.h"
 #include "neemp.h"
+#include "settings.h"
 #include "structures.h"
 
+extern const struct settings s;
 extern struct training_set ts;
 
 static void m_calculate_avg_electronegativity(struct molecule * const m);
@@ -190,7 +192,8 @@ static void m_calculate_charge_stats(struct molecule * const m) {
 void preprocess_molecules(void) {
 
 	/* Remove molecule for which the charges are not present */
-	discard_molecules_without_charges();
+	if(s.mode == MODE_PARAMS)
+		discard_molecules_without_charges();
 
 	/* Calculate average electronegativies */
 	for(int i = 0; i < ts.molecules_count; i++)
@@ -202,4 +205,19 @@ void preprocess_molecules(void) {
 
 	/* Finally, fill indices to atoms of a particular kind */
 	fill_atom_types();
+}
+
+/* Prints information about the training set */
+void ts_info(void) {
+
+	printf("Training set info\n");
+
+	printf("Molecules: %5d  Atoms: %8d  Atom types: %2d\n", ts.molecules_count, ts.atoms_count, ts.atom_types_count);
+	printf("Atom type    # atoms      %% atoms \n");
+
+	for(int i = 0; i < ts.atom_types_count; i++) {
+		#define AT ts.atom_types[i]
+		printf(" %2s(%1d)     %8d      %6.3f\n", convert_Z_to_symbol(AT.Z), AT.bond_order, AT.atoms_count, 100.0f * (float) AT.atoms_count / ts.atoms_count);
+		#undef AT
+	}
 }
