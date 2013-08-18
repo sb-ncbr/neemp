@@ -6,6 +6,7 @@
  *
  * */
 
+#include <mkl.h>
 #include <string.h>
 
 #include "neemp.h"
@@ -39,6 +40,8 @@ int main(int argc, char **argv) {
 	}
 
 	ts_destroy();
+
+	mkl_free_buffers();
 
 	return RETURN_OK;
 }

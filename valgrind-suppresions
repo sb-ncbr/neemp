@@ -1,0 +1,64 @@
+{
+	Some Intel stuff
+	Memcheck:Cond
+	fun:__intel_proc_init_ftzdazule
+	fun:main
+}
+
+{
+	MKL cond jump
+	Memcheck:Cond
+	...
+	fun:mkl*
+}
+
+{
+	MKL addr
+	Memcheck:Addr8
+	...
+	fun:mkl*
+}
+
+{
+	MKL leak
+	Memcheck:Leak
+	...
+	fun:mkl*
+}
+
+{
+	MKL value
+	Memcheck:Value8
+	...
+	fun:mkl*
+}
+
+{
+	KMP leak
+	Memcheck:Leak
+	...
+	fun:__kmp*
+}
+
+{
+	KMP addr
+	Memcheck:Addr8
+	...
+	fun:__kmp*
+}
+
+{
+	MKL param
+	Memcheck:Param
+	fun:syscall
+	...
+	fun:__kmp*
+}
+
+{
+	MKL sched
+	Memcheck:Param
+	sched_setaffinity(mask)
+	...
+	fun:mkl*
+}
