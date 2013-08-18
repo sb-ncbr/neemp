@@ -124,6 +124,7 @@ static int load_molecule(FILE * const f, struct molecule * const m) {
 	 * for reference, see http://c4.cabrillo.edu/404/ctfile.pdf */
 
 	char line[MAX_LINE_LEN];
+	memset(line, 0x0, MAX_LINE_LEN * sizeof(char));
 
 	/* Process 3-line Header Block */
 
@@ -133,7 +134,7 @@ static int load_molecule(FILE * const f, struct molecule * const m) {
 
 	/* 1st line is the name of the molecule */
 	int len = strlen(line);
-	m->name = (char *) malloc(sizeof(char) * len);
+	m->name = (char *) calloc(len, sizeof(char));
 	if(!m->name)
 		EXIT_ERROR(MEM_ERROR, "%s", "Cannot allocate memory for molecule name.\n");
 
