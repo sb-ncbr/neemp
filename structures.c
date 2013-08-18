@@ -246,7 +246,7 @@ static void calculate_y(void) {
 			for(int k = 0; k < ts.molecules[i].atoms_count; k++) {
 				if(j == k)
 					continue;
-				ATOM(j).y = ATOM(k).reference_charge * ATOM(j).rdists[k];
+				ATOM(j).y += ATOM(k).reference_charge * ATOM(j).rdists[k];
 			}
 			#undef ATOM
 		}
