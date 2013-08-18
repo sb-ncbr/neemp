@@ -113,10 +113,10 @@ static void fill_atom_types(void) {
 	/* Find number of atom types present in the training set with appropriate atom counts */
 	for(int i = 0; i < ts.molecules_count; i++)
 		for(int j = 0; j < ts.molecules[i].atoms_count; j++) {
-			const struct atom * const a = &ts.molecules[i].atoms[j];
+			#define ATOM ts.molecules[i].atoms[j]
 			int found = 0;
 			for(int k = 0; k < ts.atom_types_count; k++)
-				if(a->Z == ts.atom_types[k].Z && a->bond_order == ts.atom_types[k].bond_order) {
+				if(ATOM.Z == ts.atom_types[k].Z && ATOM.bond_order == ts.atom_types[k].bond_order) {
 					found = 1;
 					ts.atom_types[k].atoms_count++;
 					break;
@@ -124,11 +124,12 @@ static void fill_atom_types(void) {
 
 			if(!found) {
 				/* Create new atom type */
-				ts.atom_types[ts.atom_types_count].Z = a->Z;
-				ts.atom_types[ts.atom_types_count].bond_order = a->bond_order;
+				ts.atom_types[ts.atom_types_count].Z = ATOM.Z;
+				ts.atom_types[ts.atom_types_count].bond_order = ATOM.bond_order;
 				ts.atom_types[ts.atom_types_count].atoms_count = 1;
 				ts.atom_types_count++;
 			}
+			#undef ATOM
 		}
 
 	/* Shrink atom types array */
@@ -149,17 +150,19 @@ static void fill_atom_types(void) {
 	/* Fill atom types with indices pointing to atoms of that kind */
 	for(int i = 0; i < ts.molecules_count; i++)
 		for(int j = 0; j < ts.molecules[i].atoms_count; j++) {
-			const struct atom * const a = &ts.molecules[i].atoms[j];
+			#define ATOM ts.molecules[i].atoms[j]
 			for(int k = 0; k < ts.atom_types_count; k++) {
-				struct atom_type * const at = &ts.atom_types[k];
+				#define AT ts.atom_types[k]
 				/* Note that for every atom there exists k which satisfies following condition */
-				if(a->Z == at->Z && a->bond_order == at->bond_order) {
-					at->atoms_molecule_idx[at->atoms_count] = i;
-					at->atoms_atom_idx[at->atoms_count] = j;
-					at->atoms_count++;
+				if(ATOM.Z == AT.Z && ATOM.bond_order == AT.bond_order) {
+					AT.atoms_molecule_idx[AT.atoms_count] = i;
+					AT.atoms_atom_idx[AT.atoms_count] = j;
+					AT.atoms_count++;
 					break;
 				}
+				#undef AT
 			}
+			#undef ATOM
 		}
 }
 
@@ -186,6 +189,20 @@ static void m_calculate_charge_stats(struct molecule * const m) {
 
 	m->sum_of_charges = (float) sum;
 	m->average_charge = m->sum_of_charges / m->atoms_count;
+}
+
+/* Find atom type for a particular atom */
+int get_atom_type_idx(const struct atom * const a) {
+
+	assert(a != NULL);
+
+	for(int i = 0; i < ts.atom_types_count; i++)
+		if(a->Z == ts.atom_types[i].Z && a->bond_order == ts.atom_types[i].bond_order)
+			return i;
+
+	/* We should not get here! */
+	assert(0);
+	return NOT_FOUND;
 }
 
 /* Do some preprocessing to simplify things later on */

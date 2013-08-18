@@ -49,6 +49,7 @@ struct atom_type {
 	int *atoms_atom_idx;
 };
 
+int get_atom_type_idx(const struct atom * const a);
 void at_destroy(struct atom_type * const at);
 
 /* Note that there is only one instance of training_set */
