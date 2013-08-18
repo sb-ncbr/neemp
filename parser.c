@@ -94,7 +94,9 @@ void load_charges(void) {
 		/* Load actual charges */
 		for(int i = 0; i < atoms_count; i++) {
 			fgets(line, MAX_LINE_LEN, f);
-			sscanf(line, "%*s %f\n", &ts.molecules[idx].atoms[i].reference_charge);
+			int tmp_int;
+			char tmp_str[2];
+			sscanf(line, "%d %s %f\n", &tmp_int, tmp_str, &ts.molecules[idx].atoms[i].reference_charge);
 		}
 
 		ts.molecules[idx].charges_loaded = 1;
@@ -102,7 +104,6 @@ void load_charges(void) {
 		/* Read empty line */
 		fgets(line, MAX_LINE_LEN, f);
 	}
-
 	fclose(f);
 }
 
