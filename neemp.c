@@ -9,9 +9,11 @@
 #include <mkl.h>
 #include <string.h>
 
+#include "kappa.h"
 #include "neemp.h"
-#include "parser.h"
+#include "io.h"
 #include "settings.h"
+#include "subset.h"
 #include "structures.h"
 
 struct training_set ts;
@@ -28,6 +30,16 @@ int main(int argc, char **argv) {
 		load_molecules();
 		load_charges();
 		preprocess_molecules();
+
+		ts_info();
+
+		struct subset full;
+		find_the_best_parameters_for_subset(&full);
+
+		if(s.chgout_filename[0] != '\0')
+			output_charges_stats(&full);
+
+		ss_destroy(&full);
 
 	} else if(s.mode == MODE_CHARGES) {
 		load_molecules();

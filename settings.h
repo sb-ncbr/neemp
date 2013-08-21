@@ -23,8 +23,10 @@ struct settings {
 	char sdf_filename[MAX_PATH_LEN];
 	char chg_filename[MAX_PATH_LEN];
 	char par_filename[MAX_PATH_LEN];
+	char chgout_filename[MAX_PATH_LEN];
 
 	enum app_mode mode;
+	int full_scan;
 };
 
 void s_init(void);

@@ -1,5 +1,5 @@
 /*
- * NEEMP - parser.c
+ * NEEMP - io.c
  *
  * by Tomas Racek (tom@krab1k.net)
  * 2013
@@ -12,8 +12,9 @@
 #include <string.h>
 
 #include "neemp.h"
-#include "parser.h"
+#include "io.h"
 #include "settings.h"
+#include "subset.h"
 #include "structures.h"
 
 extern const struct settings s;
@@ -107,6 +108,7 @@ void load_charges(void) {
 	fclose(f);
 }
 
+/* TODO */
 void load_parameters(void) {
 
 	FILE * const f = fopen(s.par_filename, "r");
@@ -252,4 +254,34 @@ static int find_molecule_by_name(const char * const name) {
 
 	/* Not found */
 	return NOT_FOUND;
+}
+
+
+/* Output reference charges, EEM charges and their differences */
+void output_charges_stats(const struct subset * const ss) {
+
+	assert(ss != NULL);
+	assert(ss->best != NULL);
+
+	FILE *f = fopen(s.chgout_filename, "w");
+	if(!f)
+		EXIT_ERROR(IO_ERROR, "Cannot open file %s for writing the charges stats.\n", s.chgout_filename);
+
+	fprintf(f, "IDX      TYPE        A.I.             EEM            DIFF\n");
+
+	int atoms_processed = 0;
+	for(int i = 0; i < ts.molecules_count; i++) {
+		fprintf(f, "\n");
+		fprintf(f, "%s\n", ts.molecules[i].name);
+		fprintf(f, "%d\n", ts.molecules[i].atoms_count);
+		for(int j = 0; j < ts.molecules[i].atoms_count; j++) {
+			#define ATOM ts.molecules[i].atoms[j]
+			fprintf(f, "%4d\t%2s %1d\t%9.6f\t%9.6f\t%9.6f\n", j + 1, convert_Z_to_symbol(ATOM.Z), ATOM.bond_order,
+				ATOM.reference_charge, ss->best->charges[atoms_processed + j], ATOM.reference_charge - ss->best->charges[atoms_processed + j]);
+			#undef ATOM
+		}
+		atoms_processed += ts.molecules[i].atoms_count;
+	}
+
+	fclose(f);
 }

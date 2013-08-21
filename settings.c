@@ -19,15 +19,24 @@ extern struct settings s;
 static struct option long_options[] = {
 	{"help", no_argument, 0, 'h'},
 	{"mode", required_argument, 0, 'm'},
+	{"full-scan", no_argument, 0, 'f'},
 	{"sdf-file", required_argument, 0, 10},
 	{"par-file", required_argument, 0, 11},
-	{"chg-file", required_argument, 0, 12}
+	{"chg-file", required_argument, 0, 12},
+	{"chg-outfile", required_argument, 0, 13},
+	{NULL, 0, 0, 0}
 };
 
 /* Initialize default settings */
 void s_init(void) {
 
+	memset(s.sdf_filename, 0x0, MAX_PATH_LEN * sizeof(char));
+	memset(s.chg_filename, 0x0, MAX_PATH_LEN * sizeof(char));
+	memset(s.par_filename, 0x0, MAX_PATH_LEN * sizeof(char));
+	memset(s.chgout_filename, 0x0, MAX_PATH_LEN * sizeof(char));
+
 	s.mode = MODE_NOT_SET;
+	s.full_scan = 0;
 }
 
 /* Prints help if -h/--help is issued */
@@ -43,11 +52,14 @@ void parse_options(int argc, char **argv) {
 	int option_idx;
 
 	while(1) {
-		c = getopt_long(argc, argv, "hm:", long_options, &option_idx);
+		c = getopt_long(argc, argv, "fhm:", long_options, &option_idx);
 		if(c == -1)
 			break;
 
 		switch(c) {
+			case 'f':
+				s.full_scan = 1;
+				break;
 			case 'h':
 				print_help();
 				exit(RETURN_OK);
@@ -62,16 +74,16 @@ void parse_options(int argc, char **argv) {
 					EXIT_ERROR(ARG_ERROR, "Invalid mode: %s\n", optarg);
 				break;
 			case 10:
-				strncpy(s.sdf_filename, optarg, MAX_PATH_LEN);
-				s.sdf_filename[MAX_PATH_LEN - 1] = '\0';
+				strncpy(s.sdf_filename, optarg, MAX_PATH_LEN - 1);
 				break;
 			case 11:
-				strncpy(s.par_filename, optarg, MAX_PATH_LEN);
-				s.par_filename[MAX_PATH_LEN - 1] = '\0';
+				strncpy(s.par_filename, optarg, MAX_PATH_LEN - 1);
 				break;
 			case 12:
-				strncpy(s.chg_filename, optarg, MAX_PATH_LEN);
-				s.chg_filename[MAX_PATH_LEN - 1] = '\0';
+				strncpy(s.chg_filename, optarg, MAX_PATH_LEN - 1);
+				break;
+			case 13:
+				strncpy(s.chgout_filename, optarg, MAX_PATH_LEN - 1);
 				break;
 			case '?':
 				EXIT_ERROR(ARG_ERROR, "%s", "Try -h/--help.\n");

@@ -25,6 +25,8 @@ struct subset {
 	struct kappa_data *best;
 };
 
+void ss_destroy(struct subset * const ss);
+
 struct kappa_data {
 
 	const struct subset *parent_subset;
@@ -41,5 +43,8 @@ struct kappa_data {
 	float RMSD;			/* Root-mean-square deviation for each molecule, then averaged */
 	float D;			/* Absolute difference for all atoms */
 };
+
+void kd_init(struct kappa_data * const kd);
+void kd_destroy(struct kappa_data * const kd);
 
 #endif /* __SUBSET_H__ */
