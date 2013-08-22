@@ -21,6 +21,7 @@ void b_init(struct bit_array * const b, int count) {
 
 	assert(b != NULL);
 
+	b->bits_count = count;
 	b->ints_count = count / sizeof(int) + 1;
 	b->bits = (int *) calloc(b->ints_count, sizeof(int));
 	if(!b->bits)
