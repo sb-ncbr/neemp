@@ -9,6 +9,7 @@
 #include <assert.h>
 #include <stdlib.h>
 
+#include "bitarray.h"
 #include "neemp.h"
 #include "structures.h"
 #include "subset.h"
@@ -55,4 +56,7 @@ void ss_destroy(struct subset * const ss) {
 
 	for(int i = 0; i < ss->kappa_data_count; i++)
 		kd_destroy(&ss->data[i]);
+
+	b_destroy(&ss->molecules);
+	free(ss->data);
 }
