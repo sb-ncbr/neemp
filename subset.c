@@ -28,6 +28,12 @@ void kd_init(struct kappa_data * const kd) {
 	kd->charges = (float *) malloc(ts.atoms_count * sizeof(float));
 	if(!kd->charges)
 		EXIT_ERROR(MEM_ERROR, "%s", "Cannot allocate memory for charges array.\n");
+
+	kd->max_D_per_atom_type = (float *) calloc(ts.atom_types_count, sizeof(float));
+	kd->avg_D_per_atom_type = (float *) calloc(ts.atom_types_count, sizeof(float));
+
+	if(!kd->max_D_per_atom_type || !kd->avg_D_per_atom_type)
+		EXIT_ERROR(MEM_ERROR, "%s", "Cannot allocate memory for stats array.\n");
 }
 
 /* Destroy contents of the kappa_data structure */
@@ -38,6 +44,8 @@ void kd_destroy(struct kappa_data * const kd) {
 	free(kd->parameters_alpha);
 	free(kd->parameters_beta);
 	free(kd->charges);
+	free(kd->max_D_per_atom_type);
+	free(kd->avg_D_per_atom_type);
 }
 
 /* Destroy contents of the subset */

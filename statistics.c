@@ -16,7 +16,7 @@
 
 extern const struct training_set ts;
 
-/* Calculate R, RMSD and D for a kappa_data struct */
+/* Calculate R, RMSD and D, MSE and max/avg D per atom type for a given kappa_data struct */
 void calculate_statistics(struct subset * const ss, struct kappa_data * const kd) {
 
 	assert(ss != NULL);
@@ -25,8 +25,11 @@ void calculate_statistics(struct subset * const ss, struct kappa_data * const kd
 	int atoms_processed = 0;
 
 	double D_sum_atoms = 0.0;
+	double MSE_sum_molecules = 0.0;
 	double RMSD_sum_molecules = 0.0;
 	double R_sum_molecules = 0.0;
+
+	double *D_sum_atom_type = (double *) calloc(ts.atom_types_count, sizeof(double));
 
 	for(int i = 0; i < ts.molecules_count; i++) {
 		#define MOLECULE ts.molecules[i]
@@ -54,8 +57,15 @@ void calculate_statistics(struct subset * const ss, struct kappa_data * const kd
 			double diff = kd->charges[atoms_processed + j] - MOLECULE.atoms[j].reference_charge;
 			diff2 += diff * diff;
 			D_sum_atoms += fabs(diff);
+
+			const int atom_type_idx = get_atom_type_idx(&MOLECULE.atoms[j]);
+			if(fabsf(kd->max_D_per_atom_type[atom_type_idx]) < fabs(diff))
+				kd->max_D_per_atom_type[atom_type_idx] = (float) fabs(diff);
+
+			D_sum_atom_type[atom_type_idx] += fabs(diff);
 		}
 
+		MSE_sum_molecules += diff2;
 		RMSD_sum_molecules += sqrt(diff2 / MOLECULE.atoms_count);
 		R_sum_molecules += (sum1 * sum1) / (sum2 * sum3);
 
@@ -66,4 +76,10 @@ void calculate_statistics(struct subset * const ss, struct kappa_data * const kd
 	kd->D = (float) (D_sum_atoms / ts.atoms_count);
 	kd->R = (float) (R_sum_molecules / ts.molecules_count);
 	kd->RMSD = (float) (RMSD_sum_molecules / ts.molecules_count);
+	kd->MSE = (float) (MSE_sum_molecules / ts.molecules_count);
+
+	for(int i = 0; i < ts.atom_types_count; i++)
+		kd->avg_D_per_atom_type[i] = (float) D_sum_atom_type[i] / ts.atom_types[i].atoms_count;
+
+	free(D_sum_atom_type);
 }
