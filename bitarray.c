@@ -13,6 +13,8 @@
 #include "bitarray.h"
 #include "neemp.h"
 
+#define INT_BITS (8 * sizeof(int))
+
 static inline int b_idx(int bitno);
 static inline int b_off(int bitno);
 
@@ -22,7 +24,7 @@ void b_init(struct bit_array * const b, int count) {
 	assert(b != NULL);
 
 	b->bits_count = count;
-	b->ints_count = count / sizeof(int) + 1;
+	b->ints_count = 1 + count / INT_BITS;
 	b->bits = (int *) calloc(b->ints_count, sizeof(int));
 	if(!b->bits)
 		EXIT_ERROR(MEM_ERROR, "%s", "Cannot allocate memory for bitarray.\n");
@@ -50,13 +52,13 @@ void b_destroy(struct bit_array * const b) {
 /* Return number of ints befor bitno */
 static inline int b_idx(int bitno) {
 
-	return bitno / sizeof(int);
+	return bitno / INT_BITS;
 }
 
 /* Return offset to the int containing bitno */
 static inline int b_off(int bitno) {
 
-	return bitno % sizeof(int);
+	return bitno % INT_BITS;
 }
 
 /* Return the value of bit bitno */
@@ -65,7 +67,7 @@ int b_get(const struct bit_array * const b, int bitno) {
 	assert(b != NULL);
 	assert(bitno < b->bits_count);
 
-	return b->bits[b_idx(bitno)] & (1 << b_off(bitno)) ? 1 : 0;
+	return b->bits[b_idx(bitno)] & (1 << b_off(bitno));
 }
 
 /* Set bit bitno */
