@@ -22,6 +22,7 @@ extern struct training_set ts;
 
 static int load_molecule(FILE * const f, struct molecule * const m);
 static int find_molecule_by_name(const char * const name);
+static int strn2int(const char * const str, int n);
 
 /* Load all molecules from .sdf file */
 void load_molecules(void) {
@@ -118,6 +119,16 @@ void load_parameters(void) {
 	fclose(f);
 }
 
+/* Convert n characters of a string to int */
+static int strn2int(const char * const str, int n) {
+
+	char buff[n];
+	for(int i = 0; i < n; i++)
+		buff[i] = str[i];
+
+	return atoi(buff);
+}
+
 /* Load one molecule from a .sd file */
 static int load_molecule(FILE * const f, struct molecule * const m) {
 
@@ -159,11 +170,12 @@ static int load_molecule(FILE * const f, struct molecule * const m) {
 	 * the rest is not used by NEEMP */
 
 	int bonds_count;
-	char tmp[MAX_LINE_LEN];
 	char version[MAX_LINE_LEN];
 
 	fgets(line, MAX_LINE_LEN, f);
-	sscanf(line, "%3d%3d%27c%6s\n", &m->atoms_count, &bonds_count, tmp, version);
+	m->atoms_count = strn2int(line, 3);
+	bonds_count = strn2int(line + 3, 3);
+	sscanf(line + 33, "%6s\n", version);
 
 	if(!strcmp(version, "V2000")) {
 		/* Perform some checks on the values read */
@@ -212,17 +224,22 @@ static int load_molecule(FILE * const f, struct molecule * const m) {
 			int atom1, atom2, bond_order;
 
 			fgets(line, MAX_LINE_LEN, f);
-			sscanf(line, "%3d%3d%3d", &atom1, &atom2, &bond_order);
+
+			atom1 = strn2int(line, 3);
+			atom2 = strn2int(line + 3, 3);
+			bond_order = strn2int(line + 6, 3);
 
 			/* Perform some checks on the data */
 			if(atom1 > m->atoms_count || atom2 > m->atoms_count)
 				EXIT_ERROR(IO_ERROR, "Invalid atom number in the molecule \"%s\".\n", m->name);
+
 			if(bond_order > 3)
 				EXIT_ERROR(IO_ERROR, "Invalid bond order in the molecule \"%s\".\n", m->name);
 
 			/* Adjust bond orders of the atoms */
 			if(m->atoms[atom1 - 1].bond_order < bond_order)
 				m->atoms[atom1 -1].bond_order = bond_order;
+
 			if(m->atoms[atom2 - 1].bond_order < bond_order)
 				m->atoms[atom2 -1].bond_order = bond_order;
 		}
