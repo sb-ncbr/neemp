@@ -122,7 +122,8 @@ void load_parameters(void) {
 /* Convert n characters of a string to int */
 static int strn2int(const char * const str, int n) {
 
-	char buff[n];
+	char buff[n + 1];
+	memset(buff, 0x0, n + 1);
 	for(int i = 0; i < n; i++)
 		buff[i] = str[i];
 
