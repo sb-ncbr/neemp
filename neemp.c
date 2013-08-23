@@ -34,6 +34,8 @@ int main(int argc, char **argv) {
 		ts_info();
 
 		struct subset full;
+		b_init(&full.molecules, ts.molecules_count);
+		b_set_all(&full.molecules);
 		find_the_best_parameters_for_subset(&full);
 
 		if(s.chgout_filename[0] != '\0')
