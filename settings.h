@@ -26,7 +26,11 @@ struct settings {
 	char chgout_filename[MAX_PATH_LEN];
 
 	enum app_mode mode;
-	int full_scan;
+	int full_scan_only;
+
+	float kappa_max;
+	float kappa_set;
+	float full_scan_precision;
 };
 
 void s_init(void);

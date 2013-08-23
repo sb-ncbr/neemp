@@ -12,6 +12,7 @@
 
 #include "eem.h"
 #include "kappa.h"
+#include "neemp.h"
 #include "parameters.h"
 #include "settings.h"
 #include "subset.h"
@@ -23,7 +24,6 @@ extern const struct settings s;
 
 static void full_scan(struct subset * const ss);
 static void brent(struct subset * const ss);
-
 static void perform_calculations(struct subset * const ss, struct kappa_data * const kd);
 
 /* Perform all three step for one value of kappa */
@@ -41,13 +41,13 @@ static void full_scan(struct subset * const ss) {
 
 	assert(ss != NULL);
 
-	int steps = 10;
-	float kappa_step = 0.1f;
+	const int steps = s.full_scan_only ? ss->kappa_data_count : ss->kappa_data_count - 1;
 
-	for(int i = 0; i < steps; i++) {
-		ss->data[i].kappa = i * kappa_step;
+	for(int i = 0; i < steps && i * s.full_scan_precision < s.kappa_max; i++) {
+		ss->data[i].kappa = i * s.full_scan_precision;
 		perform_calculations(ss, &ss->data[i]);
-		printf("K = %6.4f R = %6.4f\n", ss->data[i].kappa, ss->data[i].R);
+		printf("%6.4f | R: %8.4f   RMSD: %8.4f   MSE: %9.4f   D: %8.4f\n",
+			ss->data[i].kappa, ss->data[i].R, ss->data[i].RMSD, ss->data[i].MSE, ss->data[i].D);
 	}
 }
 
@@ -63,23 +63,29 @@ void find_the_best_parameters_for_subset(struct subset * const ss) {
 
 	assert(ss != NULL);
 
-	if(s.full_scan) {
-		ss->kappa_data_count = 10;
-		ss->data = (struct kappa_data *) malloc(ss->kappa_data_count * sizeof(struct kappa_data));
-		for(int i = 0; i < ss->kappa_data_count; i++)
-			kd_init(&ss->data[i]);
+	if(s.kappa_set > 1e-10) {
 
-		full_scan(ss);
+		ss->kappa_data_count = 1;
+		ss->data = (struct kappa_data *) malloc(1 * sizeof(struct kappa_data));
+		kd_init(&ss->data[0]);
+		ss->data[0].kappa = s.kappa_set;
+
+		perform_calculations(ss, &ss->data[0]);
 	}
 	else {
-		ss->kappa_data_count = 10;
-		ss->data = (struct kappa_data *) malloc(ss->kappa_data_count * sizeof(struct kappa_data));
+		ss->kappa_data_count = 2 + (int) (s.kappa_max / s.full_scan_precision);
+		ss->data = (struct kappa_data *) calloc(ss->kappa_data_count, sizeof(struct kappa_data));
+		if(!ss->data)
+			EXIT_ERROR(MEM_ERROR, "%s", "Cannot allocate memory for kappa data array.\n");
+
 		for(int i = 0; i < ss->kappa_data_count; i++)
 			kd_init(&ss->data[i]);
 
-		brent(ss);
+		if(s.full_scan_only)
+			full_scan(ss);
+		else
+			brent(ss);
 	}
-
 	float best_R = 0.0f;
 
 	for(int i = 0; i < ss->kappa_data_count; i++) {
@@ -88,6 +94,4 @@ void find_the_best_parameters_for_subset(struct subset * const ss) {
 			best_R = ss->data[i].R;
 		}
 	}
-
-//	printf("K = %6.4f R = %6.4f D = %6.4f RMSD = %6.4f\n", ss->best->kappa, ss->best->R, ss->best->D, ss->best->RMSD);
 }
