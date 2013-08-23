@@ -26,6 +26,7 @@ struct subset {
 };
 
 void ss_destroy(struct subset * const ss);
+void print_results(const struct subset * const ss);
 
 struct kappa_data {
 

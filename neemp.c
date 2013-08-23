@@ -41,6 +41,8 @@ int main(int argc, char **argv) {
 		if(s.chgout_filename[0] != '\0')
 			output_charges_stats(&full);
 
+		print_results(&full);
+
 		ss_destroy(&full);
 
 	} else if(s.mode == MODE_CHARGES) {

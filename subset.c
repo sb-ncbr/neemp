@@ -60,3 +60,26 @@ void ss_destroy(struct subset * const ss) {
 	b_destroy(&ss->molecules);
 	free(ss->data);
 }
+
+/* Prints the parameters and associated stats */
+void print_results(const struct subset * const ss) {
+
+	assert(ss != NULL);
+	assert(ss->best != NULL);
+
+	printf("\nResults\n\n");
+
+	printf("Used molecules: %5d\n", b_count_bits(&ss->molecules));
+	printf("K: %6.4f | R: %6.4f   RMSD: %6.4f   MSE: %6.4f   D: %6.4f\n",
+		ss->best->kappa, ss->best->R, ss->best->RMSD, ss->best->MSE, ss->best->D);
+
+	printf("Atom type             A       B\t\t  max D\t  avg D\n");
+	for(int i = 0; i < ts.atom_types_count; i++) {
+		printf(" %2s %1d   \t%7.4f\t%7.4f\t\t%7.3f\t%7.3f\n",
+			convert_Z_to_symbol(ts.atom_types[i].Z), ts.atom_types[i].bond_order,
+			ss->best->parameters_alpha[i], ss->best->parameters_beta[i],
+			ss->best->max_D_per_atom_type[i], ss->best->avg_D_per_atom_type[i]);
+	}
+
+	printf("\n");
+}
