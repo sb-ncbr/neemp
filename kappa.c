@@ -44,8 +44,8 @@ static void full_scan(struct subset * const ss) {
 	for(int i = 0; i < ss->kappa_data_count - 1; i++) {
 		ss->data[i].kappa = i * s.full_scan_precision;
 		perform_calculations(ss, &ss->data[i]);
-		printf("K: %6.4f | R: %6.4f   RMSD: %6.4f   MSE: %6.4f   D: %6.4f\n",
-			ss->data[i].kappa, ss->data[i].R, ss->data[i].RMSD, ss->data[i].MSE, ss->data[i].D);
+		printf("K: %6.4f | R: %6.4f   RMSD: %6.4f   MSE: %.2E   D_avg: %.2E   D_max: %.2E\n",
+			ss->data[i].kappa, ss->data[i].R, ss->data[i].RMSD, ss->data[i].MSE, ss->data[i].D_avg, ss->data[i].D_max);
 	}
 }
 

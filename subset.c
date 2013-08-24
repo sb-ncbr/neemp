@@ -70,10 +70,10 @@ void print_results(const struct subset * const ss) {
 	printf("\nResults\n\n");
 
 	printf("Used molecules: %5d\n", b_count_bits(&ss->molecules));
-	printf("K: %6.4f | R: %6.4f   RMSD: %6.4f   MSE: %6.4f   D: %6.4f\n",
-		ss->best->kappa, ss->best->R, ss->best->RMSD, ss->best->MSE, ss->best->D);
+	printf("K: %6.4f | R: %6.4f   RMSD: %6.4f   MSE: %6.4f   D_avg: %6.4f   D_max: %6.4f\n",
+		ss->best->kappa, ss->best->R, ss->best->RMSD, ss->best->MSE, ss->best->D_avg, ss->best->D_max);
 
-	printf("Atom type             A       B\t\t  max D\t  avg D\n");
+	printf("Atom type             A       B\t\t  D_max\t  D_avg\n");
 	for(int i = 0; i < ts.atom_types_count; i++) {
 		printf(" %2s %1d   \t%7.4f\t%7.4f\t\t%7.3f\t%7.3f\n",
 			convert_Z_to_symbol(ts.atom_types[i].Z), ts.atom_types[i].bond_order,

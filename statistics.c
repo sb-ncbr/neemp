@@ -73,13 +73,18 @@ void calculate_statistics(struct subset * const ss, struct kappa_data * const kd
 		#undef MOLECULE
 	}
 
-	kd->D = (float) (D_sum_atoms / ts.atoms_count);
+	kd->D_avg = (float) (D_sum_atoms / ts.atoms_count);
 	kd->R = (float) (R_sum_molecules / ts.molecules_count);
 	kd->RMSD = (float) (RMSD_sum_molecules / ts.molecules_count);
 	kd->MSE = (float) (MSE_sum_molecules / ts.molecules_count);
 
 	for(int i = 0; i < ts.atom_types_count; i++)
 		kd->avg_D_per_atom_type[i] = (float) D_sum_atom_type[i] / ts.atom_types[i].atoms_count;
+
+	kd->D_max = kd->max_D_per_atom_type[0];
+	for(int i = 1; i < ts.atom_types_count; i++)
+		if(kd->D_max < kd->max_D_per_atom_type[i])
+			kd->D_max = kd->max_D_per_atom_type[i];
 
 	free(D_sum_atom_type);
 }

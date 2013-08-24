@@ -43,7 +43,8 @@ struct kappa_data {
 	float R;			/* Pearson's correlation squared for each molecule, then averaged */
 	float RMSD;			/* Root-mean-square deviation for each molecule, then averaged */
 	float MSE;			/* Sum of squared differences for each molecules, then averaged */
-	float D;			/* Absolute difference for all atoms */
+	float D_avg;			/* Average absolute difference for all atoms */
+	float D_max;			/* Maximum absolute difference for all atoms */
 
 	float *max_D_per_atom_type;
 	float *avg_D_per_atom_type;
