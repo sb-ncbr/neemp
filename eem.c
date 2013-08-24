@@ -19,6 +19,25 @@ extern const struct training_set ts;
 
 static void fill_EEM_matrix_packed(float * const A, const struct molecule * const m, const struct kappa_data * const kd);
 
+#ifdef NOT_USED
+static void print_matrix(const float * const A, int n);
+
+/* Print matrix in packed storage format */
+static void print_matrix(const float * const A, int n) {
+
+	#define U_IDX(x, y) (x + (y * (y + 1))/2)
+	for(int i = 0; i < n; i++) {
+		for(int j = 0; j < i; j++)
+			printf("       ");
+		for(int j = i; j < n; j++)
+			printf("%6.4f ", A[U_IDX(i, j)]);
+
+		printf("\n");
+	}
+	#undef U_IDX
+}
+#endif
+
 /* Use packed storage scheme to fill EEM matrix */
 static void fill_EEM_matrix_packed(float * const A, const struct molecule * const m, const struct kappa_data * const kd) {
 
@@ -75,7 +94,10 @@ void calculate_charges(struct subset * const ss, struct kappa_data * const kd) {
 
 		int ipiv[n + 1];
 
-		LAPACKE_sspsv(LAPACK_COL_MAJOR, 'U', n + 1, 1, A, ipiv, b, n + 1);
+		int info = LAPACKE_sspsv(LAPACK_COL_MAJOR, 'U', n + 1, 1, A, ipiv, b, n + 1);
+
+		if(info)
+			fprintf(stderr, "Cannot solve EEM system for molecule %s.\n", MOLECULE.name);
 
 		/* Store computed charges */
 		for(int j = 0; j < n; j++)
