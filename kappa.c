@@ -41,12 +41,10 @@ static void full_scan(struct subset * const ss) {
 
 	assert(ss != NULL);
 
-	const int steps = s.full_scan_only ? ss->kappa_data_count : ss->kappa_data_count - 1;
-
-	for(int i = 0; i < steps && i * s.full_scan_precision < s.kappa_max; i++) {
+	for(int i = 0; i < ss->kappa_data_count - 1; i++) {
 		ss->data[i].kappa = i * s.full_scan_precision;
 		perform_calculations(ss, &ss->data[i]);
-		printf("%6.4f | R: %8.4f   RMSD: %8.4f   MSE: %9.4f   D: %8.4f\n",
+		printf("K: %6.4f | R: %6.4f   RMSD: %6.4f   MSE: %6.4f   D: %6.4f\n",
 			ss->data[i].kappa, ss->data[i].R, ss->data[i].RMSD, ss->data[i].MSE, ss->data[i].D);
 	}
 }
@@ -64,16 +62,17 @@ void find_the_best_parameters_for_subset(struct subset * const ss) {
 	assert(ss != NULL);
 
 	if(s.kappa_set > 1e-10) {
-
 		ss->kappa_data_count = 1;
 		ss->data = (struct kappa_data *) malloc(1 * sizeof(struct kappa_data));
 		kd_init(&ss->data[0]);
 		ss->data[0].kappa = s.kappa_set;
 
 		perform_calculations(ss, &ss->data[0]);
+		ss->best = &ss->data[0];
 	}
 	else {
-		ss->kappa_data_count = 2 + (int) (s.kappa_max / s.full_scan_precision);
+		/* The last item in ss->data array is reserved for Brent whether it's used or not */
+		ss->kappa_data_count = 1 + (int) (s.kappa_max / s.full_scan_precision);
 		ss->data = (struct kappa_data *) calloc(ss->kappa_data_count, sizeof(struct kappa_data));
 		if(!ss->data)
 			EXIT_ERROR(MEM_ERROR, "%s", "Cannot allocate memory for kappa data array.\n");
@@ -85,13 +84,21 @@ void find_the_best_parameters_for_subset(struct subset * const ss) {
 			full_scan(ss);
 		else
 			brent(ss);
-	}
-	float best_R = 0.0f;
 
-	for(int i = 0; i < ss->kappa_data_count; i++) {
-		if(ss->data[i].R > best_R) {
-			ss->best = &ss->data[i];
-			best_R = ss->data[i].R;
+		/* Determine the best parameters for computed data */
+		float best_value = 0.0f;
+
+		if(s.full_scan_only) {
+			for(int i = 0; i < ss->kappa_data_count - 1; i++)
+				if(ss->data[i].R > best_value) {
+					ss->best = &ss->data[i];
+					best_value = ss->data[i].R;
+				}
 		}
+		else {
+			/* If Brent is used, the maximum is stored in the last item */
+			ss->best = &ss->data[ss->kappa_data_count - 1];
+		}
+
 	}
 }
