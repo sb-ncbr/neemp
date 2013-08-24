@@ -126,8 +126,10 @@ void check_settings(void) {
 				EXIT_ERROR(ARG_ERROR, "%s", "Full scan precision must be less than kappa max.\n");
 		}
 		else {
-			if(s.full_scan_only > 1e-10 || s.kappa_max > 1e-10)
+			if(s.full_scan_precision > 1e-10 || s.kappa_max > 1e-10)
 				EXIT_ERROR(ARG_ERROR, "%s", "Cannot set full scan precision and/or kappa max if --kappa is used.\n");
+			if(s.full_scan_only)
+				EXIT_ERROR(ARG_ERROR, "%s", "Cannot use full scan if single kappa is selected.\n");
 		}
 	}
 }
