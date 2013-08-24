@@ -27,6 +27,7 @@ static struct option long_options[] = {
 	{"kappa-max", required_argument, 0, 20},
 	{"kappa", required_argument, 0, 21},
 	{"fs-precision", required_argument, 0, 22},
+	{"sort-by", required_argument, 0, 30},
 	{NULL, 0, 0, 0}
 };
 
@@ -43,7 +44,7 @@ void s_init(void) {
 	s.full_scan_precision = 0.0f;
 	s.kappa_max = 0.0f;
 	s.full_scan_precision = 0.0f;
-
+	s.sort_by = SORT_R;
 }
 
 /* Prints help if -h/--help is issued */
@@ -100,6 +101,20 @@ void parse_options(int argc, char **argv) {
 				break;
 			case 22:
 				s.full_scan_precision = (float) atof(optarg);
+				break;
+			case 30:
+				if(!strcmp(optarg, "R"))
+					s.sort_by = SORT_R;
+				else if(!strcmp(optarg, "RMSD"))
+					s.sort_by = SORT_RMSD;
+				else if(!strcmp(optarg, "MSE"))
+					s.sort_by = SORT_MSE;
+				else if(!strcmp(optarg, "D_avg"))
+					s.sort_by = SORT_D_AVG;
+				else if(!strcmp(optarg, "D_max"))
+					s.sort_by = SORT_D_MAX;
+				else
+					EXIT_ERROR(ARG_ERROR, "Invalid sort-by parameter: %s\n", optarg);
 				break;
 			case '?':
 				EXIT_ERROR(ARG_ERROR, "%s", "Try -h/--help.\n");

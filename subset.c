@@ -11,9 +11,11 @@
 
 #include "bitarray.h"
 #include "neemp.h"
+#include "settings.h"
 #include "structures.h"
 #include "subset.h"
 
+extern const struct settings s;
 extern const struct training_set ts;
 
 /* Allocate memory for the contents of kappa_data structure */
@@ -82,4 +84,33 @@ void print_results(const struct subset * const ss) {
 	}
 
 	printf("\n");
+}
+
+/* Return the value which we selected for sorting */
+float kd_sort_by_return_value(const struct kappa_data * const kd) {
+
+	switch(s.sort_by) {
+		case SORT_R:
+			return kd->R;
+		case SORT_RMSD:
+			return kd->RMSD;
+		case SORT_MSE:
+			return kd->MSE;
+		case SORT_D_AVG:
+			return kd->D_avg;
+		case SORT_D_MAX:
+			return kd->D_max;
+		default:
+			/* Something bad happened */
+			assert(0);
+	}
+}
+
+/* Determine if kd1 is better than kd2 in terms of the sort-by value */
+int kd_sort_by_is_better(const struct kappa_data * const kd1, const struct kappa_data * const kd2) {
+
+	if(s.sort_by == SORT_R)
+		return kd1->R > kd2->R;
+	else
+		return kd_sort_by_return_value(kd1) < kd_sort_by_return_value(kd2);
 }

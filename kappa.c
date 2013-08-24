@@ -86,14 +86,12 @@ void find_the_best_parameters_for_subset(struct subset * const ss) {
 			brent(ss);
 
 		/* Determine the best parameters for computed data */
-		float best_value = 0.0f;
+		ss->best = &ss->data[0];
 
 		if(s.full_scan_only) {
 			for(int i = 0; i < ss->kappa_data_count - 1; i++)
-				if(ss->data[i].R > best_value) {
+				if(kd_sort_by_is_better(&ss->data[i], ss->best))
 					ss->best = &ss->data[i];
-					best_value = ss->data[i].R;
-				}
 		}
 		else {
 			/* If Brent is used, the maximum is stored in the last item */

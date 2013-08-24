@@ -12,10 +12,20 @@
 #include "config.h"
 
 enum app_mode {
+
 	MODE_PARAMS,
 	MODE_CHARGES,
 	MODE_INFO,
 	MODE_NOT_SET
+};
+
+enum sort_mode {
+
+	SORT_R,
+	SORT_RMSD,
+	SORT_MSE,
+	SORT_D_AVG,
+	SORT_D_MAX
 };
 
 struct settings {
@@ -26,6 +36,7 @@ struct settings {
 	char chgout_filename[MAX_PATH_LEN];
 
 	enum app_mode mode;
+	enum sort_mode sort_by;
 	int full_scan_only;
 
 	float kappa_max;
