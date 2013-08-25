@@ -28,6 +28,14 @@ enum sort_mode {
 	SORT_D_MAX
 };
 
+enum atom_type_customization {
+
+	AT_CUSTOM_ELEMENT,
+	AT_CUSTOM_ELEMENT_BOND,
+	AT_CUSTOM_PARTNER,
+	AT_CUSTOM_VALENCE
+};
+
 struct settings {
 
 	char sdf_filename[MAX_PATH_LEN];
@@ -37,6 +45,7 @@ struct settings {
 
 	enum app_mode mode;
 	enum sort_mode sort_by;
+	enum atom_type_customization at_customization;
 	int full_scan_only;
 
 	float kappa_max;

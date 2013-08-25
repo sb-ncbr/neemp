@@ -77,9 +77,10 @@ void print_results(const struct subset * const ss) {
 
 	printf("Atom type             A       B\t\t  D_max\t  D_avg\n");
 	for(int i = 0; i < ts.atom_types_count; i++) {
-		printf(" %2s %1d   \t%7.4f\t%7.4f\t\t%7.3f\t%7.3f\n",
-			convert_Z_to_symbol(ts.atom_types[i].Z), ts.atom_types[i].bond_order,
-			ss->best->parameters_alpha[i], ss->best->parameters_beta[i],
+		char buff[9];
+		at_format_text(&ts.atom_types[i], buff);
+		printf(" %s   \t%7.4f\t%7.4f\t\t%7.3f\t%7.3f\n",
+			buff, ss->best->parameters_alpha[i], ss->best->parameters_beta[i],
 			ss->best->max_D_per_atom_type[i], ss->best->avg_D_per_atom_type[i]);
 	}
 

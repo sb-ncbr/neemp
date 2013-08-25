@@ -27,6 +27,8 @@ static void m_calculate_charge_stats(struct molecule * const m);
 static void fill_atom_types(void);
 static void discard_molecules_without_charges(void);
 static void calculate_y(void);
+static void at_fill_from_atom(struct atom_type * const at, const struct atom * const a);
+static int at_compare_against_atom(const struct atom_type * const at, const struct atom * const a);
 
 /* Symbols for chemical elements */
 static const char * const elems[] = {"H","He","Li","Be","B","C","N","O","F","Ne","Na","Mg","Al","Si","P","S","Cl","Ar","K","Ca","Sc","Ti","V","Cr","Mn","Fe","Co","Ni","Cu","Zn","Ga","Ge","As","Se","Br","Kr","Rb","Sr","Y","Zr","Nb","Mo","Tc","Ru","Rh","Pd","Ag","Cd","In","Sn","Sb","Te","I","Xe","Cs","Ba","La","Ce","Pr","Nd","Pm","Sm","Eu","Gd","Tb","Dy","Ho","Er","Tm","Yb","Lu","Hf","Ta","W","Re","Os","Ir","Pt","Au","Hg","Tl","Pb","Bi","Po","At","Rn","Fr","Ra","Ac","Th","Pa","U","Np","Pu","Am","Cm","Bk","Cf","Es","Fm","Md","No","Lr"};
@@ -161,7 +163,7 @@ static void fill_atom_types(void) {
 			#define ATOM ts.molecules[i].atoms[j]
 			int found = 0;
 			for(int k = 0; k < ts.atom_types_count; k++)
-				if(ATOM.Z == ts.atom_types[k].Z && ATOM.bond_order == ts.atom_types[k].bond_order) {
+				if(at_compare_against_atom(&ts.atom_types[k], &ATOM)) {
 					found = 1;
 					ts.atom_types[k].atoms_count++;
 					break;
@@ -169,8 +171,7 @@ static void fill_atom_types(void) {
 
 			if(!found) {
 				/* Create new atom type */
-				ts.atom_types[ts.atom_types_count].Z = ATOM.Z;
-				ts.atom_types[ts.atom_types_count].bond_order = ATOM.bond_order;
+				at_fill_from_atom(&ts.atom_types[ts.atom_types_count], &ATOM);
 				ts.atom_types[ts.atom_types_count].atoms_count = 1;
 				ts.atom_types_count++;
 			}
@@ -199,7 +200,7 @@ static void fill_atom_types(void) {
 			for(int k = 0; k < ts.atom_types_count; k++) {
 				#define AT ts.atom_types[k]
 				/* Note that for every atom there exists k which satisfies following condition */
-				if(ATOM.Z == AT.Z && ATOM.bond_order == AT.bond_order) {
+				if(at_compare_against_atom(&AT, &ATOM)) {
 					AT.atoms_molecule_idx[AT.atoms_count] = i;
 					AT.atoms_atom_idx[AT.atoms_count] = j;
 					AT.atoms_count++;
@@ -258,7 +259,7 @@ int get_atom_type_idx(const struct atom * const a) {
 	assert(a != NULL);
 
 	for(int i = 0; i < ts.atom_types_count; i++)
-		if(a->Z == ts.atom_types[i].Z && a->bond_order == ts.atom_types[i].bond_order)
+		if(at_compare_against_atom(&ts.atom_types[i], a))
 			return i;
 
 	/* We should not get here! */
@@ -305,9 +306,90 @@ void ts_info(void) {
 
 	for(int i = 0; i < ts.atom_types_count; i++) {
 		#define AT ts.atom_types[i]
-		printf(" %2s %1d        %8d        %6.3f\n", convert_Z_to_symbol(AT.Z), AT.bond_order, AT.atoms_count, 100.0f * (float) AT.atoms_count / ts.atoms_count);
+		char buff[9];
+		at_format_text(&AT, buff);
+		printf(" %s        %8d        %6.3f\n", buff, AT.atoms_count, 100.0f * (float) AT.atoms_count / ts.atoms_count);
 		#undef AT
 	}
 
 	printf("\n");
+}
+
+/* Format text caption for a particular atom type */
+void at_format_text(const struct atom_type * const at, char * const buff) {
+
+	assert(at != NULL);
+	assert(buff != NULL);
+
+	/* Note that buff should have size at least 9, this is not checked! */
+	switch(s.at_customization) {
+		case AT_CUSTOM_ELEMENT:
+			sprintf(buff, "%2s        ", convert_Z_to_symbol(at->Z));
+			break;
+		case AT_CUSTOM_ELEMENT_BOND:
+			sprintf(buff, "%2s %1d     ", convert_Z_to_symbol(at->Z), at->bond_order);
+			break;
+		case AT_CUSTOM_PARTNER:
+			/* TODO */
+			sprintf(buff, "%2s        ", convert_Z_to_symbol(at->Z));
+			break;
+		case AT_CUSTOM_VALENCE:
+			/* TODO */
+			sprintf(buff, "%2s        ", convert_Z_to_symbol(at->Z));
+			break;
+		default:
+			/* Something bad happened */
+			assert(0);
+	}
+}
+
+/* Fill necessary atom type items according to an atom */
+static void at_fill_from_atom(struct atom_type * const at, const struct atom * const a) {
+
+	assert(at != NULL);
+	assert(a != NULL);
+
+	switch(s.at_customization) {
+			case AT_CUSTOM_ELEMENT:
+				at->Z = a->Z;
+				break;
+			case AT_CUSTOM_ELEMENT_BOND:
+				at->Z = a->Z;
+				at->bond_order = a->bond_order;
+				break;
+			case AT_CUSTOM_PARTNER:
+				/* TODO */
+				at->Z = a->Z;
+				break;
+			case AT_CUSTOM_VALENCE:
+				/* TODO */
+				at->Z = a->Z;
+				break;
+			default:
+				/* Something bad happened */
+				assert(0);
+	}
+}
+
+/* Compare if the provided atom is of a particular atom type */
+static int at_compare_against_atom(const struct atom_type * const at, const struct atom * const a) {
+
+	assert(at != NULL);
+	assert(a != NULL);
+
+	switch(s.at_customization) {
+			case AT_CUSTOM_ELEMENT:
+				return at->Z == a->Z;
+			case AT_CUSTOM_ELEMENT_BOND:
+				return at->Z ==  a->Z && at->bond_order == a->bond_order;
+			case AT_CUSTOM_PARTNER:
+				/* TODO */
+				return at->Z == a->Z;
+			case AT_CUSTOM_VALENCE:
+				/* TODO */
+				return at->Z == a->Z;
+			default:
+				/* Something bad happened */
+				assert(0);
+	}
 }

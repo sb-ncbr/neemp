@@ -28,6 +28,7 @@ static struct option long_options[] = {
 	{"kappa", required_argument, 0, 21},
 	{"fs-precision", required_argument, 0, 22},
 	{"sort-by", required_argument, 0, 30},
+	{"at-customization", required_argument, 0, 31},
 	{NULL, 0, 0, 0}
 };
 
@@ -45,6 +46,7 @@ void s_init(void) {
 	s.kappa_max = 0.0f;
 	s.full_scan_precision = 0.0f;
 	s.sort_by = SORT_R;
+	s.at_customization = AT_CUSTOM_ELEMENT_BOND;
 }
 
 /* Prints help if -h/--help is issued */
@@ -114,7 +116,19 @@ void parse_options(int argc, char **argv) {
 				else if(!strcmp(optarg, "D_max"))
 					s.sort_by = SORT_D_MAX;
 				else
-					EXIT_ERROR(ARG_ERROR, "Invalid sort-by parameter: %s\n", optarg);
+					EXIT_ERROR(ARG_ERROR, "Invalid sort-by value: %s\n", optarg);
+				break;
+			case 31:
+				if(!strcmp(optarg, "element"))
+					s.at_customization = AT_CUSTOM_ELEMENT;
+				else if(!strcmp(optarg, "element_bond"))
+					s.at_customization = AT_CUSTOM_ELEMENT_BOND;
+				else if(!strcmp(optarg, "partner"))
+					s.at_customization = AT_CUSTOM_PARTNER;
+				else if(!strcmp(optarg, "valence"))
+					s.at_customization = AT_CUSTOM_VALENCE;
+				else
+					EXIT_ERROR(ARG_ERROR, "Invalid at-customization value: %s\n", optarg);
 				break;
 			case '?':
 				EXIT_ERROR(ARG_ERROR, "%s", "Try -h/--help.\n");
@@ -128,10 +142,13 @@ void parse_options(int argc, char **argv) {
 /* Check if options are set correctly */
 void check_settings(void) {
 
+	if(s.at_customization == AT_CUSTOM_PARTNER || s.at_customization == AT_CUSTOM_VALENCE)
+		EXIT_ERROR(ARG_ERROR, "%s", "These atom type customizations are not implemented right now. Stay tuned.\n");
+
 	if(s.mode == MODE_NOT_SET)
 		EXIT_ERROR(ARG_ERROR, "%s", "No mode set.\n");
-	else if(s.mode == MODE_PARAMS) {
 
+	if(s.mode == MODE_PARAMS) {
 		if(s.kappa_set < 1e-10) {
 			if(s.full_scan_precision < 1e-10)
 				EXIT_ERROR(ARG_ERROR, "%s", "Full scan precision must be set correctly in params mode.\n");
