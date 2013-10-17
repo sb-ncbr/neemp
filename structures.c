@@ -262,8 +262,6 @@ int get_atom_type_idx(const struct atom * const a) {
 		if(at_compare_against_atom(&ts.atom_types[i], a))
 			return i;
 
-	/* We should not get here! */
-	assert(0);
 	return NOT_FOUND;
 }
 
@@ -306,7 +304,7 @@ void ts_info(void) {
 
 	for(int i = 0; i < ts.atom_types_count; i++) {
 		#define AT ts.atom_types[i]
-		char buff[9];
+		char buff[10];
 		at_format_text(&AT, buff);
 		printf(" %s        %8d        %6.3f\n", buff, AT.atoms_count, 100.0f * (float) AT.atoms_count / ts.atoms_count);
 		#undef AT
@@ -324,23 +322,56 @@ void at_format_text(const struct atom_type * const at, char * const buff) {
 	/* Note that buff should have size at least 9, this is not checked! */
 	switch(s.at_customization) {
 		case AT_CUSTOM_ELEMENT:
-			sprintf(buff, "%2s        ", convert_Z_to_symbol(at->Z));
+			sprintf(buff, "%2s         ", convert_Z_to_symbol(at->Z));
 			break;
 		case AT_CUSTOM_ELEMENT_BOND:
-			sprintf(buff, "%2s %1d     ", convert_Z_to_symbol(at->Z), at->bond_order);
+			sprintf(buff, "%2s %1d      ", convert_Z_to_symbol(at->Z), at->bond_order);
 			break;
 		case AT_CUSTOM_PARTNER:
 			/* TODO */
-			sprintf(buff, "%2s        ", convert_Z_to_symbol(at->Z));
+			sprintf(buff, "%2s         ", convert_Z_to_symbol(at->Z));
 			break;
 		case AT_CUSTOM_VALENCE:
 			/* TODO */
-			sprintf(buff, "%2s        ", convert_Z_to_symbol(at->Z));
+			sprintf(buff, "%2s         ", convert_Z_to_symbol(at->Z));
 			break;
 		default:
 			/* Something bad happened */
 			assert(0);
 	}
+}
+
+int get_atom_type_idx_from_text(const char * const str) {
+
+	assert(str != NULL);
+
+	struct atom a;
+
+	char symbol[2];
+	int bonds;
+
+	switch(s.at_customization) {
+		case AT_CUSTOM_ELEMENT:
+			sscanf(str, "%2s\n", symbol);
+			a.Z = convert_symbol_to_Z(symbol);
+			break;
+		case AT_CUSTOM_ELEMENT_BOND:
+			sscanf(str, "%2s %d\n", symbol, &bonds);
+			a.Z = convert_symbol_to_Z(symbol);
+			a.bond_order = bonds;
+			break;
+		case AT_CUSTOM_PARTNER:
+			/* TODO */
+			break;
+		case AT_CUSTOM_VALENCE:
+			/* TODO */
+			break;
+		default:
+			/* Something bad happened */
+			assert(0);
+	}
+
+	return get_atom_type_idx(&a);
 }
 
 /* Fill necessary atom type items according to an atom */

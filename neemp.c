@@ -9,11 +9,13 @@
 #include <mkl.h>
 #include <string.h>
 
+#include "eem.h"
 #include "kappa.h"
 #include "neemp.h"
 #include "io.h"
 #include "settings.h"
 #include "subset.h"
+#include "statistics.h"
 #include "structures.h"
 
 struct training_set ts;
@@ -40,6 +42,9 @@ int main(int argc, char **argv) {
 
 		if(s.chgout_filename[0] != '\0')
 			output_charges_stats(&full);
+
+		if(s.parout_filename[0] != '\0')
+			output_parameters(&full);
 
 		print_results(&full);
 

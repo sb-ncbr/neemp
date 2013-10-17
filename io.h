@@ -13,8 +13,9 @@
 
 void load_molecules(void);
 void load_charges(void);
-void load_parameters(void);
+void load_parameters(struct kappa_data * const ss);
 
 void output_charges_stats(const struct subset * const ss);
+void output_parameters(const struct subset * const ss);
 
 #endif /* __IO_H__ */

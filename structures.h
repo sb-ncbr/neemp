@@ -53,6 +53,7 @@ struct atom_type {
 };
 
 int get_atom_type_idx(const struct atom * const a);
+int get_atom_type_idx_from_text(const char * const str);
 void at_destroy(struct atom_type * const at);
 void at_format_text(const struct atom_type * const at, char * const buff);
 

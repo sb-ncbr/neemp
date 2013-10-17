@@ -24,6 +24,7 @@ static struct option long_options[] = {
 	{"par-file", required_argument, 0, 11},
 	{"chg-file", required_argument, 0, 12},
 	{"chg-outfile", required_argument, 0, 13},
+	{"par-outfile", required_argument, 0, 14},
 	{"kappa-max", required_argument, 0, 20},
 	{"kappa", required_argument, 0, 21},
 	{"fs-precision", required_argument, 0, 22},
@@ -39,6 +40,7 @@ void s_init(void) {
 	memset(s.chg_filename, 0x0, MAX_PATH_LEN * sizeof(char));
 	memset(s.par_filename, 0x0, MAX_PATH_LEN * sizeof(char));
 	memset(s.chgout_filename, 0x0, MAX_PATH_LEN * sizeof(char));
+	memset(s.parout_filename, 0x0, MAX_PATH_LEN * sizeof(char));
 
 	s.mode = MODE_NOT_SET;
 	s.full_scan_only = 0;
@@ -95,6 +97,9 @@ void parse_options(int argc, char **argv) {
 			case 13:
 				strncpy(s.chgout_filename, optarg, MAX_PATH_LEN - 1);
 				break;
+			case 14:
+				strncpy(s.parout_filename, optarg, MAX_PATH_LEN - 1);
+				break;
 			case 20:
 				s.kappa_max = (float) atof(optarg);
 				break;
@@ -149,6 +154,10 @@ void check_settings(void) {
 		EXIT_ERROR(ARG_ERROR, "%s", "No mode set.\n");
 
 	if(s.mode == MODE_PARAMS) {
+		if(s.sdf_filename[0] == '\0')
+			EXIT_ERROR(ARG_ERROR, "%s", "No .sdf file provided.\n");
+		if(s.chg_filename[0] == '\0')
+			EXIT_ERROR(ARG_ERROR, "%s", "No .chg file provided.\n");
 		if(s.kappa_set < 1e-10) {
 			if(s.full_scan_precision < 1e-10)
 				EXIT_ERROR(ARG_ERROR, "%s", "Full scan precision must be set correctly in params mode.\n");
@@ -163,5 +172,12 @@ void check_settings(void) {
 			if(s.full_scan_only)
 				EXIT_ERROR(ARG_ERROR, "%s", "Cannot use full scan if single kappa is selected.\n");
 		}
+	} else if(s.mode == MODE_CHARGES) {
+		if(s.sdf_filename[0] == '\0')
+			EXIT_ERROR(ARG_ERROR, "%s", "No .sdf file provided.\n");
+		if(s.par_filename[0] == '\0')
+			EXIT_ERROR(ARG_ERROR, "%s", "No .par file provided.\n");
+		if(s.chgout_filename[0] == '\0')
+			EXIT_ERROR(ARG_ERROR, "%s", "No .chg file provided.\n");
 	}
 }

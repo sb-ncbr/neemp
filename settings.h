@@ -41,6 +41,7 @@ struct settings {
 	char sdf_filename[MAX_PATH_LEN];
 	char chg_filename[MAX_PATH_LEN];
 	char par_filename[MAX_PATH_LEN];
+	char parout_filename[MAX_PATH_LEN];
 	char chgout_filename[MAX_PATH_LEN];
 
 	enum app_mode mode;

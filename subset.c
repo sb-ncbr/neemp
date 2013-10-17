@@ -23,8 +23,8 @@ void kd_init(struct kappa_data * const kd) {
 
 	assert(kd != NULL);
 
-	kd->parameters_alpha = (float *) malloc(ts.atom_types_count * sizeof(float));
-	kd->parameters_beta = (float *) malloc(ts.atom_types_count * sizeof(float));
+	kd->parameters_alpha = (float *) calloc(ts.atom_types_count, sizeof(float));
+	kd->parameters_beta = (float *) calloc(ts.atom_types_count, sizeof(float));
 	if(!kd->parameters_alpha || !kd->parameters_beta)
 		EXIT_ERROR(MEM_ERROR, "%s", "Cannot allocate memory for parameters array.\n");
 
@@ -77,7 +77,7 @@ void print_results(const struct subset * const ss) {
 
 	printf("Atom type             A       B\t\t  D_max\t  D_avg\n");
 	for(int i = 0; i < ts.atom_types_count; i++) {
-		char buff[9];
+		char buff[10];
 		at_format_text(&ts.atom_types[i], buff);
 		printf(" %s   \t%7.4f\t%7.4f\t\t%7.3f\t%7.3f\n",
 			buff, ss->best->parameters_alpha[i], ss->best->parameters_beta[i],

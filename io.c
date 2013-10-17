@@ -110,11 +110,41 @@ void load_charges(void) {
 }
 
 /* TODO */
-void load_parameters(void) {
+void load_parameters(struct kappa_data * const kd) {
+
+	assert(kd != NULL);
 
 	FILE * const f = fopen(s.par_filename, "r");
 	if(!f)
 		EXIT_ERROR(IO_ERROR, "Cannot open .par file \"%s\".\n", s.par_filename);
+
+	char line[MAX_LINE_LEN];
+	memset(line, 0x0, MAX_LINE_LEN);
+
+	/* Skip comments */
+	do {
+		if(!fgets(line, MAX_LINE_LEN, f))
+			EXIT_ERROR(IO_ERROR, "Invalid format of \"%s\".\n", s.par_filename);
+	} while(line[0] == '#');
+
+	sscanf(line, "%f\n", &kd->kappa);
+
+	/* Read actual parameters */
+	for(int i = 0; i < ts.atom_types_count; i++) {
+
+		if(!fgets(line, MAX_LINE_LEN, f))
+			EXIT_ERROR(IO_ERROR, "Invalid format of \"%s\".\n", s.par_filename);
+
+		/* Determine atom type from string */
+		int atom_type_idx = get_atom_type_idx_from_text(line);
+
+		if(atom_type_idx == NOT_FOUND)
+			EXIT_ERROR(IO_ERROR, "Invalid format of atom type specifier on line \"%s\"", line);
+
+
+		/* Read alpha and beta */
+		sscanf(line + 9, "%f %f\n", &kd->parameters_alpha[atom_type_idx], &kd->parameters_beta[atom_type_idx]);
+	}
 
 	fclose(f);
 }
@@ -299,6 +329,47 @@ void output_charges_stats(const struct subset * const ss) {
 			#undef ATOM
 		}
 		atoms_processed += ts.molecules[i].atoms_count;
+	}
+
+	fclose(f);
+}
+
+void output_parameters(const struct subset * const ss) {
+
+	assert(ss != NULL);
+	assert(ss->best != NULL);
+
+	FILE *f = fopen(s.parout_filename, "w");
+	if(!f)
+		EXIT_ERROR(IO_ERROR, "Cannot open file %s for writing the parameters.\n", s.parout_filename);
+
+
+	fprintf(f, "# NEEMP parameters file\n");
+	fprintf(f, "# Customization (--at-customization parameter value): ");
+	switch(s.at_customization) {
+		case AT_CUSTOM_ELEMENT:
+			fprintf(f, "element\n");
+			break;
+		case AT_CUSTOM_ELEMENT_BOND:
+			fprintf(f, "element_bond\n");
+			break;
+		case AT_CUSTOM_PARTNER:
+			fprintf(f, "partner\n");
+			break;
+		case AT_CUSTOM_VALENCE:
+			fprintf(f, "valence\n");
+			break;
+		default:
+			/* We should not be here */
+			assert(0);
+	}
+
+	fprintf(f, "%6.4f\n", ss->best->kappa);
+
+	for(int i = 0; i < ts.atom_types_count; i++) {
+		char buff[10];
+		at_format_text(&ts.atom_types[i], buff);
+		fprintf(f, "%s\t%7.4f\t%7.4f\n", buff, ss->best->parameters_alpha[i], ss->best->parameters_beta[i]);
 	}
 
 	fclose(f);

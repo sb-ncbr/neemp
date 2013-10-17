@@ -8,7 +8,6 @@
 
 #include <assert.h>
 #include <mkl.h>
-
 #include <stdlib.h>
 
 #include "parameters.h"
