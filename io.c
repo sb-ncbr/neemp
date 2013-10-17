@@ -27,9 +27,9 @@ static int strn2int(const char * const str, int n);
 /* Load all molecules from .sdf file */
 void load_molecules(void) {
 
-	FILE * const f = fopen(s.sdf_filename, "r");
+	FILE * const f = fopen(s.sdf_file, "r");
 	if(!f)
-		EXIT_ERROR(IO_ERROR, "Cannot open .sdf file \"%s\".\n", s.sdf_filename);
+		EXIT_ERROR(IO_ERROR, "Cannot open .sdf file \"%s\".\n", s.sdf_file);
 
 	ts.molecules = (struct molecule *) malloc(sizeof(struct molecule) * MAX_MOLECULES);
 	if(!ts.molecules)
@@ -65,9 +65,9 @@ void load_charges(void) {
 	 * [EMPTY LINE terminates the record]
 	 */
 
-	FILE * const f = fopen(s.chg_filename, "r");
+	FILE * const f = fopen(s.chg_file, "r");
 	if(!f)
-		EXIT_ERROR(IO_ERROR, "Cannot open .chg file \"%s\".\n", s.chg_filename);
+		EXIT_ERROR(IO_ERROR, "Cannot open .chg file \"%s\".\n", s.chg_file);
 
 	char line[MAX_LINE_LEN];
 	memset(line, 0x0, MAX_LINE_LEN * sizeof(char));
@@ -114,9 +114,9 @@ void load_parameters(struct kappa_data * const kd) {
 
 	assert(kd != NULL);
 
-	FILE * const f = fopen(s.par_filename, "r");
+	FILE * const f = fopen(s.par_file, "r");
 	if(!f)
-		EXIT_ERROR(IO_ERROR, "Cannot open .par file \"%s\".\n", s.par_filename);
+		EXIT_ERROR(IO_ERROR, "Cannot open .par file \"%s\".\n", s.par_file);
 
 	char line[MAX_LINE_LEN];
 	memset(line, 0x0, MAX_LINE_LEN);
@@ -124,7 +124,7 @@ void load_parameters(struct kappa_data * const kd) {
 	/* Skip comments */
 	do {
 		if(!fgets(line, MAX_LINE_LEN, f))
-			EXIT_ERROR(IO_ERROR, "Invalid format of \"%s\".\n", s.par_filename);
+			EXIT_ERROR(IO_ERROR, "Invalid format of \"%s\".\n", s.par_file);
 	} while(line[0] == '#');
 
 	sscanf(line, "%f\n", &kd->kappa);
@@ -133,7 +133,7 @@ void load_parameters(struct kappa_data * const kd) {
 	for(int i = 0; i < ts.atom_types_count; i++) {
 
 		if(!fgets(line, MAX_LINE_LEN, f))
-			EXIT_ERROR(IO_ERROR, "Invalid format of \"%s\".\n", s.par_filename);
+			EXIT_ERROR(IO_ERROR, "Invalid format of \"%s\".\n", s.par_file);
 
 		/* Determine atom type from string */
 		int atom_type_idx = get_atom_type_idx_from_text(line);
@@ -304,6 +304,32 @@ static int find_molecule_by_name(const char * const name) {
 	return NOT_FOUND;
 }
 
+void output_charges(const struct subset * const ss) {
+
+	assert(ss != NULL);
+	assert(ss->best != NULL);
+
+	FILE *f = fopen(s.chg_out_file, "w");
+	if(!f)
+		EXIT_ERROR(IO_ERROR, "Cannot open file %s for writing the charges stats.\n", s.chg_out_file);
+
+	int atoms_processed = 0;
+	for(int i = 0; i < ts.molecules_count; i++) {
+		fprintf(f, "%s\n", ts.molecules[i].name);
+		fprintf(f, "%d\n", ts.molecules[i].atoms_count);
+
+		for(int j = 0; j < ts.molecules[i].atoms_count; j++) {
+			#define ATOM ts.molecules[i].atoms[j]
+			fprintf(f, "%4d\t%2s\t%9.6f\n", j + 1, convert_Z_to_symbol(ATOM.Z),\
+				ss->best->charges[atoms_processed + j]);
+			#undef ATOM
+		}
+		atoms_processed += ts.molecules[i].atoms_count;
+		fprintf(f, "\n");
+	}
+
+	fclose(f);
+}
 
 /* Output reference charges, EEM charges and their differences */
 void output_charges_stats(const struct subset * const ss) {
@@ -311,9 +337,9 @@ void output_charges_stats(const struct subset * const ss) {
 	assert(ss != NULL);
 	assert(ss->best != NULL);
 
-	FILE *f = fopen(s.chgout_filename, "w");
+	FILE *f = fopen(s.chg_stats_out_file, "w");
 	if(!f)
-		EXIT_ERROR(IO_ERROR, "Cannot open file %s for writing the charges stats.\n", s.chgout_filename);
+		EXIT_ERROR(IO_ERROR, "Cannot open file %s for writing the charges stats.\n", s.chg_stats_out_file);
 
 	fprintf(f, "IDX      TYPE        A.I.             EEM            DIFF\n");
 
@@ -339,9 +365,9 @@ void output_parameters(const struct subset * const ss) {
 	assert(ss != NULL);
 	assert(ss->best != NULL);
 
-	FILE *f = fopen(s.parout_filename, "w");
+	FILE *f = fopen(s.par_out_file, "w");
 	if(!f)
-		EXIT_ERROR(IO_ERROR, "Cannot open file %s for writing the parameters.\n", s.parout_filename);
+		EXIT_ERROR(IO_ERROR, "Cannot open file %s for writing the parameters.\n", s.par_out_file);
 
 
 	fprintf(f, "# NEEMP parameters file\n");

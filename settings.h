@@ -38,11 +38,13 @@ enum atom_type_customization {
 
 struct settings {
 
-	char sdf_filename[MAX_PATH_LEN];
-	char chg_filename[MAX_PATH_LEN];
-	char par_filename[MAX_PATH_LEN];
-	char parout_filename[MAX_PATH_LEN];
-	char chgout_filename[MAX_PATH_LEN];
+	char sdf_file[MAX_PATH_LEN];
+	char chg_file[MAX_PATH_LEN];
+	char par_file[MAX_PATH_LEN];
+
+	char par_out_file[MAX_PATH_LEN];
+	char chg_out_file[MAX_PATH_LEN];
+	char chg_stats_out_file[MAX_PATH_LEN];
 
 	enum app_mode mode;
 	enum sort_mode sort_by;

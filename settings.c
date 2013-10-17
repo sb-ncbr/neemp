@@ -23,8 +23,9 @@ static struct option long_options[] = {
 	{"sdf-file", required_argument, 0, 10},
 	{"par-file", required_argument, 0, 11},
 	{"chg-file", required_argument, 0, 12},
-	{"chg-outfile", required_argument, 0, 13},
-	{"par-outfile", required_argument, 0, 14},
+	{"chg-out-file", required_argument, 0, 13},
+	{"chg-stats-out-file", required_argument, 0, 14},
+	{"par-out-file", required_argument, 0, 15},
 	{"kappa-max", required_argument, 0, 20},
 	{"kappa", required_argument, 0, 21},
 	{"fs-precision", required_argument, 0, 22},
@@ -36,11 +37,12 @@ static struct option long_options[] = {
 /* Initialize default settings */
 void s_init(void) {
 
-	memset(s.sdf_filename, 0x0, MAX_PATH_LEN * sizeof(char));
-	memset(s.chg_filename, 0x0, MAX_PATH_LEN * sizeof(char));
-	memset(s.par_filename, 0x0, MAX_PATH_LEN * sizeof(char));
-	memset(s.chgout_filename, 0x0, MAX_PATH_LEN * sizeof(char));
-	memset(s.parout_filename, 0x0, MAX_PATH_LEN * sizeof(char));
+	memset(s.sdf_file, 0x0, MAX_PATH_LEN * sizeof(char));
+	memset(s.chg_file, 0x0, MAX_PATH_LEN * sizeof(char));
+	memset(s.par_file, 0x0, MAX_PATH_LEN * sizeof(char));
+	memset(s.par_out_file, 0x0, MAX_PATH_LEN * sizeof(char));
+	memset(s.chg_out_file, 0x0, MAX_PATH_LEN * sizeof(char));
+	memset(s.chg_stats_out_file, 0x0, MAX_PATH_LEN * sizeof(char));
 
 	s.mode = MODE_NOT_SET;
 	s.full_scan_only = 0;
@@ -86,19 +88,22 @@ void parse_options(int argc, char **argv) {
 					EXIT_ERROR(ARG_ERROR, "Invalid mode: %s\n", optarg);
 				break;
 			case 10:
-				strncpy(s.sdf_filename, optarg, MAX_PATH_LEN - 1);
+				strncpy(s.sdf_file, optarg, MAX_PATH_LEN - 1);
 				break;
 			case 11:
-				strncpy(s.par_filename, optarg, MAX_PATH_LEN - 1);
+				strncpy(s.par_file, optarg, MAX_PATH_LEN - 1);
 				break;
 			case 12:
-				strncpy(s.chg_filename, optarg, MAX_PATH_LEN - 1);
+				strncpy(s.chg_file, optarg, MAX_PATH_LEN - 1);
 				break;
 			case 13:
-				strncpy(s.chgout_filename, optarg, MAX_PATH_LEN - 1);
+				strncpy(s.chg_out_file, optarg, MAX_PATH_LEN - 1);
 				break;
 			case 14:
-				strncpy(s.parout_filename, optarg, MAX_PATH_LEN - 1);
+				strncpy(s.chg_stats_out_file, optarg, MAX_PATH_LEN - 1);
+				break;
+			case 15:
+				strncpy(s.par_out_file, optarg, MAX_PATH_LEN - 1);
 				break;
 			case 20:
 				s.kappa_max = (float) atof(optarg);
@@ -154,9 +159,9 @@ void check_settings(void) {
 		EXIT_ERROR(ARG_ERROR, "%s", "No mode set.\n");
 
 	if(s.mode == MODE_PARAMS) {
-		if(s.sdf_filename[0] == '\0')
+		if(s.sdf_file[0] == '\0')
 			EXIT_ERROR(ARG_ERROR, "%s", "No .sdf file provided.\n");
-		if(s.chg_filename[0] == '\0')
+		if(s.chg_file[0] == '\0')
 			EXIT_ERROR(ARG_ERROR, "%s", "No .chg file provided.\n");
 		if(s.kappa_set < 1e-10) {
 			if(s.full_scan_precision < 1e-10)
@@ -173,11 +178,11 @@ void check_settings(void) {
 				EXIT_ERROR(ARG_ERROR, "%s", "Cannot use full scan if single kappa is selected.\n");
 		}
 	} else if(s.mode == MODE_CHARGES) {
-		if(s.sdf_filename[0] == '\0')
+		if(s.sdf_file[0] == '\0')
 			EXIT_ERROR(ARG_ERROR, "%s", "No .sdf file provided.\n");
-		if(s.par_filename[0] == '\0')
+		if(s.par_file[0] == '\0')
 			EXIT_ERROR(ARG_ERROR, "%s", "No .par file provided.\n");
-		if(s.chgout_filename[0] == '\0')
-			EXIT_ERROR(ARG_ERROR, "%s", "No .chg file provided.\n");
+		if(s.chg_out_file[0] == '\0')
+			EXIT_ERROR(ARG_ERROR, "%s", "No .chg output file provided.\n");
 	}
 }

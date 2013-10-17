@@ -40,10 +40,10 @@ int main(int argc, char **argv) {
 		b_set_all(&full.molecules);
 		find_the_best_parameters_for_subset(&full);
 
-		if(s.chgout_filename[0] != '\0')
+		if(s.chg_stats_out_file[0] != '\0')
 			output_charges_stats(&full);
 
-		if(s.parout_filename[0] != '\0')
+		if(s.par_out_file[0] != '\0')
 			output_parameters(&full);
 
 		print_results(&full);
@@ -52,7 +52,28 @@ int main(int argc, char **argv) {
 
 	} else if(s.mode == MODE_CHARGES) {
 		load_molecules();
-		load_parameters();
+
+		preprocess_molecules();
+
+		struct subset full;
+		b_init(&full.molecules, ts.molecules_count);
+		b_set_all(&full.molecules);
+
+		full.kappa_data_count = 1;
+		full.data = (struct kappa_data *) calloc(1, sizeof(struct kappa_data));
+		full.best = &full.data[0];
+		kd_init(full.best);
+
+		load_parameters(full.best);
+
+		calculate_charges(&full, full.best);
+		calculate_statistics(&full, full.best);
+
+		print_results(&full);
+
+		output_charges(&full);
+
+		ss_destroy(&full);
 
 	} else if(s.mode == MODE_INFO) {
 		load_molecules();
