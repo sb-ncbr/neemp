@@ -29,10 +29,11 @@ int main(int argc, char **argv) {
 	check_settings();
 
 	load_molecules();
-	preprocess_molecules();
 
 	switch(s.mode) {
 		case MODE_PARAMS: {
+			load_charges();
+			preprocess_molecules();
 			ts_info();
 
 			struct subset full;
@@ -53,9 +54,11 @@ int main(int argc, char **argv) {
 		}
 		case MODE_CHARGES: {
 			struct subset full;
+			preprocess_molecules();
 			b_init(&full.molecules, ts.molecules_count);
 			b_set_all(&full.molecules);
 
+			/* We use only one particular kappa which is read from .par file */
 			full.kappa_data_count = 1;
 			full.data = (struct kappa_data *) calloc(1, sizeof(struct kappa_data));
 			full.best = &full.data[0];
@@ -64,15 +67,13 @@ int main(int argc, char **argv) {
 			load_parameters(full.best);
 
 			calculate_charges(&full, full.best);
-			calculate_statistics(&full, full.best);
-
-			print_results(&full);
 			output_charges(&full);
 
 			ss_destroy(&full);
 			break;
 		}
 		case MODE_INFO:
+			preprocess_molecules();
 			ts_info();
 			break;
 	}

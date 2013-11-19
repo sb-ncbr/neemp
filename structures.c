@@ -268,10 +268,6 @@ int get_atom_type_idx(const struct atom * const a) {
 /* Do some preprocessing to simplify things later on */
 void preprocess_molecules(void) {
 
-	/* Remove molecule for which the charges are not present */
-	if(s.mode == MODE_PARAMS)
-		discard_molecules_without_charges();
-
 	/* Calculate reciprocal distances of atoms for all molecules */
 	for(int i = 0; i < ts.molecules_count; i++)
 		m_calculate_rdists(&ts.molecules[i]);
@@ -280,18 +276,20 @@ void preprocess_molecules(void) {
 	for(int i = 0; i < ts.molecules_count; i++)
 		m_calculate_avg_electronegativity(&ts.molecules[i]);
 
-	/* Calculate sum and average of the charges in the molecule */
-	if(s.mode == MODE_PARAMS)
+	if(s.mode == MODE_PARAMS) {
+		/* Remove molecule for which the charges are not present */
+		discard_molecules_without_charges();
+
+		/* Calculate sum and average of the charges in the molecule */
 		for(int i = 0; i < ts.molecules_count; i++)
 			m_calculate_charge_stats(&ts.molecules[i]);
 
-	/* Calculate auxiliary sum */
-	if(s.mode == MODE_PARAMS)
+		/* Calculate auxiliary sum */
 		calculate_y();
+	}
 
 	/* Finally, fill indices to atoms of a particular kind */
 	fill_atom_types();
-
 }
 
 /* Prints information about the training set */
