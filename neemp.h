@@ -23,6 +23,8 @@
 
 #define NOT_FOUND -1
 
+#define EPS 10E-5
+
 #define EXIT_ERROR(ERROR_CODE, fmt, ...) do { \
 fprintf(stderr, "Error: " fmt, __VA_ARGS__);  \
 exit(ERROR_CODE);                             \

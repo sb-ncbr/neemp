@@ -26,7 +26,7 @@ static void full_scan(struct subset * const ss);
 static void brent(struct subset * const ss);
 static void perform_calculations(struct subset * const ss, struct kappa_data * const kd);
 
-/* Perform all three step for one value of kappa */
+/* Perform all three steps for one value of kappa */
 static void perform_calculations(struct subset * const ss, struct kappa_data * const kd) {
 
 	assert(ss != NULL);

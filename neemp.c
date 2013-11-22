@@ -6,8 +6,11 @@
  *
  * */
 
-#include <mkl.h>
 #include <string.h>
+
+#ifdef USE_MKL
+#include <mkl.h>
+#endif /* USE_MKL */
 
 #include "discard.h"
 #include "eem.h"
@@ -101,7 +104,9 @@ int main(int argc, char **argv) {
 
 	ts_destroy();
 
+	#ifdef USE_MKL
 	mkl_free_buffers();
+	#endif /* USE_MKL */
 
 	return RETURN_OK;
 }
