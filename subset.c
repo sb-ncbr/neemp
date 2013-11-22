@@ -69,8 +69,6 @@ void print_results(const struct subset * const ss) {
 	assert(ss != NULL);
 	assert(ss->best != NULL);
 
-	printf("\nResults\n\n");
-
 	printf("Used molecules: %5d\n", b_count_bits(&ss->molecules));
 	printf("K: %6.4f | R: %6.4f   RMSD: %6.4f   MSE: %6.4f   D_avg: %6.4f   D_max: %6.4f\n",
 		ss->best->kappa, ss->best->R, ss->best->RMSD, ss->best->MSE, ss->best->D_avg, ss->best->D_max);

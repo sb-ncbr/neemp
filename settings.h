@@ -36,6 +36,12 @@ enum atom_type_customization {
 	AT_CUSTOM_VALENCE
 };
 
+enum discarding_mode {
+
+	DISCARD_OFF,
+	DISCARD_ITER
+};
+
 struct settings {
 
 	char sdf_file[MAX_PATH_LEN];
@@ -49,6 +55,7 @@ struct settings {
 	enum app_mode mode;
 	enum sort_mode sort_by;
 	enum atom_type_customization at_customization;
+	enum discarding_mode discard;
 	int full_scan_only;
 
 	float kappa_max;

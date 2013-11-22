@@ -31,6 +31,7 @@ static struct option long_options[] = {
 	{"fs-precision", required_argument, 0, 22},
 	{"sort-by", required_argument, 0, 30},
 	{"at-customization", required_argument, 0, 31},
+	{"discard", required_argument, 0, 40},
 	{NULL, 0, 0, 0}
 };
 
@@ -51,6 +52,7 @@ void s_init(void) {
 	s.full_scan_precision = 0.0f;
 	s.sort_by = SORT_R;
 	s.at_customization = AT_CUSTOM_ELEMENT_BOND;
+	s.discard = DISCARD_OFF;
 }
 
 /* Prints help if -h/--help is issued */
@@ -77,7 +79,7 @@ void parse_options(int argc, char **argv) {
 			case 'h':
 				print_help();
 				exit(RETURN_OK);
-			case 'm':
+			case 'm': /* mode */
 				if(!strcmp(optarg, "info"))
 					s.mode = MODE_INFO;
 				else if (!strcmp(optarg, "charges"))
@@ -114,7 +116,7 @@ void parse_options(int argc, char **argv) {
 			case 22:
 				s.full_scan_precision = (float) atof(optarg);
 				break;
-			case 30:
+			case 30: /* sort-by */
 				if(!strcmp(optarg, "R"))
 					s.sort_by = SORT_R;
 				else if(!strcmp(optarg, "RMSD"))
@@ -128,7 +130,7 @@ void parse_options(int argc, char **argv) {
 				else
 					EXIT_ERROR(ARG_ERROR, "Invalid sort-by value: %s\n", optarg);
 				break;
-			case 31:
+			case 31: /* at-customization */
 				if(!strcmp(optarg, "element"))
 					s.at_customization = AT_CUSTOM_ELEMENT;
 				else if(!strcmp(optarg, "element_bond"))
@@ -139,6 +141,14 @@ void parse_options(int argc, char **argv) {
 					s.at_customization = AT_CUSTOM_VALENCE;
 				else
 					EXIT_ERROR(ARG_ERROR, "Invalid at-customization value: %s\n", optarg);
+				break;
+			case 40: /* discard */
+				if(!strcmp(optarg, "off"))
+					s.discard = DISCARD_OFF;
+				else if(!strcmp(optarg, "iterative"))
+					s.discard = DISCARD_ITER;
+				else
+					EXIT_ERROR(ARG_ERROR, "Invalid discarding mode: %s\n", optarg);
 				break;
 			case '?':
 				EXIT_ERROR(ARG_ERROR, "%s", "Try -h/--help.\n");

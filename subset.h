@@ -23,6 +23,8 @@ struct subset {
 
 	/* Pointer to the best kappa */
 	struct kappa_data *best;
+
+	struct subset *parent;
 };
 
 void ss_destroy(struct subset * const ss);

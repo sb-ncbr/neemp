@@ -9,6 +9,7 @@
 #include <mkl.h>
 #include <string.h>
 
+#include "discard.h"
 #include "eem.h"
 #include "kappa.h"
 #include "neemp.h"
@@ -41,14 +42,34 @@ int main(int argc, char **argv) {
 			b_set_all(&full.molecules);
 			find_the_best_parameters_for_subset(&full);
 
+			printf("\nResults for the full set:\n\n");
+			print_results(&full);
+			struct subset *result;
+
+			switch(s.discard) {
+				case DISCARD_OFF:
+					result = &full;
+					break;
+				case DISCARD_ITER: {
+					result = discard_iterative(&full);
+					break;
+				}
+			}
+
 			if(s.chg_stats_out_file[0] != '\0')
-				output_charges_stats(&full);
+				output_charges_stats(result);
 
 			if(s.par_out_file[0] != '\0')
-				output_parameters(&full);
+				output_parameters(result);
 
-			print_results(&full);
+			if(result != &full) {
+				printf("\nFinal results after discarding:\n\n");
+				print_results(result);
 
+				/* Clean up the discarding result */
+				ss_destroy(result);
+				free(result);
+			}
 			ss_destroy(&full);
 			break;
 		}
