@@ -10,17 +10,21 @@ EXTRA_DEFINE=-DUSE_MKL
 sources=$(wildcard *.c)
 headers=$(wildcard *.h)
 objects=$(sources:.c=.o)
+libraries=-mkl
 binaries=neemp
 manpage=neemp.1
 
 all: $(sources) $(headers) neemp man
 
-neemp: $(objects)
-	$(CC) $(objects) -mkl -o neemp
+neemp-gnu: EXTRA_DEFINE=
+neemp-gnu: CC=gcc
+neemp-gnu: CFLAGS=-Wall -Wextra -std=c99 -pedantic -O3 -march=native -g
+neemp-gnu: libraries=-lm
+neemp-gnu: $(objects) man neemp
 
-neemp-nomkl: EXTRA_DEFINE=
-neemp-nomkl: $(objects) man
-	$(CC) $(objects) $(EXTRA_DEFINE) -o neemp
+neemp: $(objects)
+	$(CC) $(objects) $(libraries) -o neemp
+
 .c.o: $(headers) $(sources)
 	$(CC) $(CFLAGS) $(EXTRA_DEFINE) -c $<
 man: neemp
