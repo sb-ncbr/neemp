@@ -12,12 +12,15 @@
 #include "neemp.h"
 #include "settings.h"
 
-static void print_help(void);
-
 extern struct settings s;
 
+static void print_help(void);
+static void print_version(void);
+
 static struct option long_options[] = {
+
 	{"help", no_argument, 0, 'h'},
+	{"version", no_argument, 0, 'v'},
 	{"mode", required_argument, 0, 'm'},
 	{"fs-only", no_argument, 0, 'f'},
 	{"sdf-file", required_argument, 0, 10},
@@ -30,7 +33,7 @@ static struct option long_options[] = {
 	{"kappa", required_argument, 0, 21},
 	{"fs-precision", required_argument, 0, 22},
 	{"sort-by", required_argument, 0, 30},
-	{"at-customization", required_argument, 0, 31},
+	{"atom-types-by", required_argument, 0, 31},
 	{"discard", required_argument, 0, 40},
 	{NULL, 0, 0, 0}
 };
@@ -55,12 +58,52 @@ void s_init(void) {
 	s.discard = DISCARD_OFF;
 }
 
+/* Prints help if --version is issued */
+static void print_version(void) {
+
+	printf("%s %s\n", APP_NAME, APP_VERSION);
+	printf("Copyright (C) 2013 Tomas Racek (tom@krab1k.net)\n");
+	printf("Licence MIT: http://opensource.org/licenses/MIT\n");
+	printf("This is free software: you are free to change and redistribute it.\n");
+	printf("There is NO WARRANTY, to the extent permitted by law.\n");
+}
+
 /* Prints help if -h/--help is issued */
 static void print_help(void) {
 
-	printf("%s %s\n\n", APP_NAME, APP_VERSION);
-}
+	printf("Usage: neemp [OPTION] ...\n");
+	printf("Perform EEM (Electronegativity Equalization Method) parameterization. Compute atomic charges using EEM.\n");
 
+	printf("\nOptions:\n");
+	printf("  -h, --help			 display this help and exit\n");
+	printf("      --version			 display version information and exit\n");
+	printf("  -m, --mode MODE		 set mode for the NEEMP. Valid choices are: info, params, charges. (required)\n");
+	printf("      --sdf-file FILE		 SDF file (required)\n");
+	printf("      --atom-types-by METHOD	 classify atoms according to the METHOD. Valid choices are: element, element_bond.\n");
+	printf("Options specific to mode: params\n");
+	printf("      --chg-file FILE		 FILE with ab-initio charges (required)\n");
+	printf("      --chg-stats-out-file FILE	 output charges statistics to the FILE\n");
+	printf("      --kappa-max MAX            set maximum value for kappa (required)\n");
+	printf("      --kappa VALUE              use only one kappa VALUE for parameterization\n");
+	printf("      --fs-precision VALUE       resolution for the full scan (required)\n");
+	printf("      --fs-only                  do not use additional accuracy improvement\n");
+	printf("      --par-out-file FILE        output the parameters to the FILE\n");
+	printf("      --discard METHOD           perform discarding with METHOD. Valid choices are: iterative, simple.\n");
+	printf("      --sort-by STAT             sort solutions by STAT. Valid choices are: R, RMSD, MSE, D_max, D_avg.\n");
+	printf("Options specific to mode: charges\n");
+	printf("      --par-file FILE		 FILE with EEM parameters (required)\n");
+	printf("      --chg-out-file FILE	 Output charges to the FILE (required)\n");
+
+	printf("\nExamples:\n");
+	printf("neemp -m info --sdf-file molecules.sdf --atom-types-by element\n\
+		Display information about the training set in the file molecules.sdf. Group atoms according to the elements only.\n");
+
+	printf("neem -m params --sdf-file molecules.sdf --chg-file charges.chg --kappa-max 1.0 --fs-precision 0.2 --sort-by RMSD.\n\
+		Compute parameters for the given molecules in file molecules.sdf and ab-initio charges in charges.chg. Set maximum value for kappa to 1.0, step for the full scan to 0.2, sort results according to the relative mean square deviation.\n");
+
+	printf("neemp -m charges --sdf-file molecules.sdf --par-file parameters --chg-out-file output.chg\n\
+		Calculate and store EEM charges to the file output.chg\n");
+}
 /* Parse command line options */
 void parse_options(int argc, char **argv) {
 
@@ -78,6 +121,9 @@ void parse_options(int argc, char **argv) {
 				break;
 			case 'h':
 				print_help();
+				exit(RETURN_OK);
+			case 'v':
+				print_version();
 				exit(RETURN_OK);
 			case 'm': /* mode */
 				if(!strcmp(optarg, "info"))
@@ -140,7 +186,7 @@ void parse_options(int argc, char **argv) {
 				else if(!strcmp(optarg, "valence"))
 					s.at_customization = AT_CUSTOM_VALENCE;
 				else
-					EXIT_ERROR(ARG_ERROR, "Invalid at-customization value: %s\n", optarg);
+					EXIT_ERROR(ARG_ERROR, "Invalid atom-type-by value: %s\n", optarg);
 				break;
 			case 40: /* discard */
 				if(!strcmp(optarg, "off"))
