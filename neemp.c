@@ -6,6 +6,7 @@
  *
  * */
 
+#include <assert.h>
 #include <string.h>
 
 #ifdef USE_MKL
@@ -47,7 +48,7 @@ int main(int argc, char **argv) {
 
 			printf("\nResults for the full set:\n\n");
 			print_results(&full);
-			struct subset *result;
+			struct subset *result = NULL;
 
 			switch(s.discard) {
 				case DISCARD_OFF:
@@ -55,6 +56,10 @@ int main(int argc, char **argv) {
 					break;
 				case DISCARD_ITER: {
 					result = discard_iterative(&full);
+					break;
+				}
+				case DISCARD_SIMPLE: {
+					result = discard_simple(&full);
 					break;
 				}
 			}
@@ -100,6 +105,9 @@ int main(int argc, char **argv) {
 			preprocess_molecules();
 			ts_info();
 			break;
+		case MODE_NOT_SET:
+			/* Something bad happened. */
+			assert(0);
 	}
 
 	ts_destroy();

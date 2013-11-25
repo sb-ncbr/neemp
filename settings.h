@@ -39,7 +39,8 @@ enum atom_type_customization {
 enum discarding_mode {
 
 	DISCARD_OFF,
-	DISCARD_ITER
+	DISCARD_ITER,
+	DISCARD_SIMPLE
 };
 
 struct settings {

@@ -18,8 +18,7 @@ extern struct training_set ts;
 
 struct subset *discard_iterative(const struct subset * const initial) {
 
-
-	struct subset * current, *old;
+	struct subset *current, *old;
 
 	/* We guarantee that we won't free subset pointed by intial */
 	old = (struct subset *) initial;
@@ -64,4 +63,43 @@ struct subset *discard_iterative(const struct subset * const initial) {
 	}
 
 	return current;
+}
+
+struct subset *discard_simple(const struct subset * const initial) {
+
+	struct subset *best = (struct subset *) initial;
+	struct subset *current;
+
+	for(int i = 0; i < ts.molecules_count && i < 3; i++) {
+
+		current = (struct subset *) calloc(1, sizeof(struct subset));
+		current->parent = best;
+
+		b_init(&current->molecules, ts.molecules_count);
+		b_set_as(&current->molecules, &best->molecules);
+		b_flip(&current->molecules, i);
+
+		fprintf(stderr, "Iteration no. %d. Molecule discarded: %s Molecules used: %d\n",\
+			i, ts.molecules[i].name, b_count_bits(&current->molecules));
+
+		find_the_best_parameters_for_subset(current);
+
+		if(kd_sort_by_is_better(current->best, best->best)) {
+			fprintf(stderr, "We found better solution.\n");
+
+			if(best != initial) {
+				ss_destroy(best);
+				free(best);
+			}
+
+			best = current;
+		}
+		else {
+			fprintf(stderr, "We didn't find better solution.\n");
+			ss_destroy(current);
+			free(current);
+		}
+	}
+
+	return best;
 }

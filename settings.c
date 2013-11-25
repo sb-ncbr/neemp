@@ -193,6 +193,8 @@ void parse_options(int argc, char **argv) {
 					s.discard = DISCARD_OFF;
 				else if(!strcmp(optarg, "iterative"))
 					s.discard = DISCARD_ITER;
+				else if(!strcmp(optarg, "simple"))
+					s.discard = DISCARD_SIMPLE;
 				else
 					EXIT_ERROR(ARG_ERROR, "Invalid discarding mode: %s\n", optarg);
 				break;

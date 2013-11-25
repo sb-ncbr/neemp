@@ -12,5 +12,6 @@
 #include "subset.h"
 
 struct subset *discard_iterative(const struct subset * const full);
+struct subset *discard_simple(const struct subset * const initial);
 
 #endif /* __DISCARD_H__ */
