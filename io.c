@@ -88,14 +88,18 @@ void load_charges(void) {
 
 		/* Check if numbers of atoms match*/
 		int atoms_count;
-		fgets(line, MAX_LINE_LEN, f);
+		if(!fgets(line, MAX_LINE_LEN, f))
+			EXIT_ERROR(IO_ERROR, "Reading failed for the molecule \"%s\".\n", ts.molecules[idx].name);
+
 		sscanf(line, "%d", &atoms_count);
 		if(atoms_count != ts.molecules[idx].atoms_count)
 			EXIT_ERROR(IO_ERROR, "Number of atoms in molecule \"%s\" don't match.\n", ts.molecules[idx].name);
 
 		/* Load actual charges */
 		for(int i = 0; i < atoms_count; i++) {
-			fgets(line, MAX_LINE_LEN, f);
+			if(!fgets(line, MAX_LINE_LEN, f))
+				EXIT_ERROR(IO_ERROR, "Reading failed for the molecule \"%s\".\n", ts.molecules[idx].name);
+
 			int tmp_int;
 			char tmp_str[2];
 			sscanf(line, "%d %s %f\n", &tmp_int, tmp_str, &ts.molecules[idx].atoms[i].reference_charge);
@@ -104,7 +108,8 @@ void load_charges(void) {
 		ts.molecules[idx].charges_loaded = 1;
 
 		/* Read empty line */
-		fgets(line, MAX_LINE_LEN, f);
+		if(!fgets(line, MAX_LINE_LEN, f))
+			EXIT_ERROR(IO_ERROR, "Reading failed for the molecule \"%s\".\n", ts.molecules[idx].name);
 	}
 	fclose(f);
 }
@@ -188,9 +193,11 @@ static int load_molecule(FILE * const f, struct molecule * const m) {
 	m->name[len - 1] = '\0';
 
 	/* 2nd line contains some additional information, skip it */
-	fgets(line, MAX_LINE_LEN, f);
+	if(!fgets(line, MAX_LINE_LEN, f))
+			EXIT_ERROR(IO_ERROR, "Reading failed for the molecule \"%s\".\n", m->name);
 	/* 3rd line is for comments, skip it */
-	fgets(line, MAX_LINE_LEN, f);
+	if(!fgets(line, MAX_LINE_LEN, f))
+			EXIT_ERROR(IO_ERROR, "Reading failed for the molecule \"%s\".\n", m->name);
 
 	/* Read Counts Line
 	 *
@@ -203,7 +210,8 @@ static int load_molecule(FILE * const f, struct molecule * const m) {
 	int bonds_count;
 	char version[MAX_LINE_LEN];
 
-	fgets(line, MAX_LINE_LEN, f);
+	if(!fgets(line, MAX_LINE_LEN, f))
+			EXIT_ERROR(IO_ERROR, "Reading failed for the molecule \"%s\".\n", m->name);
 	m->atoms_count = strn2int(line, 3);
 	bonds_count = strn2int(line + 3, 3);
 	sscanf(line + 33, "%6s\n", version);
@@ -229,7 +237,8 @@ static int load_molecule(FILE * const f, struct molecule * const m) {
 
 		for(int i = 0; i < m->atoms_count; i++) {
 			char atom_symbol[3];
-			fgets(line, MAX_LINE_LEN, f);
+			if(!fgets(line, MAX_LINE_LEN, f))
+					EXIT_ERROR(IO_ERROR, "Reading failed for the molecule \"%s\".\n", m->name);
 			sscanf(line, "%f %f %f %s", &m->atoms[i].position[0], &m->atoms[i].position[1], &m->atoms[i].position[2], atom_symbol);
 
 			m->atoms[i].rdists = (double *) calloc(m->atoms_count, sizeof(double));
@@ -254,7 +263,8 @@ static int load_molecule(FILE * const f, struct molecule * const m) {
 		for(int i = 0; i < bonds_count; i++) {
 			int atom1, atom2, bond_order;
 
-			fgets(line, MAX_LINE_LEN, f);
+			if(!fgets(line, MAX_LINE_LEN, f))
+					EXIT_ERROR(IO_ERROR, "Reading failed for the molecule \"%s\".\n", m->name);
 
 			atom1 = strn2int(line, 3);
 			atom2 = strn2int(line + 3, 3);
@@ -277,7 +287,8 @@ static int load_molecule(FILE * const f, struct molecule * const m) {
 
 		/* Skip rest of the record */
 		do {
-			fgets(line, MAX_LINE_LEN, f);
+			if(!fgets(line, MAX_LINE_LEN, f))
+					EXIT_ERROR(IO_ERROR, "Reading failed for the molecule \"%s\".\n", m->name);
 		} while(strncmp(line, "$$$$", 4));
 
 	} else if(!strcmp(version, "V3000")) {
