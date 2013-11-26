@@ -33,9 +33,9 @@ static struct option long_options[] = {
 	{"kappa-max", required_argument, 0, 20},
 	{"kappa", required_argument, 0, 21},
 	{"fs-precision", required_argument, 0, 22},
-	{"sort-by", required_argument, 0, 30},
+	{"sort-by", required_argument, 0, 's'},
 	{"atom-types-by", required_argument, 0, 31},
-	{"discard", required_argument, 0, 40},
+	{"discard", required_argument, 0, 'd'},
 	{NULL, 0, 0, 0}
 };
 
@@ -57,6 +57,7 @@ void s_init(void) {
 	s.sort_by = SORT_R;
 	s.at_customization = AT_CUSTOM_ELEMENT_BOND;
 	s.discard = DISCARD_OFF;
+	s.sort_by = SORT_R;
 }
 
 /* Prints help if --version is issued */
@@ -87,10 +88,10 @@ static void print_help(void) {
 	printf("      --kappa-max MAX            set maximum value for kappa (required)\n");
 	printf("      --kappa VALUE              use only one kappa VALUE for parameterization\n");
 	printf("      --fs-precision VALUE       resolution for the full scan (required)\n");
-	printf("      --fs-only                  do not use additional accuracy improvement\n");
+	printf("  -f, --fs-only                  do not use additional accuracy improvement\n");
 	printf("      --par-out-file FILE        output the parameters to the FILE\n");
-	printf("      --discard METHOD           perform discarding with METHOD. Valid choices are: iterative, simple.\n");
-	printf("      --sort-by STAT             sort solutions by STAT. Valid choices are: R, RMSD, MSE, D_max, D_avg.\n");
+	printf("  -d, --discard METHOD           perform discarding with METHOD. Valid choices are: iterative, simple and off. Default is off.\n");
+	printf("  -s, --sort-by STAT             sort solutions by STAT. Valid choices are: R, RMSD, MSE, D_max, D_avg.\n");
 	printf("Options specific to mode: charges\n");
 	printf("      --par-file FILE		 FILE with EEM parameters (required)\n");
 	printf("      --chg-out-file FILE	 Output charges to the FILE (required)\n");
@@ -112,7 +113,7 @@ void parse_options(int argc, char **argv) {
 	int option_idx;
 
 	while(1) {
-		c = getopt_long(argc, argv, "fhm:", long_options, &option_idx);
+		c = getopt_long(argc, argv, "fvd:s:hm:", long_options, &option_idx);
 		if(c == -1)
 			break;
 
@@ -120,9 +121,11 @@ void parse_options(int argc, char **argv) {
 			case 'f':
 				s.full_scan_only = 1;
 				break;
+
 			case 'h':
 				print_help();
 				exit(RETURN_OK);
+
 			case 'm': /* mode */
 				if(!strcmp(optarg, "info"))
 					s.mode = MODE_INFO;
@@ -133,40 +136,23 @@ void parse_options(int argc, char **argv) {
 				else
 					EXIT_ERROR(ARG_ERROR, "Invalid mode: %s\n", optarg);
 				break;
+
 			case 'v':
 				s.verbosity++;
 				break;
-			case 5:
-				print_version();
-				exit(RETURN_OK);
-			case 10:
-				strncpy(s.sdf_file, optarg, MAX_PATH_LEN - 1);
+
+			case 'd': /* discard */
+				if(!strcmp(optarg, "off"))
+					s.discard = DISCARD_OFF;
+				else if(!strcmp(optarg, "iterative"))
+					s.discard = DISCARD_ITER;
+				else if(!strcmp(optarg, "simple"))
+					s.discard = DISCARD_SIMPLE;
+				else
+					EXIT_ERROR(ARG_ERROR, "Invalid discarding mode: %s\n", optarg);
 				break;
-			case 11:
-				strncpy(s.par_file, optarg, MAX_PATH_LEN - 1);
-				break;
-			case 12:
-				strncpy(s.chg_file, optarg, MAX_PATH_LEN - 1);
-				break;
-			case 13:
-				strncpy(s.chg_out_file, optarg, MAX_PATH_LEN - 1);
-				break;
-			case 14:
-				strncpy(s.chg_stats_out_file, optarg, MAX_PATH_LEN - 1);
-				break;
-			case 15:
-				strncpy(s.par_out_file, optarg, MAX_PATH_LEN - 1);
-				break;
-			case 20:
-				s.kappa_max = (float) atof(optarg);
-				break;
-			case 21:
-				s.kappa_set = (float) atof(optarg);
-				break;
-			case 22:
-				s.full_scan_precision = (float) atof(optarg);
-				break;
-			case 30: /* sort-by */
+
+			case 's': /* sort-by */
 				if(!strcmp(optarg, "R"))
 					s.sort_by = SORT_R;
 				else if(!strcmp(optarg, "RMSD"))
@@ -180,6 +166,47 @@ void parse_options(int argc, char **argv) {
 				else
 					EXIT_ERROR(ARG_ERROR, "Invalid sort-by value: %s\n", optarg);
 				break;
+
+			case 5:
+				print_version();
+				exit(RETURN_OK);
+
+			case 10:
+				strncpy(s.sdf_file, optarg, MAX_PATH_LEN - 1);
+				break;
+
+			case 11:
+				strncpy(s.par_file, optarg, MAX_PATH_LEN - 1);
+				break;
+
+			case 12:
+				strncpy(s.chg_file, optarg, MAX_PATH_LEN - 1);
+				break;
+
+			case 13:
+				strncpy(s.chg_out_file, optarg, MAX_PATH_LEN - 1);
+				break;
+
+			case 14:
+				strncpy(s.chg_stats_out_file, optarg, MAX_PATH_LEN - 1);
+				break;
+
+			case 15:
+				strncpy(s.par_out_file, optarg, MAX_PATH_LEN - 1);
+				break;
+
+			case 20:
+				s.kappa_max = (float) atof(optarg);
+				break;
+
+			case 21:
+				s.kappa_set = (float) atof(optarg);
+				break;
+
+			case 22:
+				s.full_scan_precision = (float) atof(optarg);
+				break;
+
 			case 31: /* at-customization */
 				if(!strcmp(optarg, "element"))
 					s.at_customization = AT_CUSTOM_ELEMENT;
@@ -192,16 +219,7 @@ void parse_options(int argc, char **argv) {
 				else
 					EXIT_ERROR(ARG_ERROR, "Invalid atom-type-by value: %s\n", optarg);
 				break;
-			case 40: /* discard */
-				if(!strcmp(optarg, "off"))
-					s.discard = DISCARD_OFF;
-				else if(!strcmp(optarg, "iterative"))
-					s.discard = DISCARD_ITER;
-				else if(!strcmp(optarg, "simple"))
-					s.discard = DISCARD_SIMPLE;
-				else
-					EXIT_ERROR(ARG_ERROR, "Invalid discarding mode: %s\n", optarg);
-				break;
+
 			case '?':
 				EXIT_ERROR(ARG_ERROR, "%s", "Try -h/--help.\n");
 			default:
