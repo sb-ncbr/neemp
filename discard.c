@@ -18,6 +18,7 @@
 extern struct settings s;
 extern struct training_set ts;
 
+/* Perform iterative discarding by traversing the state space */
 struct subset *discard_iterative(const struct subset * const initial) {
 
 	struct subset *current, *old;
@@ -73,6 +74,7 @@ struct subset *discard_iterative(const struct subset * const initial) {
 	return current;
 }
 
+/* Perform simple discard in the way that EMP does */
 struct subset *discard_simple(const struct subset * const initial) {
 
 	struct subset *best = (struct subset *) initial;
@@ -83,18 +85,28 @@ struct subset *discard_simple(const struct subset * const initial) {
 		current = (struct subset *) calloc(1, sizeof(struct subset));
 		current->parent = best;
 
+		/* Flip i-th molecule from the parent */
 		b_init(&current->molecules, ts.molecules_count);
 		b_set_as(&current->molecules, &best->molecules);
 		b_flip(&current->molecules, i);
 
-		fprintf(stderr, "Iteration no. %d. Molecule discarded: %s Molecules used: %d\n",\
-			i, ts.molecules[i].name, b_count_bits(&current->molecules));
+		if(s.verbosity >= VERBOSE_DISCARD) {
+			fprintf(stdout, "\nIteration no. %d. Molecule discarded: %s Molecules used: %d\n",\
+				i, ts.molecules[i].name, b_count_bits(&current->molecules));
+		}
 
+		/* The actual calculations */
 		find_the_best_parameters_for_subset(current);
 
-		if(kd_sort_by_is_better(current->best, best->best)) {
-			fprintf(stderr, "We found better solution.\n");
+		if(s.verbosity >= VERBOSE_DISCARD) {
+			printf("=> ");
+			kd_print_stats(current->best);
+			printf("\n");
+		}
 
+		if(kd_sort_by_is_better(current->best, best->best)) {
+
+			/* Do not free initial subset! */
 			if(best != initial) {
 				ss_destroy(best);
 				free(best);
@@ -103,7 +115,6 @@ struct subset *discard_simple(const struct subset * const initial) {
 			best = current;
 		}
 		else {
-			fprintf(stderr, "We didn't find better solution.\n");
 			ss_destroy(current);
 			free(current);
 		}

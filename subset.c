@@ -8,6 +8,7 @@
 
 #include <assert.h>
 #include <stdlib.h>
+#include <string.h>
 
 #include "bitarray.h"
 #include "neemp.h"
@@ -116,6 +117,34 @@ int kd_sort_by_is_better(const struct kappa_data * const kd1, const struct kappa
 /* Print all the statistics for the particular kappa data */
 void kd_print_stats(const struct kappa_data * const kd) {
 
-	printf("K: %6.4f | R: %6.4f   RMSD: %6.4f   MSE: %6.4f   D_avg: %6.4f   D_max: %6.4f\n",
+	/* Allocate buffer large enough to hold the entire message */
+	char message[100];
+	memset(message, 0, 100 * sizeof(char));
+
+	snprintf(message, 100, "K: %6.4f |  R: %6.4f  RMSD: %4.2e  MSE: %4.2e  D_avg: %4.2e  D_max: %4.2e\n",
 		kd->kappa, kd->R, kd->RMSD, kd->MSE, kd->D_avg, kd->D_max);
+
+	/* Print '*' at the position of the stat which is used for sorting */
+	switch(s.sort_by) {
+		case SORT_R:
+			message[12] = '*';
+			break;
+		case SORT_RMSD:
+			message[23] = '*';
+			break;
+		case SORT_MSE:
+			message[39] = '*';
+			break;
+		case SORT_D_AVG:
+			message[54] = '*';
+			break;
+		case SORT_D_MAX:
+			message[71] = '*';
+			break;
+		default:
+			/* Something bad happened */
+			assert(0);
+	}
+
+	printf("%s", message);
 }

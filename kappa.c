@@ -45,8 +45,10 @@ static void full_scan(struct subset * const ss) {
 		ss->data[i].kappa = i * s.full_scan_precision;
 		perform_calculations(ss, &ss->data[i]);
 
-		if(s.verbosity >= VERBOSE_KAPPA)
+		if(s.verbosity >= VERBOSE_KAPPA) {
+			printf("   ");
 			kd_print_stats(&ss->data[i]);
+		}
 	}
 }
 
