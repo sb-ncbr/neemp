@@ -216,9 +216,10 @@ void check_settings(void) {
 	if(s.mode == MODE_NOT_SET)
 		EXIT_ERROR(ARG_ERROR, "%s", "No mode set.\n");
 
+	if(s.sdf_file[0] == '\0')
+		EXIT_ERROR(ARG_ERROR, "%s", "No .sdf file provided.\n");
+
 	if(s.mode == MODE_PARAMS) {
-		if(s.sdf_file[0] == '\0')
-			EXIT_ERROR(ARG_ERROR, "%s", "No .sdf file provided.\n");
 		if(s.chg_file[0] == '\0')
 			EXIT_ERROR(ARG_ERROR, "%s", "No .chg file provided.\n");
 		if(s.kappa_set < 1e-10) {
@@ -236,8 +237,6 @@ void check_settings(void) {
 				EXIT_ERROR(ARG_ERROR, "%s", "Cannot use full scan if single kappa is selected.\n");
 		}
 	} else if(s.mode == MODE_CHARGES) {
-		if(s.sdf_file[0] == '\0')
-			EXIT_ERROR(ARG_ERROR, "%s", "No .sdf file provided.\n");
 		if(s.par_file[0] == '\0')
 			EXIT_ERROR(ARG_ERROR, "%s", "No .par file provided.\n");
 		if(s.chg_out_file[0] == '\0')
