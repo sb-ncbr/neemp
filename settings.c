@@ -23,6 +23,8 @@ static struct option long_options[] = {
 	{"mode", required_argument, 0, 'm'},
 	{"fs-only", no_argument, 0, 'f'},
 	{"verbose", no_argument, 0, 'v'},
+	{"discard", required_argument, 0, 'd'},
+	{"sort-by", required_argument, 0, 's'},
 	{"version", no_argument, 0, 5},
 	{"sdf-file", required_argument, 0, 10},
 	{"par-file", required_argument, 0, 11},
@@ -33,9 +35,8 @@ static struct option long_options[] = {
 	{"kappa-max", required_argument, 0, 20},
 	{"kappa", required_argument, 0, 21},
 	{"fs-precision", required_argument, 0, 22},
-	{"sort-by", required_argument, 0, 's'},
 	{"atom-types-by", required_argument, 0, 31},
-	{"discard", required_argument, 0, 'd'},
+	{"tabu-size", required_argument, 0, 32},
 	{NULL, 0, 0, 0}
 };
 
@@ -58,6 +59,7 @@ void s_init(void) {
 	s.at_customization = AT_CUSTOM_ELEMENT_BOND;
 	s.discard = DISCARD_OFF;
 	s.sort_by = SORT_R;
+	s.tabu_size = 0.0f;
 }
 
 /* Prints help if --version is issued */
@@ -220,6 +222,9 @@ void parse_options(int argc, char **argv) {
 					EXIT_ERROR(ARG_ERROR, "Invalid atom-type-by value: %s\n", optarg);
 				break;
 
+			case 32:
+				s.tabu_size = (float) atof(optarg);
+				break;
 			case '?':
 				EXIT_ERROR(ARG_ERROR, "%s", "Try -h/--help.\n");
 			default:
@@ -258,6 +263,9 @@ void check_settings(void) {
 			if(s.full_scan_only)
 				EXIT_ERROR(ARG_ERROR, "%s", "Cannot use full scan if single kappa is selected.\n");
 		}
+
+		if(s.tabu_size < 0.0f || s.tabu_size > 1.0f)
+			EXIT_ERROR(ARG_ERROR, "%s", "Tabu size has to be number in range [0.0; 1.0]\n");
 	} else if(s.mode == MODE_CHARGES) {
 		if(s.par_file[0] == '\0')
 			EXIT_ERROR(ARG_ERROR, "%s", "No .par file provided.\n");

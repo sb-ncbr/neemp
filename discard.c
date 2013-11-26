@@ -14,6 +14,7 @@
 #include "settings.h"
 #include "subset.h"
 #include "structures.h"
+#include "tabu.h"
 
 extern struct settings s;
 extern struct training_set ts;
@@ -27,28 +28,38 @@ struct subset *discard_iterative(const struct subset * const initial) {
 	old = (struct subset *) initial;
 	current = old;
 
-	for(int i = 0; i < 3; i++) {
+	/* Initialize tabu list */
+	struct tabu ban_list;
+	t_init(&ban_list, ts.molecules_count * s.tabu_size);
+
+	for(int i = 0; i < 30; i++) {
 		current = (struct subset *) calloc(1, sizeof(struct subset));
 		current->parent = old;
 
 		/* Flip just one molecule from the parent */
 		b_init(&current->molecules, ts.molecules_count);
 		b_set_as(&current->molecules, &old->molecules);
-		int bno = rand() % ts.molecules_count;
-		b_flip(&current->molecules, bno);
+
+		/* Generate random molecule to flip, check if it's allowed */
+		int mol_idx;
+		do {
+			mol_idx = rand() % ts.molecules_count;
+		} while(t_is_banned(&ban_list, mol_idx));
+		t_update(&ban_list, mol_idx);
+
+		b_flip(&current->molecules, mol_idx);
 
 		if(s.verbosity >= VERBOSE_DISCARD) {
 			fprintf(stdout, "\nIteration no. %d. Molecule discarded: %s Molecules used: %d\n",\
-				i, ts.molecules[bno].name, b_count_bits(&current->molecules));
+				i, ts.molecules[mol_idx].name, b_count_bits(&current->molecules));
 		}
 
 		/* The actual calculations */
 		find_the_best_parameters_for_subset(current);
 
 		if(s.verbosity >= VERBOSE_DISCARD) {
-			printf("=> ");
+			printf(" %c ", kd_sort_by_is_better(current->best, old->best) ? '+' : '-');
 			kd_print_stats(current->best);
-			printf("\n");
 		}
 
 		/* Check if the new subset is better than the old one */
@@ -70,6 +81,8 @@ struct subset *discard_iterative(const struct subset * const initial) {
 			current = old;
 		}
 	}
+
+	t_destroy(&ban_list);
 
 	return current;
 }
@@ -99,9 +112,8 @@ struct subset *discard_simple(const struct subset * const initial) {
 		find_the_best_parameters_for_subset(current);
 
 		if(s.verbosity >= VERBOSE_DISCARD) {
-			printf("=> ");
+			printf(" %c ", kd_sort_by_is_better(current->best, best->best) ? '+' : '-');
 			kd_print_stats(current->best);
-			printf("\n");
 		}
 
 		if(kd_sort_by_is_better(current->best, best->best)) {

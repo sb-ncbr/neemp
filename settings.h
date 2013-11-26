@@ -70,6 +70,8 @@ struct settings {
 	float full_scan_precision;
 
 	enum verbosity_levels verbosity;
+
+	float tabu_size;
 };
 
 void s_init(void);
