@@ -11,9 +11,11 @@
 
 #include "discard.h"
 #include "kappa.h"
+#include "settings.h"
 #include "subset.h"
 #include "structures.h"
 
+extern struct settings s;
 extern struct training_set ts;
 
 struct subset *discard_iterative(const struct subset * const initial) {
@@ -34,16 +36,23 @@ struct subset *discard_iterative(const struct subset * const initial) {
 		int bno = rand() % ts.molecules_count;
 		b_flip(&current->molecules, bno);
 
-		fprintf(stderr, "Iteration no. %d. Molecule discarded: %s Molecules used: %d\n",\
-			i, ts.molecules[bno].name, b_count_bits(&current->molecules));
+		if(s.verbosity >= VERBOSE_DISCARD) {
+			fprintf(stdout, "\nIteration no. %d. Molecule discarded: %s Molecules used: %d\n",\
+				i, ts.molecules[bno].name, b_count_bits(&current->molecules));
+		}
 
+		/* The actual calculations */
 		find_the_best_parameters_for_subset(current);
-		fprintf(stderr, "R = %6.4f\n", current->best->R);
+
+		if(s.verbosity >= VERBOSE_DISCARD) {
+			printf("=> ");
+			kd_print_stats(current->best);
+			printf("\n");
+		}
 
 		/* Check if the new subset is better than the old one */
 		if(kd_sort_by_is_better(current->best, old->best)) {
 
-			fprintf(stderr, "We found better solution.\n");
 			/* Do not free initial subset! */
 			if(old != initial) {
 				ss_destroy(old);
@@ -53,7 +62,6 @@ struct subset *discard_iterative(const struct subset * const initial) {
 			old = current;
 		}
 		else {
-			fprintf(stderr, "We didn't find better solution.\n");
 			ss_destroy(current);
 			free(current);
 

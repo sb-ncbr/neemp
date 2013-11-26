@@ -54,6 +54,7 @@ struct kappa_data {
 
 void kd_init(struct kappa_data * const kd);
 void kd_destroy(struct kappa_data * const kd);
+void kd_print_stats(const struct kappa_data * const kd);
 
 float kd_sort_by_return_value(const struct kappa_data * const kd);
 int kd_sort_by_is_better(const struct kappa_data * const kd1, const struct kappa_data * const kd2);

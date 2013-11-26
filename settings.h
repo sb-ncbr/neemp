@@ -43,6 +43,12 @@ enum discarding_mode {
 	DISCARD_SIMPLE
 };
 
+enum verbosity_levels {
+
+	VERBOSE_DISCARD = 1,
+	VERBOSE_KAPPA = 2
+};
+
 struct settings {
 
 	char sdf_file[MAX_PATH_LEN];
@@ -62,6 +68,8 @@ struct settings {
 	float kappa_max;
 	float kappa_set;
 	float full_scan_precision;
+
+	enum verbosity_levels verbosity;
 };
 
 void s_init(void);

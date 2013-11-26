@@ -20,9 +20,10 @@ static void print_version(void);
 static struct option long_options[] = {
 
 	{"help", no_argument, 0, 'h'},
-	{"version", no_argument, 0, 'v'},
 	{"mode", required_argument, 0, 'm'},
 	{"fs-only", no_argument, 0, 'f'},
+	{"verbose", no_argument, 0, 'v'},
+	{"version", no_argument, 0, 5},
 	{"sdf-file", required_argument, 0, 10},
 	{"par-file", required_argument, 0, 11},
 	{"chg-file", required_argument, 0, 12},
@@ -122,9 +123,6 @@ void parse_options(int argc, char **argv) {
 			case 'h':
 				print_help();
 				exit(RETURN_OK);
-			case 'v':
-				print_version();
-				exit(RETURN_OK);
 			case 'm': /* mode */
 				if(!strcmp(optarg, "info"))
 					s.mode = MODE_INFO;
@@ -135,6 +133,12 @@ void parse_options(int argc, char **argv) {
 				else
 					EXIT_ERROR(ARG_ERROR, "Invalid mode: %s\n", optarg);
 				break;
+			case 'v':
+				s.verbosity++;
+				break;
+			case 5:
+				print_version();
+				exit(RETURN_OK);
 			case 10:
 				strncpy(s.sdf_file, optarg, MAX_PATH_LEN - 1);
 				break;

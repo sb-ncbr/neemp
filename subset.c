@@ -70,8 +70,7 @@ void print_results(const struct subset * const ss) {
 	assert(ss->best != NULL);
 
 	printf("Used molecules: %5d\n", b_count_bits(&ss->molecules));
-	printf("K: %6.4f | R: %6.4f   RMSD: %6.4f   MSE: %6.4f   D_avg: %6.4f   D_max: %6.4f\n",
-		ss->best->kappa, ss->best->R, ss->best->RMSD, ss->best->MSE, ss->best->D_avg, ss->best->D_max);
+	kd_print_stats(ss->best);
 
 	printf("Atom type             A       B\t\t  D_max\t  D_avg\n");
 	for(int i = 0; i < ts.atom_types_count; i++) {
@@ -112,4 +111,11 @@ int kd_sort_by_is_better(const struct kappa_data * const kd1, const struct kappa
 		return kd1->R > kd2->R;
 	else
 		return kd_sort_by_return_value(kd1) < kd_sort_by_return_value(kd2);
+}
+
+/* Print all the statistics for the particular kappa data */
+void kd_print_stats(const struct kappa_data * const kd) {
+
+	printf("K: %6.4f | R: %6.4f   RMSD: %6.4f   MSE: %6.4f   D_avg: %6.4f   D_max: %6.4f\n",
+		kd->kappa, kd->R, kd->RMSD, kd->MSE, kd->D_avg, kd->D_max);
 }
