@@ -9,6 +9,7 @@
 #include <assert.h>
 #include <math.h>
 #include <stdlib.h>
+#include <omp.h>
 
 #ifdef USE_MKL
 #include <mkl.h>
@@ -183,8 +184,14 @@ void calculate_charges(struct subset * const ss, struct kappa_data * const kd) {
 	assert(ss != NULL);
 	assert(kd != NULL);
 
-	int atoms_processed = 0;
+	/* Compute starting indices for storing the charges of each molecule. These are
+	 * needed to guarantee the independence of the for loop iterations */
+	int starts[ts.molecules_count];
+	starts[0] = 0;
+	for(int i = 1; i < ts.molecules_count; i++)
+		starts[i] = starts[i - 1] + ts.molecules[i - 1].atoms_count;
 
+	#pragma omp parallel for
 	for(int i = 0; i < ts.molecules_count; i++) {
 		#define MOLECULE ts.molecules[i]
 		const int n = MOLECULE.atoms_count;
@@ -226,9 +233,8 @@ void calculate_charges(struct subset * const ss, struct kappa_data * const kd) {
 
 		/* Store computed charges */
 		for(int j = 0; j < n; j++)
-			kd->charges[atoms_processed + j] = b[j];
+			kd->charges[starts[i] + j] = b[j];
 
-		atoms_processed += n;
 		#undef MOLECULE
 
 		/* Clean things up */

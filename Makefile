@@ -3,7 +3,7 @@
 # 2013
 
 CC=icc
-CFLAGS=-Wall -Wcheck -Wremarks -std=c99 -g -Ofast -ipo -Xhost -wd981 -DDEBUG
+CFLAGS=-Wall -Wcheck -Wremarks -std=c99 -g -Ofast -ipo -Xhost -wd981 -fopenmp
 # -wd981 disables warning about operands evaluated in an unspecified order
 EXTRA_DEFINE=-DUSE_MKL
 
@@ -18,8 +18,8 @@ all: $(sources) $(headers) neemp man
 
 neemp-gnu: EXTRA_DEFINE=
 neemp-gnu: CC=gcc
-neemp-gnu: CFLAGS=-Wall -Wextra -std=c99 -pedantic -O3 -march=native -g
-neemp-gnu: libraries=-lm
+neemp-gnu: CFLAGS=-Wall -Wextra -std=c99 -pedantic -O3 -march=native -g -fopenmp
+neemp-gnu: libraries=-lm -fopenmp
 neemp-gnu: $(objects) man neemp
 
 neemp: $(objects)
