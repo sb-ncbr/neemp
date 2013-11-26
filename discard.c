@@ -19,6 +19,8 @@
 extern struct settings s;
 extern struct training_set ts;
 
+extern int termination_flag;
+
 /* Perform iterative discarding by traversing the state space */
 struct subset *discard_iterative(const struct subset * const initial) {
 
@@ -32,7 +34,7 @@ struct subset *discard_iterative(const struct subset * const initial) {
 	struct tabu ban_list;
 	t_init(&ban_list, ts.molecules_count * s.tabu_size);
 
-	for(int i = 0; i < 30; i++) {
+	for(int i = 0; !termination_flag; i++) {
 		current = (struct subset *) calloc(1, sizeof(struct subset));
 		current->parent = old;
 
@@ -50,7 +52,7 @@ struct subset *discard_iterative(const struct subset * const initial) {
 		b_flip(&current->molecules, mol_idx);
 
 		if(s.verbosity >= VERBOSE_DISCARD) {
-			fprintf(stdout, "\nIteration no. %d. Molecule discarded: %s Molecules used: %d\n",\
+			fprintf(stdout, "\nIteration no. %d. Molecule: %s Molecules used: %d\n",\
 				i, ts.molecules[mol_idx].name, b_count_bits(&current->molecules));
 		}
 
@@ -93,7 +95,7 @@ struct subset *discard_simple(const struct subset * const initial) {
 	struct subset *best = (struct subset *) initial;
 	struct subset *current;
 
-	for(int i = 0; i < ts.molecules_count && i < 3; i++) {
+	for(int i = 0; i < ts.molecules_count && !termination_flag; i++) {
 
 		current = (struct subset *) calloc(1, sizeof(struct subset));
 		current->parent = best;
@@ -104,7 +106,7 @@ struct subset *discard_simple(const struct subset * const initial) {
 		b_flip(&current->molecules, i);
 
 		if(s.verbosity >= VERBOSE_DISCARD) {
-			fprintf(stdout, "\nIteration no. %d. Molecule discarded: %s Molecules used: %d\n",\
+			fprintf(stdout, "\nIteration no. %d. Molecule: %s Molecules used: %d\n",\
 				i, ts.molecules[i].name, b_count_bits(&current->molecules));
 		}
 

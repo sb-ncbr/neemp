@@ -7,6 +7,7 @@
  * */
 
 #include <assert.h>
+#include <signal.h>
 #include <string.h>
 
 #ifdef USE_MKL
@@ -26,6 +27,17 @@
 struct training_set ts;
 struct settings s;
 
+int termination_flag = 0;
+
+static void sig_handler(int sig __attribute__ ((unused)));
+
+/* Set termination flag on signal received */
+static void sig_handler(int sig __attribute__ ((unused))) {
+
+	termination_flag = 1;
+}
+
+/* That's the main thing */
 int main(int argc, char **argv) {
 
 	s_init();
@@ -34,6 +46,10 @@ int main(int argc, char **argv) {
 	check_settings();
 
 	load_molecules();
+
+	/* Interrupt discarding if one of these signals is received */
+	signal(SIGINT, sig_handler);
+	signal(SIGTERM, sig_handler);
 
 	switch(s.mode) {
 		case MODE_PARAMS: {
