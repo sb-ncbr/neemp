@@ -11,6 +11,7 @@
 
 #include "discard.h"
 #include "kappa.h"
+#include "limits.h"
 #include "settings.h"
 #include "subset.h"
 #include "structures.h"
@@ -18,7 +19,7 @@
 
 extern struct settings s;
 extern struct training_set ts;
-
+extern struct limit limits;
 extern int termination_flag;
 
 /* Perform iterative discarding by traversing the state space */
@@ -34,7 +35,7 @@ struct subset *discard_iterative(const struct subset * const initial) {
 	struct tabu ban_list;
 	t_init(&ban_list, ts.molecules_count * s.tabu_size);
 
-	for(int i = 0; !termination_flag; i++) {
+	for(int i = 0; !l_check(&limits) && !termination_flag; i++) {
 		current = (struct subset *) calloc(1, sizeof(struct subset));
 		current->parent = old;
 
@@ -53,7 +54,7 @@ struct subset *discard_iterative(const struct subset * const initial) {
 
 		if(s.verbosity >= VERBOSE_DISCARD) {
 			fprintf(stdout, "\nIteration no. %d. Molecule: %s Molecules used: %d\n",\
-				i, ts.molecules[mol_idx].name, b_count_bits(&current->molecules));
+				i + 1, ts.molecules[mol_idx].name, b_count_bits(&current->molecules));
 		}
 
 		/* The actual calculations */
@@ -82,6 +83,9 @@ struct subset *discard_iterative(const struct subset * const initial) {
 			/* If this is the last iteration, we want to return the best result so far */
 			current = old;
 		}
+
+		/* Update number of iterations */
+		limits.iters_current += 1;
 	}
 
 	t_destroy(&ban_list);
@@ -95,7 +99,7 @@ struct subset *discard_simple(const struct subset * const initial) {
 	struct subset *best = (struct subset *) initial;
 	struct subset *current;
 
-	for(int i = 0; i < ts.molecules_count && !termination_flag; i++) {
+	for(int i = 0; i < ts.molecules_count && !termination_flag && !l_check(&limits); i++) {
 
 		current = (struct subset *) calloc(1, sizeof(struct subset));
 		current->parent = best;
@@ -107,7 +111,7 @@ struct subset *discard_simple(const struct subset * const initial) {
 
 		if(s.verbosity >= VERBOSE_DISCARD) {
 			fprintf(stdout, "\nIteration no. %d. Molecule: %s Molecules used: %d\n",\
-				i, ts.molecules[i].name, b_count_bits(&current->molecules));
+				i + 1, ts.molecules[i].name, b_count_bits(&current->molecules));
 		}
 
 		/* The actual calculations */
@@ -132,6 +136,9 @@ struct subset *discard_simple(const struct subset * const initial) {
 			ss_destroy(current);
 			free(current);
 		}
+
+		/* Update number of iterations */
+		limits.iters_current += 1;
 	}
 
 	return best;

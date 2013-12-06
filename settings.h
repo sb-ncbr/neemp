@@ -9,6 +9,8 @@
 #ifndef __SETTINGS_H__
 #define __SETTINGS_H__
 
+#include <time.h>
+
 #include "config.h"
 
 enum app_mode {
@@ -72,6 +74,9 @@ struct settings {
 	enum verbosity_levels verbosity;
 
 	float tabu_size;
+
+	int limit_iters;
+	time_t limit_time;
 };
 
 void s_init(void);

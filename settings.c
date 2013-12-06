@@ -9,6 +9,7 @@
 #include <getopt.h>
 #include <string.h>
 
+#include "limits.h"
 #include "neemp.h"
 #include "settings.h"
 
@@ -37,6 +38,8 @@ static struct option long_options[] = {
 	{"fs-precision", required_argument, 0, 22},
 	{"atom-types-by", required_argument, 0, 31},
 	{"tabu-size", required_argument, 0, 32},
+	{"limit-iters", required_argument, 0, 40},
+	{"limit-time", required_argument, 0, 41},
 	{NULL, 0, 0, 0}
 };
 
@@ -60,6 +63,8 @@ void s_init(void) {
 	s.discard = DISCARD_OFF;
 	s.sort_by = SORT_R;
 	s.tabu_size = 0.0f;
+	s.limit_iters = NO_LIMIT_ITERS;
+	s.limit_time = NO_LIMIT_TIME;
 }
 
 /* Prints help if --version is issued */
@@ -94,6 +99,8 @@ static void print_help(void) {
 	printf("      --par-out-file FILE        output the parameters to the FILE\n");
 	printf("  -d, --discard METHOD           perform discarding with METHOD. Valid choices are: iterative, simple and off. Default is off.\n");
 	printf("  -s, --sort-by STAT             sort solutions by STAT. Valid choices are: R, RMSD, MSE, D_max, D_avg.\n");
+	printf("      --limit-iters COUNT        set the maximum number of iterations for discarding.\n");
+	printf("      --limit-time HH:MM:SS      set the maximum time for discarding in format hours:minutes:seconds.\n");
 	printf("Options specific to mode: charges\n");
 	printf("      --par-file FILE		 FILE with EEM parameters (required)\n");
 	printf("      --chg-out-file FILE	 Output charges to the FILE (required)\n");
@@ -114,10 +121,8 @@ void parse_options(int argc, char **argv) {
 	int c;
 	int option_idx;
 
-	while(1) {
-		c = getopt_long(argc, argv, "fvd:s:hm:", long_options, &option_idx);
-		if(c == -1)
-			break;
+	while((c = getopt_long(argc, argv, "fvd:s:hm:", long_options, &option_idx)) != -1)
+	{
 
 		switch(c) {
 			case 'f':
@@ -225,6 +230,26 @@ void parse_options(int argc, char **argv) {
 			case 32:
 				s.tabu_size = (float) atof(optarg);
 				break;
+			case 40:
+				s.limit_iters =  atoi(optarg);
+				break;
+			case 41: {
+					char *part;
+					int hours, mins, secs;
+
+					part = strtok(optarg, ":");
+					if(part != NULL)
+						hours = atoi(part);
+					part = strtok(NULL, ":");
+					if(part != NULL)
+						mins = atoi(part);
+					part = strtok(NULL, ":");
+					if(part != NULL)
+						secs = atoi(part);
+
+					s.limit_time = 3600 * hours + 60 * mins + secs;
+					break;
+				}
 			case '?':
 				EXIT_ERROR(ARG_ERROR, "%s", "Try -h/--help.\n");
 			default:
@@ -266,6 +291,12 @@ void check_settings(void) {
 
 		if(s.tabu_size < 0.0f || s.tabu_size > 1.0f)
 			EXIT_ERROR(ARG_ERROR, "%s", "Tabu size has to be number in range [0.0; 1.0]\n");
+
+		if(s.limit_iters != NO_LIMIT_ITERS && s.limit_iters > 100000)
+			EXIT_ERROR(ARG_ERROR, "%s", "Number of iterations should be no higher than 1e6.\n");
+		if(s.limit_time != NO_LIMIT_TIME && s.limit_time > 36000 * 1000)
+			EXIT_ERROR(ARG_ERROR, "%s", "Maximum time should not be higher than 1000 hours.\n");
+
 	} else if(s.mode == MODE_CHARGES) {
 		if(s.par_file[0] == '\0')
 			EXIT_ERROR(ARG_ERROR, "%s", "No .par file provided.\n");

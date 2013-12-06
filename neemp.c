@@ -19,6 +19,7 @@
 #include "kappa.h"
 #include "neemp.h"
 #include "io.h"
+#include "limits.h"
 #include "settings.h"
 #include "subset.h"
 #include "statistics.h"
@@ -26,6 +27,7 @@
 
 struct training_set ts;
 struct settings s;
+struct limit limits;
 
 int termination_flag = 0;
 
@@ -40,10 +42,18 @@ static void sig_handler(int sig __attribute__ ((unused))) {
 /* That's the main thing */
 int main(int argc, char **argv) {
 
+	time_t start, end;
+
+	start = time(NULL);
+
+	printf("%s (%s) started\n", APP_NAME, APP_VERSION);
+
 	s_init();
 
 	parse_options(argc, argv);
 	check_settings();
+
+	l_init(&limits, s.limit_iters, s.limit_time);
 
 	load_molecules();
 
@@ -131,6 +141,17 @@ int main(int argc, char **argv) {
 	#ifdef USE_MKL
 	mkl_free_buffers();
 	#endif /* USE_MKL */
+
+	end = time(NULL);
+	time_t diff = end - start;
+	time_t hours = diff / 3600;
+	diff %= 3600;
+	time_t minutes = diff / 60;
+	diff %= 60;
+
+	printf("Execution took %lu hour(s) %lu minute(s) %lu second(s)\n",\
+		 (unsigned long) hours, (unsigned long) minutes, (unsigned long) diff);
+	printf("%s (%s) ended.\n", APP_NAME, APP_VERSION);
 
 	return RETURN_OK;
 }
