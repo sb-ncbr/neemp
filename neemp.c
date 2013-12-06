@@ -46,12 +46,11 @@ int main(int argc, char **argv) {
 
 	start = time(NULL);
 
-	printf("%s (%s) started\n", APP_NAME, APP_VERSION);
-
 	s_init();
-
 	parse_options(argc, argv);
 	check_settings();
+
+	printf("%s (%s) started\n", APP_NAME, APP_VERSION);
 
 	l_init(&limits, s.limit_iters, s.limit_time);
 

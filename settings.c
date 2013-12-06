@@ -35,7 +35,8 @@ static struct option long_options[] = {
 	{"par-out-file", required_argument, 0, 15},
 	{"kappa-max", required_argument, 0, 20},
 	{"kappa", required_argument, 0, 21},
-	{"fs-precision", required_argument, 0, 22},
+	{"kappa-preset", required_argument, 0, 22},
+	{"fs-precision", required_argument, 0, 23},
 	{"atom-types-by", required_argument, 0, 31},
 	{"tabu-size", required_argument, 0, 32},
 	{"limit-iters", required_argument, 0, 40},
@@ -95,6 +96,7 @@ static void print_help(void) {
 	printf("      --kappa-max MAX            set maximum value for kappa (required)\n");
 	printf("      --kappa VALUE              use only one kappa VALUE for parameterization\n");
 	printf("      --fs-precision VALUE       resolution for the full scan (required)\n");
+	printf("      --kappa-preset PRESET      set kappa-max and fs-precision to safe values. Valid choices are: small, protein.\n");
 	printf("  -f, --fs-only                  do not use additional accuracy improvement\n");
 	printf("      --par-out-file FILE        output the parameters to the FILE\n");
 	printf("  -d, --discard METHOD           perform discarding with METHOD. Valid choices are: iterative, simple and off. Default is off.\n");
@@ -209,8 +211,19 @@ void parse_options(int argc, char **argv) {
 			case 21:
 				s.kappa_set = (float) atof(optarg);
 				break;
-
 			case 22:
+				if(!strcmp(optarg, "small")) {
+					s.kappa_max = 1.5f;
+					s.full_scan_precision = 0.001f;
+				}
+				else if(!strcmp(optarg, "protein")) {
+					s.kappa_max = 0.01f;
+					s.full_scan_precision = 0.0001f;
+				}
+				else
+					EXIT_ERROR(ARG_ERROR, "Invalid kappa-preset value: %s\n", optarg);
+				break;
+			case 23:
 				s.full_scan_precision = (float) atof(optarg);
 				break;
 
