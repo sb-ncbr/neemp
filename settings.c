@@ -287,17 +287,21 @@ void check_settings(void) {
 	if(s.mode == MODE_PARAMS) {
 		if(s.chg_file[0] == '\0')
 			EXIT_ERROR(ARG_ERROR, "%s", "No .chg file provided.\n");
+
 		if(s.kappa_set < 1e-10) {
 			if(s.full_scan_precision < 1e-10)
 				EXIT_ERROR(ARG_ERROR, "%s", "Full scan precision must be set correctly in params mode.\n");
+
 			if(s.kappa_max < 1e-10)
 				EXIT_ERROR(ARG_ERROR, "%s", "Maximum for kappa must be set correctly in params mode.\n");
+
 			if(s.full_scan_precision > s.kappa_max)
 				EXIT_ERROR(ARG_ERROR, "%s", "Full scan precision must be less than kappa max.\n");
 		}
 		else {
 			if(s.full_scan_precision > 1e-10 || s.kappa_max > 1e-10)
 				EXIT_ERROR(ARG_ERROR, "%s", "Cannot set full scan precision and/or kappa max if --kappa is used.\n");
+
 			if(s.full_scan_only)
 				EXIT_ERROR(ARG_ERROR, "%s", "Cannot use full scan if single kappa is selected.\n");
 		}
@@ -307,12 +311,17 @@ void check_settings(void) {
 
 		if(s.limit_iters != NO_LIMIT_ITERS && s.limit_iters > 100000)
 			EXIT_ERROR(ARG_ERROR, "%s", "Number of iterations should be no higher than 1e6.\n");
+
 		if(s.limit_time != NO_LIMIT_TIME && s.limit_time > 36000 * 1000)
 			EXIT_ERROR(ARG_ERROR, "%s", "Maximum time should not be higher than 1000 hours.\n");
+
+		if(!s.full_scan_only && s.sort_by != SORT_R)
+			EXIT_ERROR(ARG_ERROR, "%s", "Full scan must be used for sort-by other than R.\n");
 
 	} else if(s.mode == MODE_CHARGES) {
 		if(s.par_file[0] == '\0')
 			EXIT_ERROR(ARG_ERROR, "%s", "No .par file provided.\n");
+
 		if(s.chg_out_file[0] == '\0')
 			EXIT_ERROR(ARG_ERROR, "%s", "No .chg output file provided.\n");
 	}
