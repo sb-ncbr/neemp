@@ -89,16 +89,16 @@ void load_charges(void) {
 		/* Check if numbers of atoms match*/
 		int atoms_count;
 		if(!fgets(line, MAX_LINE_LEN, f))
-			EXIT_ERROR(IO_ERROR, "Reading failed for the molecule \"%s\".\n", ts.molecules[idx].name);
+			EXIT_ERROR(IO_ERROR, "Reading failed for the molecule \"%s\" (%s).\n", ts.molecules[idx].name, s.chg_file);
 
 		sscanf(line, "%d", &atoms_count);
 		if(atoms_count != ts.molecules[idx].atoms_count)
-			EXIT_ERROR(IO_ERROR, "Number of atoms in molecule \"%s\" don't match.\n", ts.molecules[idx].name);
+			EXIT_ERROR(IO_ERROR, "Number of atoms in molecule \"%s\" don't match (%s).\n", ts.molecules[idx].name, s.chg_file);
 
 		/* Load actual charges */
 		for(int i = 0; i < atoms_count; i++) {
 			if(!fgets(line, MAX_LINE_LEN, f))
-				EXIT_ERROR(IO_ERROR, "Reading failed for the molecule \"%s\".\n", ts.molecules[idx].name);
+				EXIT_ERROR(IO_ERROR, "Reading charges failed for the molecule \"%s\" (%s).\n", ts.molecules[idx].name, s.chg_file);
 
 			int tmp_int;
 			char tmp_str[2];
@@ -108,13 +108,12 @@ void load_charges(void) {
 		ts.molecules[idx].charges_loaded = 1;
 
 		/* Read empty line */
-		if(!fgets(line, MAX_LINE_LEN, f))
-			EXIT_ERROR(IO_ERROR, "Reading failed for the molecule \"%s\".\n", ts.molecules[idx].name);
+		if(!fgets(line, MAX_LINE_LEN, f) && !feof(f))
+			EXIT_ERROR(IO_ERROR, "Reading empty separator line failed after the molecule \"%s\" (%s).\n", ts.molecules[idx].name, s.chg_file);
 	}
 	fclose(f);
 }
 
-/* TODO */
 void load_parameters(struct kappa_data * const kd) {
 
 	assert(kd != NULL);
@@ -144,8 +143,7 @@ void load_parameters(struct kappa_data * const kd) {
 		int atom_type_idx = get_atom_type_idx_from_text(line);
 
 		if(atom_type_idx == NOT_FOUND)
-			EXIT_ERROR(IO_ERROR, "Invalid format of atom type specifier on line \"%s\"", line);
-
+			EXIT_ERROR(IO_ERROR, "Invalid format of atom type specifier on line \"%s\" (%s).", line, s.par_file);
 
 		/* Read alpha and beta */
 		sscanf(line + 9, "%f %f\n", &kd->parameters_alpha[atom_type_idx], &kd->parameters_beta[atom_type_idx]);
@@ -194,10 +192,10 @@ static int load_molecule(FILE * const f, struct molecule * const m) {
 
 	/* 2nd line contains some additional information, skip it */
 	if(!fgets(line, MAX_LINE_LEN, f))
-			EXIT_ERROR(IO_ERROR, "Reading failed for the molecule \"%s\".\n", m->name);
+			EXIT_ERROR(IO_ERROR, "Reading failed for 2nd line of the molecule \"%s\" (%s).\n", m->name, s.sdf_file);
 	/* 3rd line is for comments, skip it */
 	if(!fgets(line, MAX_LINE_LEN, f))
-			EXIT_ERROR(IO_ERROR, "Reading failed for the molecule \"%s\".\n", m->name);
+			EXIT_ERROR(IO_ERROR, "Reading failed for 3rd line of the molecule \"%s\" (%s).\n", m->name, s.sdf_file);
 
 	/* Read Counts Line
 	 *
@@ -211,7 +209,7 @@ static int load_molecule(FILE * const f, struct molecule * const m) {
 	char version[MAX_LINE_LEN];
 
 	if(!fgets(line, MAX_LINE_LEN, f))
-			EXIT_ERROR(IO_ERROR, "Reading failed for the molecule \"%s\".\n", m->name);
+			EXIT_ERROR(IO_ERROR, "Reading failed for 4th line of the molecule \"%s\" (%s).\n", m->name, s.sdf_file);
 	m->atoms_count = strn2int(line, 3);
 	bonds_count = strn2int(line + 3, 3);
 	sscanf(line + 33, "%6s\n", version);
@@ -219,14 +217,14 @@ static int load_molecule(FILE * const f, struct molecule * const m) {
 	if(!strcmp(version, "V2000")) {
 		/* Perform some checks on the values read */
 		if(MIN_ATOMS_PER_MOLECULE > m->atoms_count || m->atoms_count > MAX_ATOMS_PER_MOLECULE)
-			EXIT_ERROR(IO_ERROR, "Number of atoms is incorrect for molecule \"%s\"\n", m->name);
+			EXIT_ERROR(IO_ERROR, "Number of atoms is incorrect for molecule \"%s\" (%s).\n", m->name, s.sdf_file);
 
 		if(MIN_BONDS_PER_MOLECULE > bonds_count || bonds_count > MAX_BONDS_PER_MOLECULE)
-			EXIT_ERROR(IO_ERROR, "Number of bonds is incorrect for molecule \"%s\"\n", m->name);
+			EXIT_ERROR(IO_ERROR, "Number of bonds is incorrect for molecule \"%s\" (%s).\n", m->name, s.sdf_file);
 
 		m->atoms = (struct atom *) malloc(sizeof(struct atom) * m->atoms_count);
 		if(!m->atoms)
-			EXIT_ERROR(MEM_ERROR, "Cannot allocate memory for atoms in molecule \"%s\".\n", m->name);
+			EXIT_ERROR(MEM_ERROR, "Cannot allocate memory for atoms in molecule \"%s\" (%s).\n", m->name, s.sdf_file);
 
 		/* Process Atom Block
 		 *
@@ -238,7 +236,7 @@ static int load_molecule(FILE * const f, struct molecule * const m) {
 		for(int i = 0; i < m->atoms_count; i++) {
 			char atom_symbol[3];
 			if(!fgets(line, MAX_LINE_LEN, f))
-					EXIT_ERROR(IO_ERROR, "Reading failed for the molecule \"%s\".\n", m->name);
+					EXIT_ERROR(IO_ERROR, "Reading failed for atom %d in the molecule \"%s\" (%s).\n", i + 1, m->name, s.sdf_file);
 			sscanf(line, "%f %f %f %s", &m->atoms[i].position[0], &m->atoms[i].position[1], &m->atoms[i].position[2], atom_symbol);
 
 			m->atoms[i].rdists = (double *) calloc(m->atoms_count, sizeof(double));
@@ -247,7 +245,7 @@ static int load_molecule(FILE * const f, struct molecule * const m) {
 
 			m->atoms[i].Z = convert_symbol_to_Z(atom_symbol);
 			if(m->atoms[i].Z == 0)
-				EXIT_ERROR(IO_ERROR, "Invalid element \"%s\" in the molecule \"%s\".\n", atom_symbol, m->name);
+				EXIT_ERROR(IO_ERROR, "Invalid element \"%s\" in the molecule \"%s\" (%s).\n", atom_symbol, m->name, s.sdf_file);
 
 			m->atoms[i].bond_order = 1;
 		}
@@ -264,7 +262,7 @@ static int load_molecule(FILE * const f, struct molecule * const m) {
 			int atom1, atom2, bond_order;
 
 			if(!fgets(line, MAX_LINE_LEN, f))
-					EXIT_ERROR(IO_ERROR, "Reading failed for the molecule \"%s\".\n", m->name);
+					EXIT_ERROR(IO_ERROR, "Reading failed for bond no. %d in the molecule \"%s\" (%s).\n", i + 1, m->name, s.sdf_file);
 
 			atom1 = strn2int(line, 3);
 			atom2 = strn2int(line + 3, 3);
@@ -272,10 +270,10 @@ static int load_molecule(FILE * const f, struct molecule * const m) {
 
 			/* Perform some checks on the data */
 			if(atom1 > m->atoms_count || atom2 > m->atoms_count)
-				EXIT_ERROR(IO_ERROR, "Invalid atom number in the molecule \"%s\".\n", m->name);
+				EXIT_ERROR(IO_ERROR, "Invalid atom number in the molecule \"%s\" (%s).\n", m->name, s.sdf_file);
 
 			if(bond_order > 3)
-				EXIT_ERROR(IO_ERROR, "Invalid bond order in the molecule \"%s\".\n", m->name);
+				EXIT_ERROR(IO_ERROR, "Invalid bond order in the molecule \"%s\" (%s).\n", m->name, s.sdf_file);
 
 			/* Adjust bond orders of the atoms */
 			if(m->atoms[atom1 - 1].bond_order < bond_order)
@@ -288,14 +286,14 @@ static int load_molecule(FILE * const f, struct molecule * const m) {
 		/* Skip rest of the record */
 		do {
 			if(!fgets(line, MAX_LINE_LEN, f))
-					EXIT_ERROR(IO_ERROR, "Reading failed for the molecule \"%s\".\n", m->name);
+					EXIT_ERROR(IO_ERROR, "Reading failed for the molecule \"%s\" (%s).\n", m->name, s.sdf_file);
 		} while(strncmp(line, "$$$$", 4));
 
 	} else if(!strcmp(version, "V3000")) {
 		/* TODO */
-		EXIT_ERROR(IO_ERROR, "%s", "MDL files with V3000 format are currently unsupported.\n");
+		EXIT_ERROR(IO_ERROR, "MDL files with V3000 format are currently unsupported (%s).\n", s.sdf_file);
 	} else
-		EXIT_ERROR(IO_ERROR, "MDL file with unknown version \"%s\".\n", version);
+		EXIT_ERROR(IO_ERROR, "MDL file with unknown version \"%s\" (%s).\n", version, s.sdf_file);
 
 	m->charges_loaded = 0;
 
