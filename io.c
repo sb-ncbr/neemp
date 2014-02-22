@@ -7,6 +7,7 @@
  * */
 
 #include <assert.h>
+#include <math.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -128,28 +129,74 @@ void load_parameters(struct kappa_data * const kd) {
 	/* Skip comments */
 	do {
 		if(!fgets(line, MAX_LINE_LEN, f))
-			EXIT_ERROR(IO_ERROR, "Invalid format of \"%s\".\n", s.par_file);
+			EXIT_ERROR(IO_ERROR, "Invalid format of parameters file (%s).\n", s.par_file);
 	} while(line[0] == '#');
 
+	/* Remove trailing newline */
+	line[strlen(line) - 1] = '\0';
+
+	/* Check if the command-line settings matches the entry in the .par file */
+	switch(s.at_customization) {
+
+		case AT_CUSTOM_ELEMENT:
+			if(strcmp(line, "element"))
+				EXIT_ERROR(RUN_ERROR, "atom-types-by \"%s\" doesn't match with provided settings.\n", line);
+			break;
+		case AT_CUSTOM_ELEMENT_BOND:
+			if(strcmp(line, "element_bond"))
+				EXIT_ERROR(RUN_ERROR, "atom-types-by \"%s\" doesn't match with provided settings.\n", line);
+			break;
+		case AT_CUSTOM_PARTNER:
+			if(strcmp(line, "partner"))
+				EXIT_ERROR(RUN_ERROR, "atom-types-by \"%s\" doesn't match with provided settings.\n", line);
+			break;
+		case AT_CUSTOM_VALENCE:
+			if(strcmp(line, "valence"))
+				EXIT_ERROR(RUN_ERROR, "atom-types-by \"%s\" doesn't match with provided settings.\n", line);
+			break;
+	}
+
+	if(!fgets(line, MAX_LINE_LEN, f))
+		EXIT_ERROR(IO_ERROR, "Invalid format of parameters file (%s).\n", s.par_file);
+
+	/* Load kappa */
 	sscanf(line, "%f\n", &kd->kappa);
 
+	if(!fgets(line, MAX_LINE_LEN, f))
+		EXIT_ERROR(IO_ERROR, "Invalid format of parameters file (%s).\n", s.par_file);
+
+	/* Load number of atom types in the .par file */
+	int atom_types_count;
+	sscanf(line, "%d\n", &atom_types_count);
+
+	if(ts.atom_types_count > atom_types_count)
+		EXIT_ERROR(RUN_ERROR, "Insufficient number of atom types in .par file (%d) in comparison to .sdf file (%d).\n", atom_types_count, ts.atom_types_count);
+
 	/* Read actual parameters */
-	for(int i = 0; i < ts.atom_types_count; i++) {
+	for(int i = 0; i < atom_types_count; i++) {
 
 		if(!fgets(line, MAX_LINE_LEN, f))
-			EXIT_ERROR(IO_ERROR, "Invalid format of \"%s\".\n", s.par_file);
+			EXIT_ERROR(IO_ERROR, "Invalid format of parameters (%s).\n", s.par_file);
 
 		/* Determine atom type from string */
 		int atom_type_idx = get_atom_type_idx_from_text(line);
 
-		if(atom_type_idx == NOT_FOUND)
-			EXIT_ERROR(IO_ERROR, "Invalid format of atom type specifier on line \"%s\" (%s).", line, s.par_file);
-
-		/* Read alpha and beta */
-		sscanf(line + 9, "%f %f\n", &kd->parameters_alpha[atom_type_idx], &kd->parameters_beta[atom_type_idx]);
+		if(atom_type_idx != NOT_FOUND) {
+			/* Read alpha and beta parameters */
+			sscanf(line + 9, "%f %f\n", &kd->parameters_alpha[atom_type_idx], &kd->parameters_beta[atom_type_idx]);
+		}
 	}
 
 	fclose(f);
+
+	/* Check if we load all necessary parameters */
+	for(int i = 0; i < ts.atom_types_count; i++) {
+		if(fabsf(kd->parameters_alpha[i] * kd->parameters_beta[i]) <= 0.0f) {
+			char buff[10];
+			at_format_text(&ts.atom_types[i], buff);
+			EXIT_ERROR(RUN_ERROR, "No parameters loaded for: %s\n", buff);
+		}
+	}
 }
 
 /* Convert n characters of a string to int */
@@ -503,8 +550,12 @@ void output_parameters(const struct subset * const ss) {
 		EXIT_ERROR(IO_ERROR, "Cannot open file %s for writing the parameters.\n", s.par_out_file);
 
 
-	fprintf(f, "# NEEMP parameters file\n");
-	fprintf(f, "# Customization (--at-customization parameter value): ");
+	fprintf(f, "# NEEMP (%s) parameters file\n", APP_VERSION);
+	fprintf(f, "# Format:\n");
+	fprintf(f, "# <group-atom-types-by>: element, element_bond\n");
+	fprintf(f, "# <kappa-value>\n");
+	fprintf(f, "# <number-of-atom-types>\n");
+	fprintf(f, "# <atom-type-specifier> <parameter-A> <parameter-B>\n");
 	switch(s.at_customization) {
 		case AT_CUSTOM_ELEMENT:
 			fprintf(f, "element\n");
@@ -524,6 +575,7 @@ void output_parameters(const struct subset * const ss) {
 	}
 
 	fprintf(f, "%6.4f\n", ss->best->kappa);
+	fprintf(f, "%d\n", ts.atom_types_count);
 
 	for(int i = 0; i < ts.atom_types_count; i++) {
 		char buff[10];
