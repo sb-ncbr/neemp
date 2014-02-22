@@ -242,9 +242,12 @@ static int load_molecule(FILE * const f, struct molecule * const m) {
 
 			sscanf(line, "%f %f %f %s", &m->atoms[i].position[0], &m->atoms[i].position[1], &m->atoms[i].position[2], atom_symbol);
 
-			m->atoms[i].rdists = (double *) calloc(m->atoms_count, sizeof(double));
-			if(!m->atoms[i].rdists)
-				EXIT_ERROR(MEM_ERROR, "%s", "Cannot allocate memory for atom distances.\n");
+
+			if(s.mode == MODE_PARAMS) {
+				m->atoms[i].rdists = (double *) calloc(m->atoms_count, sizeof(double));
+				if(!m->atoms[i].rdists)
+					EXIT_ERROR(MEM_ERROR, "%s", "Cannot allocate memory for atom distances.\n");
+			}
 
 			m->atoms[i].Z = convert_symbol_to_Z(atom_symbol);
 			if(m->atoms[i].Z == 0)
@@ -342,9 +345,11 @@ static int load_molecule(FILE * const f, struct molecule * const m) {
 			sscanf(line + 7, "%d %2s %f %f %f", &tmp, atom_symbol,\
 				&m->atoms[i].position[0], &m->atoms[i].position[1], &m->atoms[i].position[2]);
 
-			m->atoms[i].rdists = (double *) calloc(m->atoms_count, sizeof(double));
-			if(!m->atoms[i].rdists)
-				EXIT_ERROR(MEM_ERROR, "%s", "Cannot allocate memory for atom distances.\n");
+			if(s.mode == MODE_PARAMS) {
+				m->atoms[i].rdists = (double *) calloc(m->atoms_count, sizeof(double));
+				if(!m->atoms[i].rdists)
+					EXIT_ERROR(MEM_ERROR, "%s", "Cannot allocate memory for atom distances.\n");
+			}
 
 			m->atoms[i].Z = convert_symbol_to_Z(atom_symbol);
 			if(m->atoms[i].Z == 0)

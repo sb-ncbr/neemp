@@ -20,7 +20,6 @@ extern const struct settings s;
 extern struct training_set ts;
 
 static void a_destroy(struct atom * const a);
-static double rdist(const struct atom * const a1, const struct atom * const a2);
 static void m_calculate_rdists(struct molecule * const m);
 static void m_calculate_avg_electronegativity(struct molecule * const m);
 static void m_calculate_charge_stats(struct molecule * const m);
@@ -63,11 +62,12 @@ static void a_destroy(struct atom * const a) {
 
 	assert(a != NULL);
 
-	free(a->rdists);
+	if(s.mode == MODE_PARAMS)
+		free(a->rdists);
 }
 
 /* Calculates reciprocal distance between two atoms */
-static double rdist(const struct atom * const a1, const struct atom * const a2) {
+double rdist(const struct atom * const a1, const struct atom * const a2) {
 
 	assert(a1 != NULL);
 	assert(a2 != NULL);
@@ -268,15 +268,15 @@ int get_atom_type_idx(const struct atom * const a) {
 /* Do some preprocessing to simplify things later on */
 void preprocess_molecules(void) {
 
-	/* Calculate reciprocal distances of atoms for all molecules */
-	for(int i = 0; i < ts.molecules_count; i++)
-		m_calculate_rdists(&ts.molecules[i]);
-
 	/* Calculate average electronegativies */
 	for(int i = 0; i < ts.molecules_count; i++)
 		m_calculate_avg_electronegativity(&ts.molecules[i]);
 
 	if(s.mode == MODE_PARAMS) {
+		/* Calculate reciprocal distances of atoms for all molecules */
+		for(int i = 0; i < ts.molecules_count; i++)
+			m_calculate_rdists(&ts.molecules[i]);
+
 		/* Remove molecule for which the charges are not present */
 		discard_molecules_without_charges();
 

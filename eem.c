@@ -17,10 +17,12 @@
 
 #include "eem.h"
 #include "neemp.h"
+#include "settings.h"
 #include "subset.h"
 #include "structures.h"
 
 extern const struct training_set ts;
+extern const struct settings s;
 
 #ifdef USE_MKL
 static void fill_EEM_matrix_packed(float * const A, const struct molecule * const m, const struct kappa_data * const kd);
@@ -80,7 +82,10 @@ static void fill_EEM_matrix_packed(float * const A, const struct molecule * cons
 	for(int i = 0; i < n; i++) {
 		A[U_IDX(i, i)] = kd->parameters_beta[get_atom_type_idx(&m->atoms[i])];
 		for(int j = i + 1; j < n; j++) {
-			A[U_IDX(i, j)] = (float) (kd->kappa * m->atoms[i].rdists[j]);
+			if(s.mode == MODE_PARAMS)
+				A[U_IDX(i, j)] = (float) (kd->kappa * m->atoms[i].rdists[j]);
+			else
+				A[U_IDX(i, j)] = (float) (kd->kappa * rdist(&m->atoms[i], &m->atoms[j]));
 		}
 	}
 
@@ -108,8 +113,12 @@ static void fill_EEM_matrix_full(float * const A, const struct molecule * const 
 		for(int j = 0; j < n; j++)
 			if(i == j)
 				A[IDX(i, i)] = kd->parameters_beta[get_atom_type_idx(&m->atoms[i])];
-			else
-				A[IDX(i, j)] = (float) (kd->kappa * m->atoms[i].rdists[j]);
+			else {
+				if(s.mode == MODE_PARAMS)
+					A[U_IDX(i, j)] = (float) (kd->kappa * m->atoms[i].rdists[j]);
+				else
+					A[U_IDX(i, j)] = (float) (kd->kappa * rdist(&m->atoms[i], &m->atoms[j]));
+			}
 	}
 
 	/* Fill last column */

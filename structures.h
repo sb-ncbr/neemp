@@ -22,6 +22,7 @@ struct atom {
 
 int convert_symbol_to_Z(const char * const symb);
 const char *convert_Z_to_symbol(int Z);
+double rdist(const struct atom * const a1, const struct atom * const a2);
 
 struct molecule {
 
