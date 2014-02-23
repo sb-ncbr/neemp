@@ -87,7 +87,7 @@ static void print_help(void) {
 	printf("\nOptions:\n");
 	printf("  -h, --help			 display this help and exit\n");
 	printf("      --version			 display version information and exit\n");
-	printf("  -m, --mode MODE		 set mode for the NEEMP. Valid choices are: info, params, charges. (required)\n");
+	printf("  -m, --mode MODE		 set mode for the NEEMP. Valid choices are: info, params, charges, cross. (required)\n");
 	printf("      --sdf-file FILE		 SDF file (required)\n");
 	printf("      --atom-types-by METHOD	 classify atoms according to the METHOD. Valid choices are: element, element_bond.\n");
 	printf("Options specific to mode: params\n");
@@ -142,6 +142,8 @@ void parse_options(int argc, char **argv) {
 					s.mode = MODE_CHARGES;
 				else if (!strcmp(optarg, "params"))
 					s.mode = MODE_PARAMS;
+				else if (!strcmp(optarg, "cross"))
+					s.mode = MODE_CROSS;
 				else
 					EXIT_ERROR(ARG_ERROR, "Invalid mode: %s\n", optarg);
 				break;
@@ -324,5 +326,11 @@ void check_settings(void) {
 
 		if(s.chg_out_file[0] == '\0')
 			EXIT_ERROR(ARG_ERROR, "%s", "No .chg output file provided.\n");
+	} else if(s.mode == MODE_CROSS) {
+		if(s.chg_file[0] == '\0')
+			EXIT_ERROR(ARG_ERROR, "%s", "No .chg file provided.\n");
+
+		if(s.par_file[0] == '\0')
+			EXIT_ERROR(ARG_ERROR, "%s", "No .par file provided.\n");
 	}
 }

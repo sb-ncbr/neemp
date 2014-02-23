@@ -18,6 +18,7 @@ enum app_mode {
 	MODE_PARAMS,
 	MODE_CHARGES,
 	MODE_INFO,
+	MODE_CROSS,
 	MODE_NOT_SET
 };
 

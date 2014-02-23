@@ -268,21 +268,23 @@ int get_atom_type_idx(const struct atom * const a) {
 /* Do some preprocessing to simplify things later on */
 void preprocess_molecules(void) {
 
-	/* Calculate average electronegativies */
-	for(int i = 0; i < ts.molecules_count; i++)
-		m_calculate_avg_electronegativity(&ts.molecules[i]);
-
-	if(s.mode == MODE_PARAMS) {
-		/* Calculate reciprocal distances of atoms for all molecules */
-		for(int i = 0; i < ts.molecules_count; i++)
-			m_calculate_rdists(&ts.molecules[i]);
-
+	if(s.mode == MODE_PARAMS || s.mode == MODE_CROSS) {
 		/* Remove molecule for which the charges are not present */
 		discard_molecules_without_charges();
 
 		/* Calculate sum and average of the charges in the molecule */
 		for(int i = 0; i < ts.molecules_count; i++)
 			m_calculate_charge_stats(&ts.molecules[i]);
+	}
+
+	if(s.mode == MODE_PARAMS) {
+		/* Calculate average electronegativies */
+		for(int i = 0; i < ts.molecules_count; i++)
+			m_calculate_avg_electronegativity(&ts.molecules[i]);
+
+		/* Calculate reciprocal distances of atoms for all molecules */
+		for(int i = 0; i < ts.molecules_count; i++)
+			m_calculate_rdists(&ts.molecules[i]);
 
 		/* Calculate auxiliary sum */
 		calculate_y();
