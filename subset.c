@@ -98,14 +98,14 @@ void print_results(const struct subset * const ss) {
 	printf("Used molecules: %5d\n", b_count_bits(&ss->molecules));
 	kd_print_stats(ss->best);
 
-	printf("Atom type             A       B\t\t     R\t    RMSD       MSE\t  D_max\t  D_avg\n");
+	printf("Atom type             A       B\t\t     R\t    RMSD       MSE\t  D_avg\t  D_max\n");
 	for(int i = 0; i < ts.atom_types_count; i++) {
 		char buff[10];
 		at_format_text(&ts.atom_types[i], buff);
 		printf(" %s   \t%7.4f\t%7.4f\t\t%6.4f  %4.2e  %4.2e\t%7.3f\t%7.3f\n",
 			buff, ss->best->parameters_alpha[i], ss->best->parameters_beta[i],
 			ss->best->stats.R_per_atom_type[i], ss->best->stats.RMSD_per_atom_type[i], ss->best->stats.MSE_per_atom_type[i],
-			ss->best->stats.max_D_per_atom_type[i], ss->best->stats.avg_D_per_atom_type[i]);
+			ss->best->stats.avg_D_per_atom_type[i], ss->best->stats.max_D_per_atom_type[i]);
 	}
 
 	printf("\n");

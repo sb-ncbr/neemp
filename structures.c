@@ -306,7 +306,7 @@ void ts_info(void) {
 		#define AT ts.atom_types[i]
 		char buff[10];
 		at_format_text(&AT, buff);
-		printf(" %s        %8d        %6.3f\n", buff, AT.atoms_count, 100.0f * (float) AT.atoms_count / ts.atoms_count);
+		printf(" %s %8d        %6.3f\n", buff, AT.atoms_count, 100.0f * (float) AT.atoms_count / ts.atoms_count);
 		#undef AT
 	}
 
