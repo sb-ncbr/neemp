@@ -84,5 +84,6 @@ void s_init(void);
 
 void parse_options(int argc, char **argv);
 void check_settings(void);
+void print_settings(void);
 
 #endif /* __SETTINGS_H__ */

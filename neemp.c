@@ -52,6 +52,8 @@ int main(int argc, char **argv) {
 
 	printf("%s (%s) started\n", APP_NAME, APP_VERSION);
 
+	print_settings();
+
 	l_init(&limits, s.limit_iters, s.limit_time);
 
 	load_molecules();

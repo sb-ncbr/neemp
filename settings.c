@@ -72,7 +72,7 @@ void s_init(void) {
 static void print_version(void) {
 
 	printf("%s %s\n", APP_NAME, APP_VERSION);
-	printf("Copyright (C) 2013 Tomas Racek (tom@krab1k.net)\n");
+	printf("Copyright (C) 2013, 2014 Tomas Racek (tom@krab1k.net)\n");
 	printf("Licence MIT: http://opensource.org/licenses/MIT\n");
 	printf("This is free software: you are free to change and redistribute it.\n");
 	printf("There is NO WARRANTY, to the extent permitted by law.\n");
@@ -333,4 +333,149 @@ void check_settings(void) {
 		if(s.par_file[0] == '\0')
 			EXIT_ERROR(ARG_ERROR, "%s", "No .par file provided.\n");
 	}
+}
+
+void print_settings(void) {
+
+	printf("\nSettings:\n\n");
+
+	printf("Mode: ");
+	switch(s.mode) {
+		case MODE_INFO:
+			printf("info (print info about the training set)\n");
+			break;
+		case MODE_PARAMS:
+			printf("params (calculate EEM parameters)\n");
+			break;
+		case MODE_CHARGES:
+			printf("charges (calculate EEM charges)\n");
+			break;
+		case MODE_CROSS:
+			printf("cross (perform cross-validation of the EEM parameters)\n");
+			break;
+	}
+
+	printf("\nFiles:\n");
+	printf(" Structural (.sdf) file: %s\n", s.sdf_file);
+	if(s.par_file[0] != '\0')
+		printf(" Parameters (.par) file: %s\n", s.par_file);
+
+	if(s.chg_file[0] != '\0')
+		printf(" Charges (.chg) file: %s\n", s.chg_file);
+
+	if(s.par_out_file[0] != '\0')
+		printf(" Parameters (.par) output file: %s\n", s.par_out_file);
+
+	if(s.chg_out_file[0] != '\0')
+		printf(" Charges output (.chg)'file: %s\n", s.chg_out_file);
+
+	if(s.chg_stats_out_file[0] != '\0')
+		printf(" Charges stats output (.chgs) file: %s\n", s.chg_stats_out_file);
+
+	printf("\nAtom types grouped by: ");
+	switch(s.at_customization) {
+		case AT_CUSTOM_ELEMENT:
+			printf("element\n");
+			break;
+		case AT_CUSTOM_ELEMENT_BOND:
+			printf("element + bond order\n");
+			break;
+		case AT_CUSTOM_PARTNER:
+			printf("bonding partner\n");
+			break;
+		case AT_CUSTOM_VALENCE:
+			printf("valence state\n");
+			break;
+	}
+
+	printf("\nVerbosity level: ");
+	switch(s.verbosity) {
+		case 0:
+			printf("0 (only minimal info)\n");
+			break;
+		case 1:
+			printf("1 (include discarding info)\n");
+			break;
+		case 2:
+			printf("2 (include discarding + kappa search info)\n");
+			break;
+		default:
+			printf("%u (I won't tell you more than on level 2. Sorry about that.)\n", s.verbosity);
+			break;
+	}
+
+	if(s.mode == MODE_PARAMS) {
+		printf("\nSort by: ");
+		switch(s.sort_by) {
+			case SORT_R:
+				printf("R");
+				break;
+			case SORT_RMSD:
+				printf("RMSD");
+				break;
+			case SORT_MSE:
+				printf("MSE");
+				break;
+			case SORT_D_AVG:
+				printf("Avg D");
+				break;
+			case SORT_D_MAX:
+				printf("Max D");
+				break;
+		}
+
+		if(s.sort_by == SORT_R)
+			printf(" (higher is better)\n");
+		else
+			printf(" (lower is better)\n");
+
+		printf("\nDiscarding:\n");
+		printf(" Mode: ");
+		switch(s.discard) {
+			case DISCARD_OFF:
+				printf("off\n");
+				break;
+			case DISCARD_SIMPLE:
+				printf("simple (try each molecule once)\n");
+				break;
+			case DISCARD_ITER:
+				printf("iterative (try molecules at random until limit is reached)\n");
+				break;
+		}
+		printf(" Time limit: ");
+		if(s.limit_time == NO_LIMIT_TIME)
+			printf("none set\n");
+		else {
+
+			unsigned tmp = (unsigned) s.limit_time;
+			unsigned secs = tmp % 60;
+			tmp /= 60;
+			unsigned mins = tmp % 60;
+			tmp /= 60;
+			unsigned hours = tmp;
+			printf("%u hour(s) %u min(s) %u sec(s)\n", hours, mins, secs);
+
+
+		}
+		printf(" Iterations limit: ");
+		if(s.limit_iters == NO_LIMIT_ITERS)
+			printf("none set\n");
+		else
+			printf("%d\n", s.limit_iters);
+
+		printf("\nKappa search:\n");
+		printf(" Mode: ");
+		if(s.kappa_set > 0.0f)
+			printf("single kappa value = %5.3f\n", s.kappa_set);
+		else {
+			printf("full scan from 0.0 to %5.3f with step %5.3f", s.kappa_max, s.full_scan_precision);
+
+			if(!s.full_scan_only)
+				printf(" + iterative refinement\n");
+			else
+				printf("\n");
+		}
+	}
+
+	printf("\n");
 }
