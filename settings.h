@@ -48,6 +48,7 @@ enum discarding_mode {
 
 enum verbosity_levels {
 
+	VERBOSE_MINIMAL = 0,
 	VERBOSE_DISCARD = 1,
 	VERBOSE_KAPPA = 2
 };

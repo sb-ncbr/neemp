@@ -110,7 +110,7 @@ static void brent(struct subset * const ss) {
 	/* Accepting tolerances */
 	float tol1, tol2;
 
-	float d;
+	float d = 0.0f;
 	float e = 0.0f;
 
 	x = w = v = 0.5f * (a + b);

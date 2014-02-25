@@ -6,6 +6,7 @@
  *
  * */
 
+#include <assert.h>
 #include <getopt.h>
 #include <string.h>
 
@@ -250,7 +251,9 @@ void parse_options(int argc, char **argv) {
 				break;
 			case 41: {
 					char *part;
-					int hours, mins, secs;
+					int hours = 0;
+					int mins = 0;
+					int secs = 0;
 
 					part = strtok(optarg, ":");
 					if(part != NULL)
@@ -353,6 +356,8 @@ void print_settings(void) {
 		case MODE_CROSS:
 			printf("cross (perform cross-validation of the EEM parameters)\n");
 			break;
+		case MODE_NOT_SET:
+			assert(0);
 	}
 
 	printf("\nFiles:\n");
