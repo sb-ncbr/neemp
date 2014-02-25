@@ -115,9 +115,9 @@ static void fill_EEM_matrix_full(float * const A, const struct molecule * const 
 				A[IDX(i, i)] = kd->parameters_beta[get_atom_type_idx(&m->atoms[i])];
 			else {
 				if(s.mode == MODE_PARAMS)
-					A[U_IDX(i, j)] = (float) (kd->kappa * m->atoms[i].rdists[j]);
+					A[IDX(i, j)] = (float) (kd->kappa * m->atoms[i].rdists[j]);
 				else
-					A[U_IDX(i, j)] = (float) (kd->kappa * rdist(&m->atoms[i], &m->atoms[j]));
+					A[IDX(i, j)] = (float) (kd->kappa * rdist(&m->atoms[i], &m->atoms[j]));
 			}
 	}
 
