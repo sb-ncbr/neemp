@@ -395,13 +395,13 @@ void print_settings(void) {
 
 	printf("\nVerbosity level: ");
 	switch(s.verbosity) {
-		case 0:
+		case VERBOSE_MINIMAL:
 			printf("0 (only minimal info)\n");
 			break;
-		case 1:
+		case VERBOSE_DISCARD:
 			printf("1 (include discarding info)\n");
 			break;
-		case 2:
+		case VERBOSE_KAPPA:
 			printf("2 (include discarding + kappa search info)\n");
 			break;
 		default:
