@@ -84,8 +84,17 @@ void load_charges(void) {
 
 		/* Find corresponding previously loaded molecule */
 		int idx = find_molecule_by_name(line);
-		if(idx == NOT_FOUND)
-			EXIT_ERROR(IO_ERROR, "Molecule \"%s\" was not loaded.\n", line);
+		if(idx == NOT_FOUND) {
+			printf("Molecule %s not loaded from .sdf file. Skipping the charge record (%s).\n", line, s.chg_file);
+			/* Skip the whole record */
+			do {
+				if(!fgets(line, MAX_LINE_LEN, f))
+					EXIT_ERROR(IO_ERROR, "Reading failed when skipping record (%s).\n", s.chg_file);
+			} while(strcmp(line, "\n"));
+
+			/* Go to the next record */
+			continue;
+		}
 
 		/* Check if numbers of atoms match*/
 		int atoms_count;

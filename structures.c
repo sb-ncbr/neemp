@@ -135,6 +135,8 @@ static void discard_molecules_without_charges(void) {
 	int i = 0;
 	while(i < ts.molecules_count) {
 		if(!ts.molecules[i].charges_loaded) {
+			printf("No charges were loaded for the molecule %s. Discarding it from the training set.\n", ts.molecules[i].name);
+
 			/* Destroy molecule without charges; fill its space with the last one */
 			ts.atoms_count -= ts.molecules[i].atoms_count;
 			m_destroy(&ts.molecules[i]);
@@ -297,7 +299,7 @@ void preprocess_molecules(void) {
 /* Prints information about the training set */
 void ts_info(void) {
 
-	printf("Training set info\n");
+	printf("\nTraining set info\n");
 
 	printf("Molecules: %5d  Atoms: %8d  Atom types: %2d\n", ts.molecules_count, ts.atoms_count, ts.atom_types_count);
 	printf("Atom type     # atoms       %% atoms \n");
