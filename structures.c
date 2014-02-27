@@ -133,9 +133,11 @@ void ts_destroy(void) {
 static void discard_molecules_without_charges(void) {
 
 	int i = 0;
+	int number_of_discarded = 0;
+
 	while(i < ts.molecules_count) {
 		if(!ts.molecules[i].charges_loaded) {
-			printf("No charges were loaded for the molecule %s. Discarding it from the training set.\n", ts.molecules[i].name);
+			number_of_discarded++;
 
 			/* Destroy molecule without charges; fill its space with the last one */
 			ts.atoms_count -= ts.molecules[i].atoms_count;
@@ -148,6 +150,9 @@ static void discard_molecules_without_charges(void) {
 			i++;
 
 	}
+
+	if(number_of_discarded)
+		printf("Discarded %d molecules without loaded charges.\n", number_of_discarded);
 
 	/* Shrink molecules array */
 	ts.molecules = (struct molecule *) realloc(ts.molecules, sizeof(struct molecule) * ts.molecules_count);
