@@ -14,13 +14,13 @@ libraries=-mkl
 binaries=neemp
 manpage=neemp.1
 
-all: $(sources) $(headers) neemp man
+all: $(sources) $(headers) neemp
 
 neemp-gnu: EXTRA_DEFINE=
 neemp-gnu: CC=gcc
 neemp-gnu: CFLAGS=-Wall -Wextra -std=c99 -pedantic -O3 -march=native -g -fopenmp
 neemp-gnu: libraries=-lm -fopenmp
-neemp-gnu: $(objects) man neemp
+neemp-gnu: $(objects) neemp
 
 neemp: $(objects)
 	$(CC) $(objects) $(libraries) -o neemp
