@@ -112,7 +112,7 @@ static void print_help(void) {
 	printf("neemp -m info --sdf-file molecules.sdf --atom-types-by element\n\
 		Display information about the training set in the file molecules.sdf. Group atoms according to the elements only.\n");
 
-	printf("neem -m params --sdf-file molecules.sdf --chg-file charges.chg --kappa-max 1.0 --fs-precision 0.2 --sort-by RMSD.\n\
+	printf("neemp -m params --sdf-file molecules.sdf --chg-file charges.chg --kappa-max 1.0 --fs-precision 0.2 --sort-by RMSD.\n\
 		Compute parameters for the given molecules in file molecules.sdf and ab-initio charges in charges.chg. Set maximum value for kappa to 1.0, step for the full scan to 0.2, sort results according to the relative mean square deviation.\n");
 
 	printf("neemp -m charges --sdf-file molecules.sdf --par-file parameters --chg-out-file output.chg\n\
