@@ -42,6 +42,7 @@ static struct option long_options[] = {
 	{"tabu-size", required_argument, 0, 32},
 	{"limit-iters", required_argument, 0, 40},
 	{"limit-time", required_argument, 0, 41},
+	{"check-charges", no_argument, 0, 50},
 	{NULL, 0, 0, 0}
 };
 
@@ -67,6 +68,7 @@ void s_init(void) {
 	s.tabu_size = 0.0f;
 	s.limit_iters = NO_LIMIT_ITERS;
 	s.limit_time = NO_LIMIT_TIME;
+	s.check_charges = 0;
 }
 
 /* Prints help if --version is issued */
@@ -268,6 +270,9 @@ void parse_options(int argc, char **argv) {
 					s.limit_time = 3600 * hours + 60 * mins + secs;
 					break;
 				}
+			case 50:
+				s.check_charges = 1;
+				break;
 			case '?':
 				EXIT_ERROR(ARG_ERROR, "%s", "Try -h/--help.\n");
 			default:

@@ -101,9 +101,16 @@ int main(int argc, char **argv) {
 				printf("\nFinal results after discarding:\n\n");
 				print_results(result);
 
+				if(s.check_charges)
+					check_charges(result->best);
+
 				/* Clean up the discarding result */
 				ss_destroy(result);
 				free(result);
+			}
+			else {
+				if(s.check_charges)
+					check_charges(full.best);
 			}
 			ss_destroy(&full);
 			break;
@@ -124,6 +131,9 @@ int main(int argc, char **argv) {
 
 			calculate_charges(&full, full.best);
 			output_charges(&full);
+
+			if(s.check_charges)
+				check_charges(full.best);
 
 			ss_destroy(&full);
 			break;
@@ -176,7 +186,7 @@ int main(int argc, char **argv) {
 	time_t minutes = diff / 60;
 	diff %= 60;
 
-	printf("Execution took %lu hour(s) %lu minute(s) %lu second(s)\n",\
+	printf("\nExecution took %lu hour(s) %lu minute(s) %lu second(s)\n",\
 		 (unsigned long) hours, (unsigned long) minutes, (unsigned long) diff);
 	printf("%s (%s) ended.\n", APP_NAME, APP_VERSION);
 

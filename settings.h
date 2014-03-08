@@ -79,6 +79,8 @@ struct settings {
 
 	int limit_iters;
 	time_t limit_time;
+
+	int check_charges;
 };
 
 void s_init(void);

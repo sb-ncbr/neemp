@@ -12,6 +12,7 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include "config.h"
 #include "statistics.h"
 #include "structures.h"
 #include "subset.h"
@@ -118,7 +119,6 @@ void calculate_statistics(struct subset * const ss, struct kappa_data * const kd
 		avg_computed_charge_per_atom_type /= AT.atoms_count;
 		avg_reference_charge_per_atom_type /= AT.atoms_count;
 
-
 		double diff2_sum = 0.0;
 		double sum_xy = 0.0;
 		double sum_xx = 0.0;
@@ -144,5 +144,23 @@ void calculate_statistics(struct subset * const ss, struct kappa_data * const kd
 		kd->stats.R_per_atom_type[i] = (float) ((sum_xy * sum_xy) / (sum_xx * sum_yy));
 
 		#undef AT
+	}
+}
+
+/* Check for abnormal charge differences */
+void check_charges(const struct kappa_data * const kd) {
+
+	assert(kd != NULL);
+
+	int atoms_processed = 0;
+
+	for(int i = 0; i < ts.molecules_count; i++) {
+		for(int j = 0; j < ts.molecules[i].atoms_count; j++) {
+			if(fabsf(kd->charges[atoms_processed + j] - ts.molecules[i].atoms[j].reference_charge) > MAX_ABS_CHARGE_DIFF) {
+				fprintf(stderr, "Warning: Abnormal charge differences in molecule %s.\n", ts.molecules[i].name);
+				break;
+			}
+		}
+		atoms_processed += ts.molecules[i].atoms_count;
 	}
 }

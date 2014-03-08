@@ -21,4 +21,6 @@
 #define MIN_BONDS_PER_MOLECULE 1
 #define MAX_BONDS_PER_MOLECULE 1E5
 
+#define MAX_ABS_CHARGE_DIFF 1.5F
+
 #endif /* __CONFIG_H__ */
