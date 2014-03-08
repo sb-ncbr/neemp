@@ -132,9 +132,6 @@ int main(int argc, char **argv) {
 			calculate_charges(&full, full.best);
 			output_charges(&full);
 
-			if(s.check_charges)
-				check_charges(full.best);
-
 			ss_destroy(&full);
 			break;
 		}
@@ -160,6 +157,10 @@ int main(int argc, char **argv) {
 				output_charges_stats(&full);
 
 			print_results(&full);
+
+			if(s.check_charges)
+				check_charges(full.best);
+
 			ss_destroy(&full);
 
 			break;
