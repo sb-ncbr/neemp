@@ -106,6 +106,7 @@ static void print_help(void) {
 	printf("  -s, --sort-by STAT             sort solutions by STAT. Valid choices are: R, RMSD, MSE, D_max, D_avg.\n");
 	printf("      --limit-iters COUNT        set the maximum number of iterations for discarding.\n");
 	printf("      --limit-time HH:MM:SS      set the maximum time for discarding in format hours:minutes:seconds.\n");
+	printf("      --check-charges      	 warn about molecules with abnormal differences between QM and EEM charges.\n");
 	printf("Options specific to mode: charges\n");
 	printf("      --par-file FILE		 FILE with EEM parameters (required)\n");
 	printf("      --chg-out-file FILE	 Output charges to the FILE (required)\n");
@@ -114,8 +115,8 @@ static void print_help(void) {
 	printf("neemp -m info --sdf-file molecules.sdf --atom-types-by element\n\
 		Display information about the training set in the file molecules.sdf. Group atoms according to the elements only.\n");
 
-	printf("neemp -m params --sdf-file molecules.sdf --chg-file charges.chg --kappa-max 1.0 --fs-precision 0.2 --sort-by RMSD.\n\
-		Compute parameters for the given molecules in file molecules.sdf and ab-initio charges in charges.chg. Set maximum value for kappa to 1.0, step for the full scan to 0.2, sort results according to the relative mean square deviation.\n");
+	printf("neemp -m params --sdf-file molecules.sdf --chg-file charges.chg --kappa-max 1.0 --fs-precision 0.2 --sort-by RMSD --fs-only.\n\
+		Compute parameters for the given molecules in file molecules.sdf and ab-initio charges in charges.chg. Set maximum value for kappa to 1.0, step for the full scan to 0.2, no iterative refinement, sort results according to the relative mean square deviation.\n");
 
 	printf("neemp -m charges --sdf-file molecules.sdf --par-file parameters --chg-out-file output.chg\n\
 		Calculate and store EEM charges to the file output.chg\n");
