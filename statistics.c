@@ -10,6 +10,7 @@
 #include <math.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 
 #include "statistics.h"
 #include "structures.h"
@@ -31,6 +32,9 @@ void calculate_statistics(struct subset * const ss, struct kappa_data * const kd
 	double R_sum_molecules = 0.0;
 
 	double *D_sum_atom_type = (double *) calloc(ts.atom_types_count, sizeof(double));
+
+	/* Reset values left by previous iteration of the Brent's method */
+	memset(kd->stats.max_D_per_atom_type, 0x0, ts.atom_types_count * sizeof(float));
 
 	for(int i = 0; i < ts.molecules_count; i++) {
 		#define MOLECULE ts.molecules[i]
