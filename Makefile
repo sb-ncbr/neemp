@@ -1,6 +1,6 @@
 # NEEMP - Makefile
 # by Tomas Racek (tom@krab1k.net)
-# 2013
+# 2013, 2014
 
 CC=icc
 CFLAGS=-Wall -Wcheck -Wremarks -std=c99 -g -Ofast -ipo -Xhost -wd981 -fopenmp

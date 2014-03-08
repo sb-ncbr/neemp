@@ -2,7 +2,7 @@
  * NEEMP - parameters.c
  *
  * by Tomas Racek (tom@krab1k.net)
- * 2013
+ * 2013, 2014
  *
  * */
 
