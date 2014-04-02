@@ -1,0 +1,26 @@
+NEEMP - EEM parameterization tool
+
+by Tomas Racek "tom (at) krab1k (dot) net", 2013, 2014
+website: http://fi.muni.cz/~xracek/neemp
+
+*Requirements*
+- NEEMP may be compiled either with ICC (+ MKL) or with GCC (fallback option,
+	not recommended for performance reasons)
+- Tested with Intel C/C++ Compiler 14, Intel Math Kernel Library 11.1 or GCC 4.7.3
+
+*Compilation*
+- Simply run 'make' for ICC/MKL version (recommended)
+	or 'make neemp-gnu' for GCC version
+
+*Running*
+- Run ./neemp --help to get the list of all options available.
+- Feel free to modify examples to suit your needs.
+
+*Input files*
+- NEEMP reads SDF files containing records in MOL V2000 or V3000.
+- V3000 is required for molecules with more than 999 atoms (babel
+	should convert these molecules automatically)
+
+*Bugs*
+- If you found a bug, or have a feature request, please send me an email to
+  "tom (at) krab1k (dot) net" with subject prefixed with [NEEMP]. Thank you!
