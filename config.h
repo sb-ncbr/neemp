@@ -21,6 +21,11 @@
 #define MIN_BONDS_PER_MOLECULE 1
 #define MAX_BONDS_PER_MOLECULE 1E5
 
-#define MAX_ABS_CHARGE_DIFF 1.5F
+/* Default per molecule warning constants for --check-charges */
+#define WARN_MIN_R 0.2F
+#define WARN_MAX_RMSD 0.2F
+#define WARN_MAX_MSE 0.2F
+#define WARN_MAX_D_AVG 0.2F
+#define WARN_MAX_D_MAX 1.0F
 
 #endif /* __CONFIG_H__ */

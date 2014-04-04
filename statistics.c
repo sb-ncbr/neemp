@@ -35,7 +35,8 @@ void calculate_statistics(struct subset * const ss, struct kappa_data * const kd
 	double *D_sum_atom_type = (double *) calloc(ts.atom_types_count, sizeof(double));
 
 	/* Reset values left by previous iteration of the Brent's method */
-	memset(kd->stats.max_D_per_atom_type, 0x0, ts.atom_types_count * sizeof(float));
+	for(int i = 0; i < ts.atom_types_count; i++)
+		kd->per_at_stats[i].D_max = 0.0f;
 
 	for(int i = 0; i < ts.molecules_count; i++) {
 		#define MOLECULE ts.molecules[i]
@@ -52,6 +53,9 @@ void calculate_statistics(struct subset * const ss, struct kappa_data * const kd
 		double sum_xx = 0.0;
 		double sum_yy = 0.0;
 
+		double max_diff_per_molecule = 0.0;
+		double D_sum_molecule = 0.0;
+
 		for(int j = 0; j < MOLECULE.atoms_count; j++) {
 			double x_xavg = MOLECULE.atoms[j].reference_charge - MOLECULE.average_charge;
 			double y_yavg = kd->charges[atoms_processed + j] - new_average_charge;
@@ -63,35 +67,46 @@ void calculate_statistics(struct subset * const ss, struct kappa_data * const kd
 			double diff = kd->charges[atoms_processed + j] - MOLECULE.atoms[j].reference_charge;
 			diff2_sum += diff * diff;
 			D_sum_atoms += fabs(diff);
+			D_sum_molecule += fabs(diff);
+
+			if(max_diff_per_molecule < diff)
+				max_diff_per_molecule = diff;
 
 			const int atom_type_idx = get_atom_type_idx(&MOLECULE.atoms[j]);
-			if(fabsf(kd->stats.max_D_per_atom_type[atom_type_idx]) < fabs(diff))
-				kd->stats.max_D_per_atom_type[atom_type_idx] = (float) fabs(diff);
+
+			if(fabsf(kd->per_at_stats[atom_type_idx].D_max) < fabs(diff))
+				kd->per_at_stats[atom_type_idx].D_max = (float) fabs(diff);
 
 			D_sum_atom_type[atom_type_idx] += fabs(diff);
 		}
 
-		MSE_sum_molecules += diff2_sum;
-		RMSD_sum_molecules += sqrt(diff2_sum / MOLECULE.atoms_count);
 		R_sum_molecules += (sum_xy * sum_xy) / (sum_xx * sum_yy);
+		RMSD_sum_molecules += sqrt(diff2_sum / MOLECULE.atoms_count);
+		MSE_sum_molecules += diff2_sum;
+
+		kd->per_molecule_stats[i].R = (float) ((sum_xy * sum_xy) / (sum_xx * sum_yy));
+		kd->per_molecule_stats[i].RMSD = (float) sqrt(diff2_sum / MOLECULE.atoms_count);
+		kd->per_molecule_stats[i].MSE = (float) diff2_sum;
+		kd->per_molecule_stats[i].D_avg = (float) (D_sum_molecule / MOLECULE.atoms_count);
+		kd->per_molecule_stats[i].D_max = (float) max_diff_per_molecule;
 
 		atoms_processed += MOLECULE.atoms_count;
 		#undef MOLECULE
 	}
 
-	kd->stats.D_avg = (float) (D_sum_atoms / ts.atoms_count);
-	kd->stats.R = (float) (R_sum_molecules / ts.molecules_count);
-	kd->stats.RMSD = (float) (RMSD_sum_molecules / ts.molecules_count);
-	kd->stats.MSE = (float) (MSE_sum_molecules / ts.molecules_count);
+	kd->full_stats.R = (float) (R_sum_molecules / ts.molecules_count);
+	kd->full_stats.RMSD = (float) (RMSD_sum_molecules / ts.molecules_count);
+	kd->full_stats.MSE = (float) (MSE_sum_molecules / ts.molecules_count);
+	kd->full_stats.D_avg = (float) (D_sum_atoms / ts.atoms_count);
 
 	/* Calculate per atom type statistics */
 	for(int i = 0; i < ts.atom_types_count; i++)
-		kd->stats.avg_D_per_atom_type[i] = (float) D_sum_atom_type[i] / ts.atom_types[i].atoms_count;
+		kd->per_at_stats[i].D_avg = (float) D_sum_atom_type[i] / ts.atom_types[i].atoms_count;
 
-	kd->stats.D_max = kd->stats.max_D_per_atom_type[0];
+	kd->full_stats.D_max = kd->per_at_stats[0].D_max;
 	for(int i = 1; i < ts.atom_types_count; i++)
-		if(kd->stats.D_max < kd->stats.max_D_per_atom_type[i])
-			kd->stats.D_max = kd->stats.max_D_per_atom_type[i];
+		if(kd->full_stats.D_max < kd->per_at_stats[i].D_max)
+			kd->full_stats.D_max = kd->per_at_stats[i].D_max;
 
 	free(D_sum_atom_type);
 
@@ -139,10 +154,9 @@ void calculate_statistics(struct subset * const ss, struct kappa_data * const kd
 			sum_yy += y_yavg * y_yavg;
 		}
 
-		kd->stats.MSE_per_atom_type[i] = (float) (diff2_sum / ts.atom_types[i].atoms_count);
-		kd->stats.RMSD_per_atom_type[i] = (float) sqrt(diff2_sum / ts.atom_types[i].atoms_count);
-		kd->stats.R_per_atom_type[i] = (float) ((sum_xy * sum_xy) / (sum_xx * sum_yy));
-
+		kd->per_at_stats[i].R = (float) ((sum_xy * sum_xy) / (sum_xx * sum_yy));
+		kd->per_at_stats[i].RMSD = (float) sqrt(diff2_sum / ts.atom_types[i].atoms_count);
+		kd->per_at_stats[i].MSE = (float) (diff2_sum / ts.atom_types[i].atoms_count);
 		#undef AT
 	}
 }
@@ -152,15 +166,22 @@ void check_charges(const struct kappa_data * const kd) {
 
 	assert(kd != NULL);
 
-	int atoms_processed = 0;
+	int bad_molecules = 0;
 
 	for(int i = 0; i < ts.molecules_count; i++) {
-		for(int j = 0; j < ts.molecules[i].atoms_count; j++) {
-			if(fabsf(kd->charges[atoms_processed + j] - ts.molecules[i].atoms[j].reference_charge) > MAX_ABS_CHARGE_DIFF) {
-				fprintf(stderr, "Warning: Abnormal charge differences in molecule %s.\n", ts.molecules[i].name);
-				break;
-			}
+		if(kd->per_molecule_stats[i].R < WARN_MIN_R ||
+		   kd->per_molecule_stats[i].RMSD > WARN_MAX_RMSD ||
+		   kd->per_molecule_stats[i].MSE > WARN_MAX_MSE ||
+		   kd->per_molecule_stats[i].D_avg > WARN_MAX_D_AVG ||
+		   kd->per_molecule_stats[i].D_max > WARN_MAX_D_MAX) {
+			fprintf(stderr, "Warning: Abnormal values for molecule %s\n", ts.molecules[i].name);
+			fprintf(stderr, "R: %6.4f  RMSD: %4.2e  MSE: %4.2e  D_avg: %4.2e  D_max: %4.2e\n\n",
+				kd->per_molecule_stats[i].R, kd->per_molecule_stats[i].RMSD, kd->per_molecule_stats[i].MSE,
+				kd->per_molecule_stats[i].D_avg, kd->per_molecule_stats[i].D_max);
+
+			bad_molecules++;
 		}
-		atoms_processed += ts.molecules[i].atoms_count;
+
 	}
+	fprintf(stderr, "Check charges: %d molecules with abnormal statistics found.\n", bad_molecules);
 }

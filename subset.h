@@ -11,24 +11,14 @@
 
 #include "bitarray.h"
 
-struct statistics {
+struct stats {
 
-	float R;			/* Pearson's correlation squared for each molecule, then averaged */
-	float RMSD;			/* Root-mean-square deviation for each molecule, then averaged */
-	float MSE;			/* Sum of squared differences for each molecules, then averaged */
-	float D_avg;			/* Average absolute difference for all atoms */
-	float D_max;			/* Maximum absolute difference for all atoms */
-
-	/* Statistics per atom type */
-	float *R_per_atom_type;
-	float *RMSD_per_atom_type;
-	float *MSE_per_atom_type;
-	float *max_D_per_atom_type;
-	float *avg_D_per_atom_type;
+	float R;
+	float RMSD;
+	float MSE;
+	float D_avg;
+	float D_max;
 };
-
-void st_init(struct statistics * const st);
-void st_destroy(struct statistics * const st);
 
 struct kappa_data {
 
@@ -41,7 +31,9 @@ struct kappa_data {
 	float *parameters_alpha;
 	float *parameters_beta;
 
-	struct statistics stats;
+	struct stats full_stats;
+	struct stats *per_at_stats;
+	struct stats *per_molecule_stats;
 };
 
 void kd_init(struct kappa_data * const kd);

@@ -68,7 +68,7 @@ static void brent(struct subset * const ss) {
 	/* Find the best so far */
 	int best_idx = 0;
 	for(int i = 1; i < ss->kappa_data_count - 1; i++)
-		if(ss->data[i].stats.R > ss->data[best_idx].stats.R)
+		if(ss->data[i].full_stats.R > ss->data[best_idx].full_stats.R)
 			best_idx = i;
 
 	/* Create initial inverval for Brent */
@@ -118,7 +118,7 @@ static void brent(struct subset * const ss) {
 	KAPPA_DATA_BRENT.kappa = x;
 	perform_calculations(ss, &KAPPA_DATA_BRENT);
 	/* The code is for minimization, so take the negative of R */
-	fw = fv = fx=  - KAPPA_DATA_BRENT.stats.R;
+	fw = fv = fx=  - KAPPA_DATA_BRENT.full_stats.R;
 
 	if(s.verbosity >= VERBOSE_KAPPA) {
 			printf("B> ");
@@ -161,7 +161,7 @@ static void brent(struct subset * const ss) {
 		KAPPA_DATA_BRENT.kappa = u;
 		perform_calculations(ss, &KAPPA_DATA_BRENT);
 		/* The code is for minimization, so take the negative of R */
-		fu = - KAPPA_DATA_BRENT.stats.R;
+		fu = - KAPPA_DATA_BRENT.full_stats.R;
 
 		if(s.verbosity >= VERBOSE_KAPPA) {
 				printf("B> ");
