@@ -69,8 +69,8 @@ void calculate_statistics(struct subset * const ss, struct kappa_data * const kd
 			D_sum_atoms += fabs(diff);
 			D_sum_molecule += fabs(diff);
 
-			if(max_diff_per_molecule < diff)
-				max_diff_per_molecule = diff;
+			if(max_diff_per_molecule < fabs(diff))
+				max_diff_per_molecule = fabs(diff);
 
 			const int atom_type_idx = get_atom_type_idx(&MOLECULE.atoms[j]);
 
