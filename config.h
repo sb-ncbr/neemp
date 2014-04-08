@@ -23,9 +23,11 @@
 
 /* Default per molecule warning constants for --check-charges */
 #define WARN_MIN_R 0.2F
-#define WARN_MAX_RMSD 0.2F
-#define WARN_MAX_MSE 0.2F
+#define WARN_MAX_RMSD 0.5F
+#define WARN_MAX_MSE 1.0F
 #define WARN_MAX_D_AVG 0.2F
 #define WARN_MAX_D_MAX 1.0F
+
+#define WARN_MIN_RCOND 0.000005F
 
 #endif /* __CONFIG_H__ */

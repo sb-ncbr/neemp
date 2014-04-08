@@ -229,20 +229,29 @@ void calculate_charges(struct subset * const ss, struct kappa_data * const kd) {
 		b[n] = MOLECULE.sum_of_charges;
 
 		/* Solve EEM system */
-		int info;
 		#ifdef USE_MKL
 		int ipiv[n + 1];
-		info = LAPACKE_sspsv(LAPACK_COL_MAJOR, 'U', n + 1, 1, A, ipiv, b, n + 1);
+
+		/* int LAPACKE_sspsvx(int matrix_layout, char fact, char uplo, int n, int nrhs, const float *ap, float *afp,
+		 * 	int *ipiv, const float *b, int ldb, float *x, int ldx, float *rcond, float *ferr, float *berr ); */
+
+		float *Ap = (float *) mkl_malloc(((n + 1) * (n + 2)) / 2 * sizeof(float), 32);
+		float *x = (float *) mkl_malloc((n + 1) * sizeof(float), 32);
+		float rcond;
+		float berr, ferr;
+
+		LAPACKE_sspsvx(LAPACK_COL_MAJOR, 'N', 'U', n + 1, 1, A, Ap, ipiv, b, n + 1, x, n + 1, &rcond, &ferr, &berr);
+
 		#else
 		info = GEM_solver(A, b, n + 1);
 		#endif /* USE_MKL */
 
-		if(info)
-			fprintf(stderr, "Cannot solve EEM system for molecule %s.\n", MOLECULE.name);
+		if(s.mode == MODE_CHARGES && rcond < WARN_MIN_RCOND)
+			fprintf(stderr, "Ill-conditioned EEM system for molecule %s. Charges might be inaccurate.\n", MOLECULE.name);
 
 		/* Store computed charges */
 		for(int j = 0; j < n; j++)
-			kd->charges[starts[i] + j] = b[j];
+			kd->charges[starts[i] + j] = x[j];
 
 		#undef MOLECULE
 
@@ -250,6 +259,8 @@ void calculate_charges(struct subset * const ss, struct kappa_data * const kd) {
 		#ifdef USE_MKL
 		mkl_free(A);
 		mkl_free(b);
+		mkl_free(Ap);
+		mkl_free(x);
 		#else
 		free(A);
 		free(b);
