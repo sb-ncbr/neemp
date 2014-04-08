@@ -16,6 +16,14 @@ manpage=neemp.1
 
 all: $(sources) $(headers) neemp
 
+depend: .depend
+
+.depend: $(sources)
+	rm -f ./.depend
+	$(CC) $(CFLAGS) -MM $^ >> ./.depend;
+
+include .depend
+
 neemp-gnu: EXTRA_DEFINE=
 neemp-gnu: CC=gcc
 neemp-gnu: CFLAGS=-Wall -Wextra -std=c99 -pedantic -O3 -march=native -g -fopenmp
@@ -23,11 +31,10 @@ neemp-gnu: libraries=-lm -fopenmp
 neemp-gnu: $(objects) neemp
 
 neemp: $(objects)
-	$(CC) $(objects) $(libraries) -o neemp
+	$(CC) $(objects) $(libraries) -o ../neemp
 
-.c.o: $(headers) $(sources)
+%.o: %.c
 	$(CC) $(CFLAGS) $(EXTRA_DEFINE) -c $<
-man: neemp
-	help2man -N ./neemp -o $(manpage)
+
 clean:
 	rm -f $(objects) $(manpage) $(binaries)
