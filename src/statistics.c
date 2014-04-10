@@ -86,7 +86,7 @@ void calculate_statistics(struct subset * const ss, struct kappa_data * const kd
 
 		kd->per_molecule_stats[i].R = (float) ((sum_xy * sum_xy) / (sum_xx * sum_yy));
 		kd->per_molecule_stats[i].RMSD = (float) sqrt(diff2_sum / MOLECULE.atoms_count);
-		kd->per_molecule_stats[i].MSE = (float) diff2_sum;
+		kd->per_molecule_stats[i].MSE = (float) diff2_sum / MOLECULE.atoms_count;
 		kd->per_molecule_stats[i].D_avg = (float) (D_sum_molecule / MOLECULE.atoms_count);
 		kd->per_molecule_stats[i].D_max = (float) max_diff_per_molecule;
 
