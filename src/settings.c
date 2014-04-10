@@ -220,11 +220,11 @@ void parse_options(int argc, char **argv) {
 			case 22:
 				if(!strcmp(optarg, "small")) {
 					s.kappa_max = 1.5f;
-					s.full_scan_precision = 0.001f;
+					s.full_scan_precision = 0.1f;
 				}
 				else if(!strcmp(optarg, "protein")) {
 					s.kappa_max = 0.01f;
-					s.full_scan_precision = 0.0001f;
+					s.full_scan_precision = 0.001f;
 				}
 				else
 					EXIT_ERROR(ARG_ERROR, "Invalid kappa-preset value: %s\n", optarg);
