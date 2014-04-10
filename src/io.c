@@ -536,7 +536,9 @@ void output_charges_stats(const struct subset * const ss) {
 	for(int i = 0; i < ts.molecules_count; i++) {
 		fprintf(f, "\n");
 		fprintf(f, "%s\n", ts.molecules[i].name);
-		fprintf(f, "%d\n", ts.molecules[i].atoms_count);
+		fprintf(f, "R: %6.4f  RMSD: %4.2e  MSE: %4.2e  D_avg: %4.2e  D_max: %4.2e\n",
+			ss->best->per_molecule_stats[i].R, ss->best->per_molecule_stats[i].RMSD, ss->best->per_molecule_stats[i].MSE,
+			ss->best->per_molecule_stats[i].D_avg, ss->best->per_molecule_stats[i].D_max);
 		for(int j = 0; j < ts.molecules[i].atoms_count; j++) {
 			#define ATOM ts.molecules[i].atoms[j]
 			fprintf(f, "%4d\t%2s %1d\t%9.6f\t%9.6f\t%9.6f\n", j + 1, convert_Z_to_symbol(ATOM.Z), ATOM.bond_order,
