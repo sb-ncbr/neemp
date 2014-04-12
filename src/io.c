@@ -88,8 +88,12 @@ void load_charges(void) {
 			fprintf(stderr, "Molecule %s not loaded from .sdf file. Skipping the charge record (%s).\n", line, s.chg_file);
 			/* Skip the whole record */
 			do {
-				if(!fgets(line, MAX_LINE_LEN, f))
-					EXIT_ERROR(IO_ERROR, "Reading failed when skipping record (%s).\n", s.chg_file);
+				if(!fgets(line, MAX_LINE_LEN, f)) {
+					if(feof(f))
+						break;
+					else
+						EXIT_ERROR(IO_ERROR, "Reading failed when skipping record (%s).\n", s.chg_file);
+				}
 			} while(strcmp(line, "\n"));
 
 			/* Go to the next record */
