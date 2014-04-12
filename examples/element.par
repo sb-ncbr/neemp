@@ -1,0 +1,14 @@
+# NEEMP (1.1-git) parameters file
+# Format:
+# <group-atom-types-by>: element, element_bond
+# <kappa-value>
+# <number-of-atom-types>
+# <atom-type-specifier> <parameter-A> <parameter-B>
+element
+0.1935
+5
+ N         	 2.5452	 0.2625
+ O         	 2.6414	 0.4142
+ C         	 2.4644	 0.2429
+ H         	 2.3595	 0.5927
+ S         	 2.4658	 0.1635

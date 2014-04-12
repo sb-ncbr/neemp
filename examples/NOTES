@@ -1,0 +1,11 @@
+Sets:
+set01.sdf -- 500 molecules (H, C, N, O, S)
+set02.sdf -- 500 molecules (H, C, N, O, S)
+set03.sdf -- 500 molecules (H, C, N, O, S)
+
+Charges:
+charges.chg -- HF/6-31GH, Mulliken (includes charges for all molecules in set01, set02 and set03)
+
+Parameters:
+element.par -- parameters calculated using set03 for atom types determined by element only
+element_bond.par -- parameters calculated using set03 for atom types determined by element + maximum bond order
