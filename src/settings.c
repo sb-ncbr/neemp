@@ -43,6 +43,7 @@ static struct option long_options[] = {
 	{"limit-iters", required_argument, 0, 40},
 	{"limit-time", required_argument, 0, 41},
 	{"check-charges", no_argument, 0, 50},
+	{"max-threads", required_argument, 0, 51},
 	{NULL, 0, 0, 0}
 };
 
@@ -69,6 +70,7 @@ void s_init(void) {
 	s.limit_iters = NO_LIMIT_ITERS;
 	s.limit_time = NO_LIMIT_TIME;
 	s.check_charges = 0;
+	s.max_threads = 1;
 }
 
 /* Prints help if --version is issued */
@@ -90,6 +92,7 @@ static void print_help(void) {
 	printf("\nOptions:\n");
 	printf("  -h, --help			 display this help and exit\n");
 	printf("      --version			 display version information and exit\n");
+	printf("      --max-threads N		 use up to N threads to solve EEM system in parallel\n");
 	printf("  -m, --mode MODE		 set mode for the NEEMP. Valid choices are: info, params, charges, cross. (required)\n");
 	printf("      --sdf-file FILE		 SDF file (required)\n");
 	printf("      --atom-types-by METHOD	 classify atoms according to the METHOD. Valid choices are: element, element_bond.\n");
@@ -274,6 +277,9 @@ void parse_options(int argc, char **argv) {
 			case 50:
 				s.check_charges = 1;
 				break;
+			case 51:
+				s.max_threads =  atoi(optarg);
+				break;
 			case '?':
 				EXIT_ERROR(ARG_ERROR, "%s", "Try -h/--help.\n");
 			default:
@@ -294,6 +300,9 @@ void check_settings(void) {
 
 	if(s.sdf_file[0] == '\0')
 		EXIT_ERROR(ARG_ERROR, "%s", "No .sdf file provided.\n");
+
+	if(s.max_threads < 1)
+		EXIT_ERROR(ARG_ERROR, "%s", "Maximum number of threads has to be at least 1 (default).\n");
 
 	if(s.mode == MODE_PARAMS) {
 		if(s.chg_file[0] == '\0')

@@ -81,6 +81,8 @@ struct settings {
 	time_t limit_time;
 
 	int check_charges;
+
+	int max_threads;
 };
 
 void s_init(void);
