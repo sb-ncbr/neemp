@@ -1,7 +1,7 @@
 Sets:
-set01.sdf -- 500 molecules (H, C, N, O, S)
-set02.sdf -- 500 molecules (H, C, N, O, S)
-set03.sdf -- 500 molecules (H, C, N, O, S)
+set01.sdf -- 500 molecules (H, C, N, O, S), records in MOL V2000
+set02.sdf -- 500 molecules (H, C, N, O, S), records in MOL V2000
+set03.sdf -- 500 molecules (H, C, N, O, S), records in MOL V3000
 
 Charges:
 charges.chg -- HF/6-31GH, Mulliken (includes charges for all molecules in set01, set02 and set03)
