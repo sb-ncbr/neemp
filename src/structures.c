@@ -329,18 +329,18 @@ void at_format_text(const struct atom_type * const at, char * const buff) {
 	/* Note that buff should have size at least 9, this is not checked! */
 	switch(s.at_customization) {
 		case AT_CUSTOM_ELEMENT:
-			sprintf(buff, "%2s         ", convert_Z_to_symbol(at->Z));
+			snprintf(buff, 10, "%2s       ", convert_Z_to_symbol(at->Z));
 			break;
 		case AT_CUSTOM_ELEMENT_BOND:
-			sprintf(buff, "%2s %1d      ", convert_Z_to_symbol(at->Z), at->bond_order);
+			snprintf(buff, 10, "%2s %1d     ", convert_Z_to_symbol(at->Z), at->bond_order);
 			break;
 		case AT_CUSTOM_PARTNER:
 			/* TODO */
-			sprintf(buff, "%2s         ", convert_Z_to_symbol(at->Z));
+			snprintf(buff, 10, "%2s       ", convert_Z_to_symbol(at->Z));
 			break;
 		case AT_CUSTOM_VALENCE:
 			/* TODO */
-			sprintf(buff, "%2s         ", convert_Z_to_symbol(at->Z));
+			snprintf(buff, 10, "%2s       ", convert_Z_to_symbol(at->Z));
 			break;
 		default:
 			/* Something bad happened */
