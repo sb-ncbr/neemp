@@ -354,7 +354,7 @@ int get_atom_type_idx_from_text(const char * const str) {
 
 	struct atom a;
 
-	char symbol[2];
+	char symbol[3];
 	int bonds;
 
 	switch(s.at_customization) {
