@@ -28,21 +28,21 @@ extern const struct settings s;
 static void fill_EEM_matrix_packed(float * const A, const struct molecule * const m, const struct kappa_data * const kd);
 #else
 static void fill_EEM_matrix_full(float * const A, const struct molecule * const m, const struct kappa_data * const kd);
-static int GEM_solver(float * const A, float * const b, int n);
+static int GEM_solver(float * const A, float * const b, long int n);
 #endif /* USE_MKL */
 
 #ifdef NOT_USED
-static void print_matrix_packed(const float * const A, int n);
-static void print_matrix_full(const float * const A, int n);
+static void print_matrix_packed(const float * const A, long int n);
+static void print_matrix_full(const float * const A, long int n);
 
 /* Print matrix in packed storage format */
-static void print_matrix_packed(const float * const A, int n) {
+static void print_matrix_packed(const float * const A, long int n) {
 
 	#define U_IDX(x, y) (x + (y * (y + 1))/2)
-	for(int i = 0; i < n; i++) {
-		for(int j = 0; j < i; j++)
+	for(long int i = 0; i < n; i++) {
+		for(long int j = 0; j < i; j++)
 			printf("       ");
-		for(int j = i; j < n; j++)
+		for(long int j = i; j < n; j++)
 			printf("%6.4f ", A[U_IDX(i, j)]);
 
 		printf("\n");
@@ -54,8 +54,8 @@ static void print_matrix_packed(const float * const A, int n) {
 static void print_matrix_full(const float * const A, int n) {
 
 	#define IDX(x, y) (x * n + y)
-	for(int i = 0; i < n; i++) {
-		for(int j = 0; j < n; j++)
+	for(long int i = 0; i < n; i++) {
+		for(long int j = 0; j < n; j++)
 			fprintf(stderr, "%6.3f ", A[IDX(i, j)]);
 
 		fprintf(stderr, "\n");
@@ -73,15 +73,15 @@ static void fill_EEM_matrix_packed(float * const A, const struct molecule * cons
 	assert(m != NULL);
 	assert(kd != NULL);
 
-	const int n = m->atoms_count;
+	const long int n = m->atoms_count;
 
 	/* Following #define works only for i <= j */
 	#define U_IDX(x, y) (x + (y * (y + 1))/2)
 
 	/* Fill the upper half of the n * n block */
-	for(int i = 0; i < n; i++) {
+	for(long int i = 0; i < n; i++) {
 		A[U_IDX(i, i)] = kd->parameters_beta[get_atom_type_idx(&m->atoms[i])];
-		for(int j = i + 1; j < n; j++) {
+		for(long int j = i + 1; j < n; j++) {
 			if(s.mode == MODE_PARAMS)
 				A[U_IDX(i, j)] = (float) (kd->kappa * m->atoms[i].rdists[j]);
 			else
@@ -90,7 +90,7 @@ static void fill_EEM_matrix_packed(float * const A, const struct molecule * cons
 	}
 
 	/* Fill last column */
-	for(int i = 0; i < n; i++)
+	for(long int i = 0; i < n; i++)
 		A[U_IDX(i, n)] = 1.0f;
 
 	/* Set the bottom right element to zero */
@@ -105,12 +105,12 @@ static void fill_EEM_matrix_full(float * const A, const struct molecule * const 
 	assert(m != NULL);
 	assert(kd != NULL);
 
-	const int n = m->atoms_count;
+	const long int n = m->atoms_count;
 
 	#define IDX(x, y) (x * (n + 1) + y)
 	/* Fill the n x n block */
-	for(int i = 0; i < n; i++) {
-		for(int j = 0; j < n; j++)
+	for(long int i = 0; i < n; i++) {
+		for(long int j = 0; j < n; j++)
 			if(i == j)
 				A[IDX(i, i)] = kd->parameters_beta[get_atom_type_idx(&m->atoms[i])];
 			else {
@@ -135,22 +135,22 @@ static void fill_EEM_matrix_full(float * const A, const struct molecule * const 
 }
 
 /* Solve the system of linear eqns using GEM w/ partial pivoting */
-static int GEM_solver(float * const A, float * const b, int n) {
+static int GEM_solver(float * const A, float * const b, long int n) {
 
 	assert(A != NULL);
 	assert(b != NULL);
 
 	#define IDX(x, y) (x * n + y)
 	/* GEM with partial pivoting */
-	for(int i = 0; i < n; i++) {
+	for(long int i = 0; i < n; i++) {
 		/* Find the largest pivot element */
-		int best_row = i;
-		for(int j = i + 1; j < n; j++)
+		long int best_row = i;
+		for(long int j = i + 1; j < n; j++)
 			if(fabsf(A[IDX(best_row, i)]) < fabsf(A[IDX(j, i)]))
 				best_row = j;
 
 		/* Swap rows i and best_row */
-		for(int j = 0; j < n; j++) {
+		for(long int j = 0; j < n; j++) {
 			float tmp = A[IDX(best_row, j)];
 			A[IDX(best_row, j)] = A[IDX(i, j)];
 			A[IDX(i, j)] = tmp;
@@ -166,9 +166,9 @@ static int GEM_solver(float * const A, float * const b, int n) {
 			return i + 1;
 
 		/* Actual elimination */
-		for(int j = i + 1; j < n; j++) {
+		for(long int j = i + 1; j < n; j++) {
 			const float mult = A[IDX(j, i)] / A[IDX(i, i)];
-			for(int k = i + 1; k < n; k++)
+			for(long int k = i + 1; k < n; k++)
 				A[IDX(j, k)] -= mult * A[IDX(i, k)];
 
 			b[j] -= mult * b[i];
@@ -176,9 +176,9 @@ static int GEM_solver(float * const A, float * const b, int n) {
 	}
 
 	/* Backward substitution */
-	for(int i = n - 1; i >= 0; i--) {
+	for(long int i = n - 1; i >= 0; i--) {
 		b[i] /= A[IDX(i, i)];
-		for(int j = i - 1; j >= 0; j--)
+		for(long int j = i - 1; j >= 0; j--)
 			b[j] -= A[IDX(j, i)] * b[i];
 	}
 	#undef IDX
@@ -203,7 +203,7 @@ void calculate_charges(struct subset * const ss, struct kappa_data * const kd) {
 	#pragma omp parallel for num_threads(ts.molecules_count < s.max_threads ? ts.molecules_count : s.max_threads)
 	for(int i = 0; i < ts.molecules_count; i++) {
 		#define MOLECULE ts.molecules[i]
-		const int n = MOLECULE.atoms_count;
+		const long int n = MOLECULE.atoms_count;
 
 		#ifdef USE_MKL
 		float *A = (float *) mkl_malloc(((n + 1) * (n + 2)) / 2 * sizeof(float), 32);
