@@ -83,6 +83,8 @@ struct settings {
 	int check_charges;
 
 	int max_threads;
+
+	float total_charge;
 };
 
 void s_init(void);

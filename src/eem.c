@@ -226,7 +226,10 @@ void calculate_charges(struct subset * const ss, struct kappa_data * const kd) {
 		for(int j = 0; j < n; j++)
 			b[j] = - kd->parameters_alpha[get_atom_type_idx(&MOLECULE.atoms[j])];
 
-		b[n] = MOLECULE.sum_of_charges;
+		if(s.mode == MODE_CHARGES)
+			b[n] = s.total_charge;
+		else
+			b[n] = MOLECULE.sum_of_charges;
 
 		/* Solve EEM system */
 		#ifdef USE_MKL
