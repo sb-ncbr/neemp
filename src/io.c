@@ -7,6 +7,8 @@
  * */
 
 #include <assert.h>
+#include <libxml/parser.h>
+#include <libxml/tree.h>
 #include <math.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -128,79 +130,149 @@ void load_charges(void) {
 	fclose(f);
 }
 
+static xmlNodePtr get_child_node_by_name(xmlNodePtr node, const char * const name) {
+
+	xmlNodePtr curr_node = node->children;
+
+	while(curr_node != NULL) {
+
+		if(!strcmp((char *) curr_node->name, name))
+			return curr_node;
+
+		curr_node = curr_node->next;
+	}
+
+	return NULL;
+}
+
+static xmlNodePtr get_child_node_by_name_and_property(xmlNodePtr node, const char * const name, const char * const property) {
+
+	xmlNodePtr curr_node = node->children;
+
+	while(curr_node != NULL) {
+
+		if(!strcmp((char *) curr_node->name, name) && xmlGetProp(curr_node, BAD_CAST property)) {
+			return curr_node;
+		}
+
+		curr_node = curr_node->next;
+	}
+
+	return NULL;
+}
+
 void load_parameters(struct kappa_data * const kd) {
 
 	assert(kd != NULL);
 
-	FILE * const f = fopen(s.par_file, "r");
-	if(!f)
-		EXIT_ERROR(IO_ERROR, "Cannot open .par file \"%s\".\n", s.par_file);
+	xmlDocPtr doc = NULL;
+	xmlNodePtr root_node = NULL;
 
-	char line[MAX_LINE_LEN];
-	memset(line, 0x0, MAX_LINE_LEN);
+	if((doc = xmlReadFile(s.par_file, NULL, XML_PARSE_NOBLANKS)) == NULL)
+		EXIT_ERROR(IO_ERROR, "Cannot open or parse .par file \"%s\".\n", s.par_file);
 
-	/* Skip comments */
-	do {
-		if(!fgets(line, MAX_LINE_LEN, f))
-			EXIT_ERROR(IO_ERROR, "Invalid format of parameters file (%s).\n", s.par_file);
-	} while(line[0] == '#');
+	root_node = xmlDocGetRootElement(doc);
 
-	/* Remove trailing newline */
-	line[strlen(line) - 1] = '\0';
+
+	xmlNodePtr properties_node = get_child_node_by_name(root_node, "Properties");
+
+	xmlNodePtr atom_type_node = get_child_node_by_name_and_property(properties_node, "Property", "AtomType");
+	xmlChar *atom_type = xmlGetProp(atom_type_node, BAD_CAST "AtomType");
 
 	/* Check if the command-line settings matches the entry in the .par file */
 	switch(s.at_customization) {
 
 		case AT_CUSTOM_ELEMENT:
-			if(strcmp(line, "element"))
-				EXIT_ERROR(RUN_ERROR, "atom-types-by \"%s\" doesn't match with provided settings.\n", line);
+			if(strcmp((char *) atom_type, "Element"))
+				EXIT_ERROR(RUN_ERROR, "atom-types-by \"%s\" doesn't match with provided settings.\n", (char *) atom_type);
 			break;
 		case AT_CUSTOM_ELEMENT_BOND:
-			if(strcmp(line, "element_bond"))
-				EXIT_ERROR(RUN_ERROR, "atom-types-by \"%s\" doesn't match with provided settings.\n", line);
+			if(strcmp((char *) atom_type, "ElemBond"))
+				EXIT_ERROR(RUN_ERROR, "atom-types-by \"%s\" doesn't match with provided settings.\n", (char *) atom_type);
 			break;
 		case AT_CUSTOM_PARTNER:
-			if(strcmp(line, "partner"))
-				EXIT_ERROR(RUN_ERROR, "atom-types-by \"%s\" doesn't match with provided settings.\n", line);
+			if(strcmp((char *) atom_type, "Partner"))
+				EXIT_ERROR(RUN_ERROR, "atom-types-by \"%s\" doesn't match with provided settings.\n", (char *) atom_type);
 			break;
 		case AT_CUSTOM_VALENCE:
-			if(strcmp(line, "valence"))
-				EXIT_ERROR(RUN_ERROR, "atom-types-by \"%s\" doesn't match with provided settings.\n", line);
+			if(strcmp((char *) atom_type, "Valence"))
+				EXIT_ERROR(RUN_ERROR, "atom-types-by \"%s\" doesn't match with provided settings.\n", (char *) atom_type);
 			break;
 	}
 
-	if(!fgets(line, MAX_LINE_LEN, f))
-		EXIT_ERROR(IO_ERROR, "Invalid format of parameters file (%s).\n", s.par_file);
+	xmlNodePtr parameters_node = get_child_node_by_name(root_node, "Parameters");
+	if(parameters_node == NULL)
+		EXIT_ERROR(IO_ERROR, "%s", "Ill-formed .par file. No Parameters node.\n");
 
-	/* Load kappa */
-	sscanf(line, "%f\n", &kd->kappa);
+	xmlChar *kappa = xmlGetProp(parameters_node, BAD_CAST "Kappa");
 
-	if(!fgets(line, MAX_LINE_LEN, f))
-		EXIT_ERROR(IO_ERROR, "Invalid format of parameters file (%s).\n", s.par_file);
+	if(kappa == NULL)
+		EXIT_ERROR(IO_ERROR, "%s", "Ill-formed .par file. No Kappa property.\n");
 
-	/* Load number of atom types in the .par file */
-	int atom_types_count;
-	sscanf(line, "%d\n", &atom_types_count);
+	kd->kappa = (float) atof((char *) kappa);
 
-	if(ts.atom_types_count > atom_types_count)
-		EXIT_ERROR(RUN_ERROR, "Insufficient number of atom types in .par file (%d) in comparison to .sdf file (%d).\n", atom_types_count, ts.atom_types_count);
+	xmlFree(kappa);
+	xmlFree(atom_type);
 
-	/* Read actual parameters */
-	for(int i = 0; i < atom_types_count; i++) {
+	xmlNodePtr element_node = parameters_node->children;
 
-		if(!fgets(line, MAX_LINE_LEN, f))
-			EXIT_ERROR(IO_ERROR, "Invalid format of parameters (%s).\n", s.par_file);
+	while(element_node != NULL) {
 
-		/* Determine atom type from string */
-		int atom_type_idx = get_atom_type_idx_from_text(line);
+		xmlChar *symbol = xmlGetProp(element_node, BAD_CAST "Name");
+		if(symbol == NULL)
+			EXIT_ERROR(IO_ERROR, "%s", "Ill-formed .par file. No Name property.\n");
 
-		if(atom_type_idx != NOT_FOUND) {
-			/* Read alpha and beta parameters */
-			sscanf(line + 9, "%f %f\n", &kd->parameters_alpha[atom_type_idx], &kd->parameters_beta[atom_type_idx]);
+		xmlNodePtr ab_node = element_node->children;
+		while(ab_node != NULL) {
+
+			xmlChar *parameter_a = NULL, *parameter_b = NULL;
+
+			char buff[10];
+			switch(s.at_customization) {
+
+				case AT_CUSTOM_ELEMENT:
+					snprintf(buff, 10, "%2s", (char *) symbol);
+					break;
+				case AT_CUSTOM_ELEMENT_BOND: {
+					xmlChar *bond_order = xmlGetProp(ab_node, BAD_CAST "Type");
+					if(!bond_order)
+						EXIT_ERROR(IO_ERROR, "Could not load parameters for element %s\n", (char *) symbol);
+
+					int bond = atoi((char *) bond_order);
+
+					snprintf(buff, 10, "%2s %1d", (char *) symbol, bond);
+					break;
+				}
+				default:
+					assert(0);
+			}
+
+			parameter_a = xmlGetProp(ab_node, BAD_CAST "A");
+			parameter_b = xmlGetProp(ab_node, BAD_CAST "B");
+
+			if(!parameter_a || !parameter_b)
+				EXIT_ERROR(IO_ERROR, "Could not load parameters for element %s\n", (char *) symbol);
+
+			int atom_type_idx = get_atom_type_idx_from_text(buff);
+			if(atom_type_idx != NOT_FOUND) {
+				/* Store alpha and beta parameters */
+				kd->parameters_alpha[atom_type_idx] = (float) atof((char *) parameter_a);
+				kd->parameters_beta[atom_type_idx] = (float) atof((char *) parameter_b);
+			}
+
+			xmlFree(parameter_a);
+			xmlFree(parameter_b);
+
+			ab_node = ab_node->next;
 		}
+
+		xmlFree(symbol);
+
+		element_node = element_node->next;
 	}
 
-	fclose(f);
+	xmlFreeDoc(doc);
+	xmlCleanupParser();
 
 	/* Check if we load all necessary parameters */
 	for(int i = 0; i < ts.atom_types_count; i++) {
@@ -560,43 +632,77 @@ void output_parameters(const struct subset * const ss) {
 	assert(ss != NULL);
 	assert(ss->best != NULL);
 
-	FILE *f = fopen(s.par_out_file, "w");
-	if(!f)
-		EXIT_ERROR(IO_ERROR, "Cannot open file %s for writing the parameters.\n", s.par_out_file);
+	xmlDocPtr doc = NULL;
+	xmlNodePtr root_node = NULL;
 
+	doc = xmlNewDoc(BAD_CAST "1.0");
 
-	fprintf(f, "# NEEMP (%s) parameters file\n", APP_VERSION);
-	fprintf(f, "# Format:\n");
-	fprintf(f, "# <group-atom-types-by>: element, element_bond\n");
-	fprintf(f, "# <kappa-value>\n");
-	fprintf(f, "# <number-of-atom-types>\n");
-	fprintf(f, "# <atom-type-specifier> <parameter-A> <parameter-B>\n");
+	root_node = xmlNewNode(NULL, BAD_CAST "ParameterSet");
+	xmlDocSetRootElement(doc, root_node);
+
+	xmlNodePtr params_node = xmlNewChild(root_node, NULL, BAD_CAST "Parameters", NULL);
+	xmlNodePtr properties_node = xmlNewChild(root_node, NULL, BAD_CAST "Properties", NULL);
+
+	xmlNodePtr atom_type_node = xmlNewChild(properties_node, NULL, BAD_CAST "Property", NULL);
+
+	char buff[10];
+
 	switch(s.at_customization) {
+
 		case AT_CUSTOM_ELEMENT:
-			fprintf(f, "element\n");
+			snprintf(buff, 10, "Element");
 			break;
 		case AT_CUSTOM_ELEMENT_BOND:
-			fprintf(f, "element_bond\n");
+			snprintf(buff, 10, "ElemBond");
 			break;
 		case AT_CUSTOM_PARTNER:
-			fprintf(f, "partner\n");
+			snprintf(buff, 10, "Partner");
 			break;
 		case AT_CUSTOM_VALENCE:
-			fprintf(f, "valence\n");
+			snprintf(buff, 10, "Valence");
 			break;
-		default:
-			/* We should not be here */
-			assert(0);
 	}
 
-	fprintf(f, "%6.4f\n", ss->best->kappa);
-	fprintf(f, "%d\n", ts.atom_types_count);
+	xmlNewProp(atom_type_node, BAD_CAST "AtomType", BAD_CAST buff);
+
+	snprintf(buff, 10, "%6.4f", ss->best->kappa);
+	xmlNewProp(params_node, BAD_CAST "Kappa", BAD_CAST buff);
+	xmlAddChild(root_node, params_node);
 
 	for(int i = 0; i < ts.atom_types_count; i++) {
-		char buff[10];
-		at_format_text(&ts.atom_types[i], buff);
-		fprintf(f, "%s\t%7.4f\t%7.4f\n", buff, ss->best->parameters_alpha[i], ss->best->parameters_beta[i]);
+
+		snprintf(buff, 10, "%2s", convert_Z_to_symbol(ts.atom_types[i].Z));
+
+		xmlNodePtr element_node = NULL;
+		xmlNodePtr curr_node = params_node->children;
+
+		while(curr_node != NULL) {
+			if(!strncmp((char *) xmlGetProp(curr_node, BAD_CAST "Name"), buff, 10))
+				element_node = curr_node;
+
+			curr_node = curr_node->next;
+		}
+
+		if(!element_node) {
+			element_node = xmlNewChild(params_node, NULL, BAD_CAST "Element", NULL);
+			xmlNewProp(element_node, BAD_CAST "Name", BAD_CAST buff);
+		}
+
+		xmlNodePtr bond_node = xmlNewChild(element_node, NULL, BAD_CAST "Bond", NULL);
+
+		if(s.at_customization == AT_CUSTOM_ELEMENT_BOND) {
+			snprintf(buff, 10, "%d", ts.atom_types[i].bond_order);
+			xmlNewProp(bond_node, BAD_CAST "Type", BAD_CAST buff);
+		}
+
+		snprintf(buff, 10, "%6.4f", ss->best->parameters_alpha[i]);
+		xmlNewProp(bond_node, BAD_CAST "A", BAD_CAST buff);
+		snprintf(buff, 10,"%6.4f", ss->best->parameters_beta[i]);
+		xmlNewProp(bond_node, BAD_CAST "B", BAD_CAST buff);
 	}
 
-	fclose(f);
+	if(xmlSaveFormatFile(s.par_out_file, doc, 1) == -1)
+		EXIT_ERROR(IO_ERROR, "Cannot open file %s for writing the parameters.\n", s.par_out_file);
+
+	xmlFreeDoc(doc);
 }
