@@ -61,6 +61,22 @@ void ss_destroy(struct subset * const ss) {
 	free(ss->data);
 }
 
+/* Print loaded parameters */
+void print_parameters(const struct kappa_data * const kd) {
+
+	assert(kd != NULL);
+
+	printf("Loaded parameters:\n");
+	printf("Atom type             A       B\n");
+	for(int i = 0; i < ts.atom_types_count; i++) {
+		char buff[10];
+		at_format_text(&ts.atom_types[i], buff);
+		printf(" %s   \t%7.4f\t%7.4f\n", buff, kd->parameters_alpha[i], kd->parameters_beta[i]);
+	}
+
+	printf("\n");
+}
+
 /* Prints the parameters and associated stats */
 void print_results(const struct subset * const ss) {
 
