@@ -173,11 +173,12 @@ void load_parameters(struct kappa_data * const kd) {
 
 	root_node = xmlDocGetRootElement(doc);
 
-
 	xmlNodePtr properties_node = get_child_node_by_name(root_node, "Properties");
 
 	xmlNodePtr atom_type_node = get_child_node_by_name_and_property(properties_node, "Property", "AtomType");
 	xmlChar *atom_type = xmlGetProp(atom_type_node, BAD_CAST "AtomType");
+	if(atom_type == NULL)
+		EXIT_ERROR(IO_ERROR, "%s", "Ill-formed .par file. No AtomType property.\n");
 
 	/* Check if the command-line settings matches the entry in the .par file */
 	if(strcmp((char *) atom_type, get_atom_types_by_string(s.at_customization)))
@@ -225,6 +226,7 @@ void load_parameters(struct kappa_data * const kd) {
 					int bond = atoi((char *) bond_order);
 
 					snprintf(buff, 10, "%2s %1d", (char *) symbol, bond);
+					xmlFree(bond_order);
 					break;
 				}
 				default:
@@ -630,7 +632,7 @@ void output_parameters(const struct subset * const ss) {
 	xmlNodePtr atom_type_node = xmlNewChild(properties_node, NULL, BAD_CAST "Property", NULL);
 
 	char buff[10];
-	snprintf(buff, 10, get_atom_types_by_string(s.at_customization));
+	snprintf(buff, 10, "%s", get_atom_types_by_string(s.at_customization));
 
 	xmlNewProp(atom_type_node, BAD_CAST "AtomType", BAD_CAST buff);
 
