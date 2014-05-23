@@ -33,10 +33,10 @@ enum sort_mode {
 
 enum atom_type_customization {
 
-	AT_CUSTOM_ELEMENT,
-	AT_CUSTOM_ELEMENT_BOND,
-	AT_CUSTOM_PARTNER,
-	AT_CUSTOM_VALENCE
+	AT_CUSTOM_ELEMENT = 0,
+	AT_CUSTOM_ELEMENT_BOND = 1,
+	AT_CUSTOM_PARTNER = 2,
+	AT_CUSTOM_VALENCE = 3
 };
 
 enum discarding_mode {
@@ -92,5 +92,7 @@ void s_init(void);
 void parse_options(int argc, char **argv);
 void check_settings(void);
 void print_settings(void);
+
+char *get_atom_types_by_string(enum atom_type_customization atc);
 
 #endif /* __SETTINGS_H__ */

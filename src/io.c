@@ -180,25 +180,9 @@ void load_parameters(struct kappa_data * const kd) {
 	xmlChar *atom_type = xmlGetProp(atom_type_node, BAD_CAST "AtomType");
 
 	/* Check if the command-line settings matches the entry in the .par file */
-	switch(s.at_customization) {
-
-		case AT_CUSTOM_ELEMENT:
-			if(strcmp((char *) atom_type, "Element"))
-				EXIT_ERROR(RUN_ERROR, "atom-types-by \"%s\" doesn't match with provided settings.\n", (char *) atom_type);
-			break;
-		case AT_CUSTOM_ELEMENT_BOND:
-			if(strcmp((char *) atom_type, "ElemBond"))
-				EXIT_ERROR(RUN_ERROR, "atom-types-by \"%s\" doesn't match with provided settings.\n", (char *) atom_type);
-			break;
-		case AT_CUSTOM_PARTNER:
-			if(strcmp((char *) atom_type, "Partner"))
-				EXIT_ERROR(RUN_ERROR, "atom-types-by \"%s\" doesn't match with provided settings.\n", (char *) atom_type);
-			break;
-		case AT_CUSTOM_VALENCE:
-			if(strcmp((char *) atom_type, "Valence"))
-				EXIT_ERROR(RUN_ERROR, "atom-types-by \"%s\" doesn't match with provided settings.\n", (char *) atom_type);
-			break;
-	}
+	if(strcmp((char *) atom_type, get_atom_types_by_string(s.at_customization)))
+		EXIT_ERROR(RUN_ERROR, "atom-types-by \"%s\" doesn't match with provided settings \"%s\".\n",
+			(char *) atom_type, get_atom_types_by_string(s.at_customization));
 
 	xmlNodePtr parameters_node = get_child_node_by_name(root_node, "Parameters");
 	if(parameters_node == NULL)
@@ -646,22 +630,7 @@ void output_parameters(const struct subset * const ss) {
 	xmlNodePtr atom_type_node = xmlNewChild(properties_node, NULL, BAD_CAST "Property", NULL);
 
 	char buff[10];
-
-	switch(s.at_customization) {
-
-		case AT_CUSTOM_ELEMENT:
-			snprintf(buff, 10, "Element");
-			break;
-		case AT_CUSTOM_ELEMENT_BOND:
-			snprintf(buff, 10, "ElemBond");
-			break;
-		case AT_CUSTOM_PARTNER:
-			snprintf(buff, 10, "Partner");
-			break;
-		case AT_CUSTOM_VALENCE:
-			snprintf(buff, 10, "Valence");
-			break;
-	}
+	snprintf(buff, 10, get_atom_types_by_string(s.at_customization));
 
 	xmlNewProp(atom_type_node, BAD_CAST "AtomType", BAD_CAST buff);
 

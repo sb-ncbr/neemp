@@ -19,6 +19,8 @@ extern struct settings s;
 static void print_help(void);
 static void print_version(void);
 
+static char *atom_types_by_strings[] = {"Element", "ElemBond", "Partner", "Valence"};
+
 static struct option long_options[] = {
 
 	{"help", no_argument, 0, 'h'},
@@ -47,6 +49,12 @@ static struct option long_options[] = {
 	{"max-threads", required_argument, 0, 51},
 	{NULL, 0, 0, 0}
 };
+
+
+char *get_atom_types_by_string(enum atom_type_customization atc) {
+
+	return atom_types_by_strings[atc];
+}
 
 /* Initialize default settings */
 void s_init(void) {
@@ -97,7 +105,7 @@ static void print_help(void) {
 	printf("      --max-threads N		 use up to N threads to solve EEM system in parallel\n");
 	printf("  -m, --mode MODE		 set mode for the NEEMP. Valid choices are: info, params, charges, cross. (required)\n");
 	printf("      --sdf-file FILE		 SDF file (required)\n");
-	printf("      --atom-types-by METHOD	 classify atoms according to the METHOD. Valid choices are: element, element_bond.\n");
+	printf("      --atom-types-by METHOD	 classify atoms according to the METHOD. Valid choices are: Element, ElemBond.\n");
 	printf("Options specific to mode: params\n");
 	printf("      --chg-file FILE		 FILE with ab-initio charges (required)\n");
 	printf("      --chg-stats-out-file FILE	 output charges statistics to the FILE\n");
@@ -117,7 +125,7 @@ static void print_help(void) {
 	printf("      --chg-out-file FILE	 Output charges to the FILE (required)\n");
 
 	printf("\nExamples:\n");
-	printf("neemp -m info --sdf-file molecules.sdf --atom-types-by element\n\
+	printf("neemp -m info --sdf-file molecules.sdf --atom-types-by Element\n\
 		Display information about the training set in the file molecules.sdf. Group atoms according to the elements only.\n");
 
 	printf("neemp -m params --sdf-file molecules.sdf --chg-file charges.chg --kappa-max 1.0 --fs-precision 0.2 --sort-by RMSD --fs-only.\n\
@@ -241,13 +249,13 @@ void parse_options(int argc, char **argv) {
 				s.total_charge = (float) atof(optarg);
 				break;
 			case 31: /* at-customization */
-				if(!strcmp(optarg, "element"))
+				if(!strcmp(optarg, atom_types_by_strings[AT_CUSTOM_ELEMENT]))
 					s.at_customization = AT_CUSTOM_ELEMENT;
-				else if(!strcmp(optarg, "element_bond"))
+				else if(!strcmp(optarg, atom_types_by_strings[AT_CUSTOM_ELEMENT_BOND]))
 					s.at_customization = AT_CUSTOM_ELEMENT_BOND;
-				else if(!strcmp(optarg, "partner"))
+				else if(!strcmp(optarg, atom_types_by_strings[AT_CUSTOM_PARTNER]))
 					s.at_customization = AT_CUSTOM_PARTNER;
-				else if(!strcmp(optarg, "valence"))
+				else if(!strcmp(optarg, atom_types_by_strings[AT_CUSTOM_VALENCE]))
 					s.at_customization = AT_CUSTOM_VALENCE;
 				else
 					EXIT_ERROR(ARG_ERROR, "Invalid atom-type-by value: %s\n", optarg);
@@ -399,16 +407,16 @@ void print_settings(void) {
 	printf("\nAtom types grouped by: ");
 	switch(s.at_customization) {
 		case AT_CUSTOM_ELEMENT:
-			printf("element\n");
+			printf("%s (element)\n", atom_types_by_strings[AT_CUSTOM_ELEMENT]);
 			break;
 		case AT_CUSTOM_ELEMENT_BOND:
-			printf("element + bond order\n");
+			printf("%s (element + bond order)\n", atom_types_by_strings[AT_CUSTOM_ELEMENT_BOND]);
 			break;
 		case AT_CUSTOM_PARTNER:
-			printf("bonding partner\n");
+			printf("%s (bonding partner)\n", atom_types_by_strings[AT_CUSTOM_PARTNER]);
 			break;
 		case AT_CUSTOM_VALENCE:
-			printf("valence state\n");
+			printf("%s (valence state)\n", atom_types_by_strings[AT_CUSTOM_VALENCE]);
 			break;
 	}
 
