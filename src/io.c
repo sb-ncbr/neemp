@@ -43,6 +43,10 @@ void load_molecules(void) {
 	while(!load_molecule(f, &ts.molecules[i])) {
 		ts.atoms_count += ts.molecules[i].atoms_count;
 		i++;
+
+		if(i == MAX_MOLECULES)
+			EXIT_ERROR(RUN_ERROR, "Maximum number of molecules (%d) reached. "
+					      "Increase value of MAX_MOLECULES in config.h and recompile.\n", MAX_MOLECULES);
 	}
 
 	fclose(f);

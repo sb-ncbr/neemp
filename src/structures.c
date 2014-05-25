@@ -185,6 +185,11 @@ static void fill_atom_types(void) {
 			#undef ATOM
 		}
 
+	if(ts.atom_types_count > MAX_ATOM_TYPES)
+		EXIT_ERROR(RUN_ERROR, "Maximum number of atom types (%d) reached. "
+				      "Increase value of MAX_ATOM_TYPES in config.h and recompile NEEMP.\n",
+				      MAX_ATOM_TYPES);
+
 	/* Shrink atom types array */
 	ts.atom_types = (struct atom_type *) realloc(ts.atom_types, sizeof(struct atom_type) * ts.atom_types_count);
 
