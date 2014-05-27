@@ -13,6 +13,7 @@
 #include <string.h>
 
 #include "config.h"
+#include "neemp.h"
 #include "statistics.h"
 #include "structures.h"
 #include "subset.h"
@@ -31,8 +32,11 @@ void calculate_statistics(struct subset * const ss, struct kappa_data * const kd
 	double MSE_sum_molecules = 0.0;
 	double RMSD_sum_molecules = 0.0;
 	double R_sum_molecules = 0.0;
+	int bad_molecules = 0;
 
 	double *D_sum_atom_type = (double *) calloc(ts.atom_types_count, sizeof(double));
+	if(!D_sum_atom_type)
+		EXIT_ERROR(MEM_ERROR, "%s", "Cannot allocate memory for statistical data.\n");
 
 	/* Reset values left by previous iteration of the Brent's method */
 	for(int i = 0; i < ts.atom_types_count; i++)
@@ -80,7 +84,12 @@ void calculate_statistics(struct subset * const ss, struct kappa_data * const kd
 			D_sum_atom_type[atom_type_idx] += fabs(diff);
 		}
 
-		R_sum_molecules += (sum_xy * sum_xy) / (sum_xx * sum_yy);
+
+		if(fabs(sum_xx * sum_yy) <= 0.0f)
+			bad_molecules++;
+		else
+			R_sum_molecules += (sum_xy * sum_xy) / (sum_xx * sum_yy);
+
 		RMSD_sum_molecules += sqrt(diff2_sum / MOLECULE.atoms_count);
 		MSE_sum_molecules += diff2_sum;
 
@@ -94,7 +103,7 @@ void calculate_statistics(struct subset * const ss, struct kappa_data * const kd
 		#undef MOLECULE
 	}
 
-	kd->full_stats.R = (float) (R_sum_molecules / ts.molecules_count);
+	kd->full_stats.R = (float) (R_sum_molecules / (ts.molecules_count - bad_molecules));
 	kd->full_stats.RMSD = (float) (RMSD_sum_molecules / ts.molecules_count);
 	kd->full_stats.MSE = (float) (MSE_sum_molecules / ts.molecules_count);
 	kd->full_stats.D_avg = (float) (D_sum_atoms / ts.atoms_count);
