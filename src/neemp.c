@@ -150,7 +150,6 @@ int main(int argc, char **argv) {
 			kd_init(full.best);
 
 			load_parameters(full.best);
-			print_parameters(full.best);
 
 			calculate_charges(&full, full.best);
 			calculate_statistics(&full, full.best);

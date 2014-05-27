@@ -66,7 +66,8 @@ void print_parameters(const struct kappa_data * const kd) {
 
 	assert(kd != NULL);
 
-	printf("Loaded parameters:\n");
+	printf("\nLoaded parameters:\n");
+	printf("K: %6.4f\n", kd->kappa);
 	printf("Atom type             A       B\n");
 	for(int i = 0; i < ts.atom_types_count; i++) {
 		char buff[10];
@@ -83,7 +84,7 @@ void print_results(const struct subset * const ss) {
 	assert(ss != NULL);
 	assert(ss->best != NULL);
 
-	printf("Used molecules: %5d\n", b_count_bits(&ss->molecules));
+	printf("\nUsed molecules: %5d\n", b_count_bits(&ss->molecules));
 	kd_print_stats(ss->best);
 
 	printf("Atom type             A       B\t\t     R\t    RMSD       MSE\t  D_avg\t  D_max\n");

@@ -399,7 +399,7 @@ void print_settings(void) {
 		printf(" Parameters (.par) output file: %s\n", s.par_out_file);
 
 	if(s.chg_out_file[0] != '\0')
-		printf(" Charges output (.chg)'file: %s\n", s.chg_out_file);
+		printf(" Charges output (.chg) file: %s\n", s.chg_out_file);
 
 	if(s.chg_stats_out_file[0] != '\0')
 		printf(" Charges stats output (.chgs) file: %s\n", s.chg_stats_out_file);
