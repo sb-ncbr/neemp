@@ -1,0 +1,24 @@
+<?xml version="1.0"?>
+<ParameterSet>
+  <Parameters AtomType="ElemBond" Kappa="0.1976">
+    <Element Name=" O">
+      <Bond Type="1" A="2.6730" B="0.4091"/>
+      <Bond Type="2" A="2.7759" B="0.6434"/>
+    </Element>
+    <Element Name=" C">
+      <Bond Type="2" A="2.4880" B="0.2348"/>
+      <Bond Type="1" A="2.4787" B="0.2722"/>
+    </Element>
+    <Element Name=" H">
+      <Bond Type="1" A="2.3827" B="0.5701"/>
+    </Element>
+    <Element Name=" N">
+      <Bond Type="2" A="2.5440" B="0.2370"/>
+      <Bond Type="1" A="2.5370" B="0.2526"/>
+    </Element>
+    <Element Name=" S">
+      <Bond Type="2" A="2.4945" B="0.1454"/>
+      <Bond Type="1" A="2.4050" B="0.3687"/>
+    </Element>
+  </Parameters>
+</ParameterSet>

@@ -149,22 +149,6 @@ static xmlNodePtr get_child_node_by_name(xmlNodePtr node, const char * const nam
 	return NULL;
 }
 
-static xmlNodePtr get_child_node_by_name_and_property(xmlNodePtr node, const char * const name, const char * const property) {
-
-	xmlNodePtr curr_node = node->children;
-
-	while(curr_node != NULL) {
-
-		if(!strcmp((char *) curr_node->name, name) && xmlGetProp(curr_node, BAD_CAST property)) {
-			return curr_node;
-		}
-
-		curr_node = curr_node->next;
-	}
-
-	return NULL;
-}
-
 void load_parameters(struct kappa_data * const kd) {
 
 	assert(kd != NULL);
@@ -177,21 +161,22 @@ void load_parameters(struct kappa_data * const kd) {
 
 	root_node = xmlDocGetRootElement(doc);
 
-	xmlNodePtr properties_node = get_child_node_by_name(root_node, "Properties");
 
-	xmlNodePtr atom_type_node = get_child_node_by_name_and_property(properties_node, "Property", "AtomType");
-	xmlChar *atom_type = xmlGetProp(atom_type_node, BAD_CAST "AtomType");
-	if(atom_type == NULL)
-		EXIT_ERROR(IO_ERROR, "%s", "Ill-formed .par file. No AtomType property.\n");
+	xmlNodePtr parameters_node = get_child_node_by_name(root_node, "Parameters");
+	if(parameters_node == NULL)
+		EXIT_ERROR(IO_ERROR, "%s", "Ill-formed .par file. No Parameters node.\n");
+
+	xmlChar *atom_type = xmlGetProp(parameters_node, BAD_CAST "AtomType");
+	if(atom_type == NULL) {
+		/* Assume ElemBond by default */
+		atom_type = (xmlChar *) malloc(sizeof(xmlChar) * 10);
+		snprintf((char *) atom_type, 9, "%s", "ElemBond");
+	}
 
 	/* Check if the command-line settings matches the entry in the .par file */
 	if(strcmp((char *) atom_type, get_atom_types_by_string(s.at_customization)))
 		EXIT_ERROR(RUN_ERROR, "atom-types-by \"%s\" doesn't match with provided settings \"%s\".\n",
 			(char *) atom_type, get_atom_types_by_string(s.at_customization));
-
-	xmlNodePtr parameters_node = get_child_node_by_name(root_node, "Parameters");
-	if(parameters_node == NULL)
-		EXIT_ERROR(IO_ERROR, "%s", "Ill-formed .par file. No Parameters node.\n");
 
 	xmlChar *kappa = xmlGetProp(parameters_node, BAD_CAST "Kappa");
 
@@ -631,16 +616,14 @@ void output_parameters(const struct subset * const ss) {
 	xmlDocSetRootElement(doc, root_node);
 
 	xmlNodePtr params_node = xmlNewChild(root_node, NULL, BAD_CAST "Parameters", NULL);
-	xmlNodePtr properties_node = xmlNewChild(root_node, NULL, BAD_CAST "Properties", NULL);
-
-	xmlNodePtr atom_type_node = xmlNewChild(properties_node, NULL, BAD_CAST "Property", NULL);
 
 	char buff[10];
 	snprintf(buff, 10, "%s", get_atom_types_by_string(s.at_customization));
 
-	xmlNewProp(atom_type_node, BAD_CAST "AtomType", BAD_CAST buff);
+	xmlNewProp(params_node, BAD_CAST "AtomType", BAD_CAST buff);
 
 	snprintf(buff, 10, "%6.4f", ss->best->kappa);
+
 	xmlNewProp(params_node, BAD_CAST "Kappa", BAD_CAST buff);
 	xmlAddChild(root_node, params_node);
 

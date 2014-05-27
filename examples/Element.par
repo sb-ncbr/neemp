@@ -1,0 +1,20 @@
+<?xml version="1.0"?>
+<ParameterSet>
+  <Parameters AtomType="Element" Kappa="0.1764">
+    <Element Name=" O">
+      <Bond A="2.6840" B="0.4389"/>
+    </Element>
+    <Element Name=" C">
+      <Bond A="2.4827" B="0.2267"/>
+    </Element>
+    <Element Name=" H">
+      <Bond A="2.3838" B="0.5406"/>
+    </Element>
+    <Element Name=" N">
+      <Bond A="2.5390" B="0.2302"/>
+    </Element>
+    <Element Name=" S">
+      <Bond A="2.4746" B="0.1380"/>
+    </Element>
+  </Parameters>
+</ParameterSet>
