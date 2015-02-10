@@ -16,9 +16,7 @@
 #define MAX_MOLECULES 1000000
 #define MAX_ATOM_TYPES 150
 
-#define MIN_ATOMS_PER_MOLECULE 2
 #define MAX_ATOMS_PER_MOLECULE 1000000
-#define MIN_BONDS_PER_MOLECULE 1
 #define MAX_BONDS_PER_MOLECULE 1000000
 
 /* Default per molecule warning constants for --check-charges */

@@ -325,10 +325,10 @@ static int load_molecule(FILE * const f, struct molecule * const m) {
 		bonds_count = strn2int(line + 3, 3);
 
 		/* Perform some checks on the values read */
-		if(MIN_ATOMS_PER_MOLECULE > m->atoms_count || m->atoms_count > MAX_ATOMS_PER_MOLECULE)
+		if(m->atoms_count > MAX_ATOMS_PER_MOLECULE)
 			EXIT_ERROR(IO_ERROR, "Number of atoms is incorrect for molecule \"%s\" (%s).\n", m->name, s.sdf_file);
 
-		if(MIN_BONDS_PER_MOLECULE > bonds_count || bonds_count > MAX_BONDS_PER_MOLECULE)
+		if(bonds_count > MAX_BONDS_PER_MOLECULE)
 			EXIT_ERROR(IO_ERROR, "Number of bonds is incorrect for molecule \"%s\" (%s).\n", m->name, s.sdf_file);
 
 		m->atoms = (struct atom *) malloc(sizeof(struct atom) * m->atoms_count);
@@ -421,10 +421,10 @@ static int load_molecule(FILE * const f, struct molecule * const m) {
 		sscanf(line + 14, "%d %d", &m->atoms_count, &bonds_count);
 
 		/* Perform some checks on the values read */
-		if(MIN_ATOMS_PER_MOLECULE > m->atoms_count || m->atoms_count > MAX_ATOMS_PER_MOLECULE)
+		if(m->atoms_count > MAX_ATOMS_PER_MOLECULE)
 			EXIT_ERROR(IO_ERROR, "Number of atoms is incorrect for molecule \"%s\" (%s).\n", m->name, s.sdf_file);
 
-		if(MIN_BONDS_PER_MOLECULE > bonds_count || bonds_count > MAX_BONDS_PER_MOLECULE)
+		if(bonds_count > MAX_BONDS_PER_MOLECULE)
 			EXIT_ERROR(IO_ERROR, "Number of bonds is incorrect for molecule \"%s\" (%s).\n", m->name, s.sdf_file);
 
 		m->atoms = (struct atom *) malloc(sizeof(struct atom) * m->atoms_count);
