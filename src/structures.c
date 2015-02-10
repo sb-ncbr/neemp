@@ -40,7 +40,7 @@ int convert_symbol_to_Z(const char * const symb) {
 
 	assert(symb != NULL);
 
-	for(int i = 0; i < 100; i++)
+	for(int i = 0; i < 103; i++)
 		if(!strcmp(symb, elems[i]))
 			return i + 1;
 
