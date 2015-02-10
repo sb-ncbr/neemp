@@ -13,6 +13,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <zlib.h>
 
 #include "neemp.h"
 #include "io.h"
@@ -22,17 +23,47 @@
 
 extern const struct settings s;
 extern struct training_set ts;
+static int is_sdf_gzipped = 0;
 
-static int load_molecule(FILE * const f, struct molecule * const m);
+static int load_molecule(FILE * const f, gzFile gz_f, struct molecule * const m);
 static int find_molecule_by_name(const char * const name);
 static int strn2int(const char * const str, int n);
+static char *mygets(char * const buff, unsigned int len, FILE * const f, gzFile gz_f);
+
+
+/* Use either fgets or gzgets to read line from file */
+static char *mygets(char * const buff, unsigned int len, FILE * const f, gzFile gz_f) {
+
+	if(is_sdf_gzipped)
+		return gzgets(gz_f, buff, len);
+	else
+		return fgets(buff, len, f);
+}
 
 /* Load all molecules from .sdf file */
 void load_molecules(void) {
 
-	FILE * const f = fopen(s.sdf_file, "r");
-	if(!f)
+	/* Check if we load gzipped sdf file */
+	FILE * f_test = fopen(s.sdf_file, "r");
+	if(!f_test)
 		EXIT_ERROR(IO_ERROR, "Cannot open .sdf file \"%s\".\n", s.sdf_file);
+
+	int byte1, byte2;
+	byte1 = fgetc(f_test);
+	byte2 = fgetc(f_test);
+	fclose(f_test);
+
+	if(byte1 == 0x1f && byte2 == 0x8b)
+		is_sdf_gzipped = 1;
+
+	/* Read either regular or gzip compressed file */
+	gzFile gz_f = 0;
+	FILE * f = NULL;
+
+	if(is_sdf_gzipped)
+		gz_f = gzopen(s.sdf_file, "r");
+	else
+		f = fopen(s.sdf_file, "r");
 
 	ts.molecules = (struct molecule *) malloc(sizeof(struct molecule) * MAX_MOLECULES);
 	if(!ts.molecules)
@@ -40,7 +71,7 @@ void load_molecules(void) {
 
 	/* Load molecules one by one */
 	int i = 0;
-	while(!load_molecule(f, &ts.molecules[i])) {
+	while(!load_molecule(f, gz_f, &ts.molecules[i])) {
 		ts.atoms_count += ts.molecules[i].atoms_count;
 		i++;
 
@@ -49,7 +80,10 @@ void load_molecules(void) {
 					      "Increase value of MAX_MOLECULES in config.h and recompile.\n", MAX_MOLECULES);
 	}
 
-	fclose(f);
+	if(is_sdf_gzipped)
+		gzclose(gz_f);
+	else
+		fclose(f);
 
 	/* Free unused memory */
 	ts.molecules_count = i;
@@ -270,10 +304,10 @@ static int strn2int(const char * const str, int n) {
 	return atoi(buff);
 }
 
-/* Load one molecule from a .sd file */
-static int load_molecule(FILE * const f, struct molecule * const m) {
+/* Load one molecule from a .sdf file */
+static int load_molecule(FILE * const f, gzFile gz_f, struct molecule * const m) {
 
-	assert(f != NULL);
+	assert(f != NULL || gz_f != 0);
 	assert(m != NULL);
 
 	/* Each molecule is stored in MOL format;
@@ -285,7 +319,7 @@ static int load_molecule(FILE * const f, struct molecule * const m) {
 	/* Process 3-line Header Block */
 
 	/* Do we reached EOF? */
-	if(!fgets(line, MAX_LINE_LEN, f))
+	if(!mygets(line, MAX_LINE_LEN, f, gz_f))
 		return 1;
 
 	/* 1st line is the name of the molecule */
@@ -298,10 +332,10 @@ static int load_molecule(FILE * const f, struct molecule * const m) {
 	m->name[len - 1] = '\0';
 
 	/* 2nd line contains some additional information, skip it */
-	if(!fgets(line, MAX_LINE_LEN, f))
+	if(!mygets(line, MAX_LINE_LEN, f, gz_f))
 			EXIT_ERROR(IO_ERROR, "Reading failed for 2nd line of the molecule \"%s\" (%s).\n", m->name, s.sdf_file);
 	/* 3rd line is for comments, skip it */
-	if(!fgets(line, MAX_LINE_LEN, f))
+	if(!mygets(line, MAX_LINE_LEN, f, gz_f))
 			EXIT_ERROR(IO_ERROR, "Reading failed for 3rd line of the molecule \"%s\" (%s).\n", m->name, s.sdf_file);
 
 	/* Read Counts Line
@@ -315,7 +349,7 @@ static int load_molecule(FILE * const f, struct molecule * const m) {
 	int bonds_count;
 	char version[MAX_LINE_LEN];
 
-	if(!fgets(line, MAX_LINE_LEN, f))
+	if(!mygets(line, MAX_LINE_LEN, f, gz_f))
 			EXIT_ERROR(IO_ERROR, "Reading failed for 4th line of the molecule \"%s\" (%s).\n", m->name, s.sdf_file);
 
 	sscanf(line + 34, "%5s\n", version);
@@ -344,7 +378,7 @@ static int load_molecule(FILE * const f, struct molecule * const m) {
 
 		for(int i = 0; i < m->atoms_count; i++) {
 			char atom_symbol[3];
-			if(!fgets(line, MAX_LINE_LEN, f))
+			if(!mygets(line, MAX_LINE_LEN, f, gz_f))
 					EXIT_ERROR(IO_ERROR, "Reading failed for atom %d in the molecule \"%s\" (%s).\n", i + 1, m->name, s.sdf_file);
 
 			sscanf(line, "%f %f %f %s", &m->atoms[i].position[0], &m->atoms[i].position[1], &m->atoms[i].position[2], atom_symbol);
@@ -374,7 +408,7 @@ static int load_molecule(FILE * const f, struct molecule * const m) {
 		for(int i = 0; i < bonds_count; i++) {
 			int atom1, atom2, bond_order;
 
-			if(!fgets(line, MAX_LINE_LEN, f))
+			if(!mygets(line, MAX_LINE_LEN, f, gz_f))
 				EXIT_ERROR(IO_ERROR, "Reading failed for bond no. %d in the molecule \"%s\" (%s).\n", i + 1, m->name, s.sdf_file);
 
 			atom1 = strn2int(line, 3);
@@ -398,21 +432,21 @@ static int load_molecule(FILE * const f, struct molecule * const m) {
 
 		/* Skip rest of the record */
 		do {
-			if(!fgets(line, MAX_LINE_LEN, f))
+			if(!mygets(line, MAX_LINE_LEN, f, gz_f))
 				EXIT_ERROR(IO_ERROR, "Reading failed for the molecule \"%s\" (%s).\n", m->name, s.sdf_file);
 		} while(strncmp(line, "$$$$", strlen("$$$$")));
 
 	} else if(!strcmp(version, "V3000")) {
 
 		/* Read BEGIN CTAB entry */
-		if(!fgets(line, MAX_LINE_LEN, f))
+		if(!mygets(line, MAX_LINE_LEN, f, gz_f))
 			EXIT_ERROR(IO_ERROR, "Reading failed for the molecule \"%s\" (%s).\n", m->name, s.sdf_file);
 
 		if(strncmp(line, "M  V30 BEGIN CTAB", strlen("M  V30 BEGIN CTAB")))
 			EXIT_ERROR(IO_ERROR, "Incorrect format of the BEGIN CTAB entry for the molecule \"%s\" (%s).\n", m->name, s.sdf_file);
 
 		/* Read COUNTS entry */
-		if(!fgets(line, MAX_LINE_LEN, f))
+		if(!mygets(line, MAX_LINE_LEN, f, gz_f))
 			EXIT_ERROR(IO_ERROR, "Reading failed for the molecule \"%s\" (%s).\n", m->name, s.sdf_file);
 
 		if(strncmp(line, "M  V30 COUNTS", strlen("M  V30 COUNTS")))
@@ -432,7 +466,7 @@ static int load_molecule(FILE * const f, struct molecule * const m) {
 			EXIT_ERROR(MEM_ERROR, "Cannot allocate memory for atoms in molecule \"%s\" (%s).\n", m->name, s.sdf_file);
 
 		/* Read BEGIN ATOM entry */
-		if(!fgets(line, MAX_LINE_LEN, f))
+		if(!mygets(line, MAX_LINE_LEN, f, gz_f))
 			EXIT_ERROR(IO_ERROR, "Reading failed for the molecule \"%s\" (%s).\n", m->name, s.sdf_file);
 
 		if(strncmp(line, "M  V30 BEGIN ATOM", strlen("M  V30 BEGIN ATOM")))
@@ -440,7 +474,7 @@ static int load_molecule(FILE * const f, struct molecule * const m) {
 
 		/* Process individual atom records */
 		for(int i = 0; i < m->atoms_count; i++) {
-			if(!fgets(line, MAX_LINE_LEN, f))
+			if(!mygets(line, MAX_LINE_LEN, f, gz_f))
 				EXIT_ERROR(IO_ERROR, "Reading failed for the molecule \"%s\" (%s).\n", m->name, s.sdf_file);
 
 			char atom_symbol[3];
@@ -466,21 +500,21 @@ static int load_molecule(FILE * const f, struct molecule * const m) {
 		}
 
 		/* Read END ATOM entry */
-		if(!fgets(line, MAX_LINE_LEN, f))
+		if(!mygets(line, MAX_LINE_LEN, f, gz_f))
 			EXIT_ERROR(IO_ERROR, "Reading failed for the molecule \"%s\" (%s).\n", m->name, s.sdf_file);
 
 		if(strncmp(line, "M  V30 END ATOM", strlen("M  V30 END ATOM")))
 			EXIT_ERROR(IO_ERROR, "Incorrect format of the END ATOM entry for the molecule \"%s\" (%s).\n", m->name, s.sdf_file);
 
 		/* Read BEGIN BOND entry */
-		if(!fgets(line, MAX_LINE_LEN, f))
+		if(!mygets(line, MAX_LINE_LEN, f, gz_f))
 			EXIT_ERROR(IO_ERROR, "Reading failed for the molecule \"%s\" (%s).\n", m->name, s.sdf_file);
 
 		if(strncmp(line, "M  V30 BEGIN BOND", strlen("M  V30 BEGIN BOND")))
 			EXIT_ERROR(IO_ERROR, "Incorrect format of the BEGIN BOND entry for the molecule \"%s\" (%s).\n", m->name, s.sdf_file);
 
 		for(int i = 0; i < bonds_count; i++) {
-			if(!fgets(line, MAX_LINE_LEN, f))
+			if(!mygets(line, MAX_LINE_LEN, f, gz_f))
 				EXIT_ERROR(IO_ERROR, "Reading failed for the molecule \"%s\" (%s).\n", m->name, s.sdf_file);
 
 			int tmp, bond_order, atom1, atom2;
@@ -506,7 +540,7 @@ static int load_molecule(FILE * const f, struct molecule * const m) {
 		}
 
 		/* Read END BOND entry */
-		if(!fgets(line, MAX_LINE_LEN, f))
+		if(!mygets(line, MAX_LINE_LEN, f, gz_f))
 			EXIT_ERROR(IO_ERROR, "Reading failed for the molecule \"%s\" (%s).\n", m->name, s.sdf_file);
 
 		if(strncmp(line, "M  V30 END BOND", strlen("M  V30 END BOND")))
@@ -514,13 +548,13 @@ static int load_molecule(FILE * const f, struct molecule * const m) {
 
 		/* Skip other entries */
 		do {
-			if(!fgets(line, MAX_LINE_LEN, f))
+			if(!mygets(line, MAX_LINE_LEN, f, gz_f))
 				EXIT_ERROR(IO_ERROR, "Reading failed for the molecule \"%s\" (%s).\n", m->name, s.sdf_file);
 		} while(strncmp(line, "M  V30 END CTAB", strlen("M  V30 END CTAB")));
 
 		/* Skip the rest of the record */
 		do {
-			if(!fgets(line, MAX_LINE_LEN, f))
+			if(!mygets(line, MAX_LINE_LEN, f, gz_f))
 				EXIT_ERROR(IO_ERROR, "Reading failed for the molecule \"%s\" (%s).\n", m->name, s.sdf_file);
 		} while(strncmp(line, "$$$$", strlen("$$$$")));
 	} else

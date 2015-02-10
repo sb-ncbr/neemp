@@ -12,7 +12,7 @@ ICC_DISABLE_WARNS=-wd11021
 sources=$(wildcard *.c)
 headers=$(wildcard *.h)
 objects=$(sources:.c=.o)
-libraries=-mkl
+libraries=-mkl -lz
 binaries=neemp
 manpage=neemp.1
 
@@ -30,7 +30,7 @@ neemp-gnu: EXTRA_DEFINE=
 neemp-gnu: CC=gcc
 neemp-gnu: ICC_DISABLE_WARNS=
 neemp-gnu: CFLAGS=-Wall -Wextra -std=c99 -pedantic -O3 -march=native -g -fopenmp
-neemp-gnu: libraries=-lm -fopenmp
+neemp-gnu: libraries=-lm -lz -fopenmp
 neemp-gnu: $(objects) neemp
 
 neemp: $(objects)
