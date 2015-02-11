@@ -394,7 +394,7 @@ static int load_molecule(FILE * const f, gzFile gz_f, struct molecule * const m)
 			if(m->atoms[i].Z == 0)
 				EXIT_ERROR(IO_ERROR, "Invalid element \"%s\" in the molecule \"%s\" (%s).\n", atom_symbol, m->name, s.sdf_file);
 
-			m->atoms[i].bond_order = 1;
+			m->atoms[i].bond_order = 0;
 		}
 
 		/* Process Bond Block
@@ -420,7 +420,7 @@ static int load_molecule(FILE * const f, gzFile gz_f, struct molecule * const m)
 				EXIT_ERROR(IO_ERROR, "Invalid atom number in the molecule \"%s\" (%s).\n", m->name, s.sdf_file);
 
 			if(bond_order > 3)
-				EXIT_ERROR(IO_ERROR, "Invalid bond order in the molecule \"%s\" (%s).\n", m->name, s.sdf_file);
+				EXIT_ERROR(IO_ERROR, "Invalid bond order (%d) in the molecule \"%s\" (%s).\n", bond_order, m->name, s.sdf_file);
 
 			/* Adjust bond orders of the atoms */
 			if(m->atoms[atom1 - 1].bond_order < bond_order)
@@ -496,7 +496,7 @@ static int load_molecule(FILE * const f, gzFile gz_f, struct molecule * const m)
 			if(m->atoms[i].Z == 0)
 				EXIT_ERROR(IO_ERROR, "Invalid element \"%s\" in the molecule \"%s\" (%s).\n", atom_symbol, m->name, s.sdf_file);
 
-			m->atoms[i].bond_order = 1;
+			m->atoms[i].bond_order = 0;
 		}
 
 		/* Read END ATOM entry */
@@ -529,7 +529,7 @@ static int load_molecule(FILE * const f, gzFile gz_f, struct molecule * const m)
 				EXIT_ERROR(IO_ERROR, "Invalid atom number in the molecule \"%s\" (%s).\n", m->name, s.sdf_file);
 
 			if(bond_order > 3)
-				EXIT_ERROR(IO_ERROR, "Invalid bond order in the molecule \"%s\" (%s).\n", m->name, s.sdf_file);
+				EXIT_ERROR(IO_ERROR, "Invalid bond order (%d) in the molecule \"%s\" (%s).\n", bond_order, m->name, s.sdf_file);
 
 			/* Adjust bond orders of the atoms */
 			if(m->atoms[atom1 - 1].bond_order < bond_order)
