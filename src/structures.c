@@ -44,6 +44,10 @@ int convert_symbol_to_Z(const char * const symb) {
 		if(!strcmp(symb, elems[i]))
 			return i + 1;
 
+	/* Check for deuterium and tritium */
+	if(!strcmp(symb, "D") || !strcmp(symb, "T"))
+		return 1;
+
 	/* Not found */
 	return 0;
 }
