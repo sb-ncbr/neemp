@@ -103,7 +103,7 @@ static void print_help(void) {
 	printf("  -h, --help			 display this help and exit\n");
 	printf("      --version			 display version information and exit\n");
 	printf("      --max-threads N		 use up to N threads to solve EEM system in parallel\n");
-	printf("  -m, --mode MODE		 set mode for the NEEMP. Valid choices are: info, params, charges, cross. (required)\n");
+	printf("  -m, --mode MODE		 set mode for the NEEMP. Valid choices are: info, params, charges, cross, cover (required)\n");
 	printf("      --sdf-file FILE		 SDF file (required)\n");
 	printf("      --atom-types-by METHOD	 classify atoms according to the METHOD. Valid choices are: Element, ElemBond.\n");
 	printf("Options specific to mode: params\n");
@@ -161,6 +161,8 @@ void parse_options(int argc, char **argv) {
 					s.mode = MODE_PARAMS;
 				else if (!strcmp(optarg, "cross"))
 					s.mode = MODE_CROSS;
+				else if (!strcmp(optarg, "cover"))
+					s.mode = MODE_COVER;
 				else
 					EXIT_ERROR(ARG_ERROR, "Invalid mode: %s\n", optarg);
 				break;
@@ -362,6 +364,9 @@ void check_settings(void) {
 
 		if(s.par_file[0] == '\0')
 			EXIT_ERROR(ARG_ERROR, "%s", "No .par file provided.\n");
+	} else if(s.mode == MODE_COVER) {
+		if(s.par_file[0] == '\0')
+			EXIT_ERROR(ARG_ERROR, "%s", "No .par file provided.\n");
 	}
 }
 
@@ -382,6 +387,9 @@ void print_settings(void) {
 			break;
 		case MODE_CROSS:
 			printf("cross (perform cross-validation of the EEM parameters)\n");
+			break;
+		case MODE_COVER:
+			printf("cover (calculate parameters coverage)\n");
 			break;
 		case MODE_NOT_SET:
 			assert(0);

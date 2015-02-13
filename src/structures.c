@@ -473,7 +473,7 @@ static void list_molecules_without_charges(void) {
 
 void discard_molecules_without_charges_or_parameters(void) {
 
-	if(s.mode == MODE_CHARGES || s.mode == MODE_CROSS)
+	if(s.mode == MODE_CHARGES || s.mode == MODE_CROSS || s.mode == MODE_COVER)
 		list_molecules_without_parameters();
 
 	if(s.mode == MODE_PARAMS || s.mode == MODE_CROSS)
@@ -486,7 +486,7 @@ void discard_molecules_without_charges_or_parameters(void) {
 	while(idx < ts.molecules_count) {
 		int cond;
 		/* Different combination of parameters/charges are required for each mode, so act accordingly */
-		if(s.mode == MODE_CHARGES)
+		if(s.mode == MODE_CHARGES || s.mode == MODE_COVER)
 			cond = !ts.molecules[idx].has_parameters;
 		else if (s.mode == MODE_PARAMS)
 			cond = !ts.molecules[idx].has_charges;

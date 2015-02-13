@@ -19,6 +19,7 @@ enum app_mode {
 	MODE_CHARGES,
 	MODE_INFO,
 	MODE_CROSS,
+	MODE_COVER,
 	MODE_NOT_SET
 };
 

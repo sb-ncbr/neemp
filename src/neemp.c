@@ -185,6 +185,32 @@ int main(int argc, char **argv) {
 			preprocess_molecules();
 			ts_info();
 			break;
+		case MODE_COVER: {
+			struct subset full;
+			preprocess_molecules();
+
+			/* We use only one particular kappa which is read from .par file */
+			full.kappa_data_count = 1;
+			full.data = (struct kappa_data *) calloc(1, sizeof(struct kappa_data));
+			full.best = &full.data[0];
+			kd_init(full.best);
+
+			ts_info();
+
+			load_parameters(full.best);
+			discard_molecules_without_charges_or_parameters();
+			kd_destroy(full.best);
+
+			/* Now we have the right molecules, so we can restart the process */
+			b_init(&full.molecules, ts.molecules_count);
+			b_set_all(&full.molecules);
+
+			kd_init(full.best);
+			load_parameters(full.best);
+			print_parameters(full.best);
+
+			break;
+		}
 		case MODE_NOT_SET:
 			/* Something bad happened. */
 			assert(0);
