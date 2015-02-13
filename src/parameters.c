@@ -37,7 +37,9 @@ void calculate_parameters(struct subset * const ss, struct kappa_data * const kd
 		#define AT ts.atom_types[i]
 
 		double *A = (double *) mkl_malloc(2 * AT.atoms_count * sizeof(double), 32);
-		double *b = (double *) mkl_malloc(AT.atoms_count * sizeof(double), 32);
+		/* b has to have at least 2 elements since b[1] is used to store beta parameter.
+		 * If atoms_count is 1 (which is unlikely but possible) we would probably crash... */
+		double *b = (double *) mkl_malloc((1 + AT.atoms_count) * sizeof(double), 32);
 
 		/* If some molecule is disabled, skip its atoms.
 		 * To avoid having empty (zero) rows, change the index so that all used atoms are
