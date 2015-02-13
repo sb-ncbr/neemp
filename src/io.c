@@ -313,6 +313,8 @@ static int load_molecule(FILE * const f, gzFile gz_f, struct molecule * const m)
 	assert(f != NULL || gz_f != 0);
 	assert(m != NULL);
 
+	m->is_valid = 1;
+
 	/* Each molecule is stored in MOL format;
 	 * for reference, see http://c4.cabrillo.edu/404/ctfile.pdf */
 
@@ -386,7 +388,6 @@ static int load_molecule(FILE * const f, gzFile gz_f, struct molecule * const m)
 
 			sscanf(line, "%f %f %f %s", &m->atoms[i].position[0], &m->atoms[i].position[1], &m->atoms[i].position[2], atom_symbol);
 
-
 			if(s.mode == MODE_PARAMS) {
 				m->atoms[i].rdists = (double *) calloc(m->atoms_count, sizeof(double));
 				if(!m->atoms[i].rdists)
@@ -395,7 +396,7 @@ static int load_molecule(FILE * const f, gzFile gz_f, struct molecule * const m)
 
 			m->atoms[i].Z = convert_symbol_to_Z(atom_symbol);
 			if(m->atoms[i].Z == 0)
-				EXIT_ERROR(IO_ERROR, "Invalid element \"%s\" in the molecule \"%s\" (%s).\n", atom_symbol, m->name, s.sdf_file);
+				m->is_valid = 0;
 
 			m->atoms[i].bond_order = 0;
 		}
@@ -423,7 +424,7 @@ static int load_molecule(FILE * const f, gzFile gz_f, struct molecule * const m)
 				EXIT_ERROR(IO_ERROR, "Invalid atom number in the molecule \"%s\" (%s).\n", m->name, s.sdf_file);
 
 			if(bond_order > 3)
-				EXIT_ERROR(IO_ERROR, "Invalid bond order (%d) in the molecule \"%s\" (%s).\n", bond_order, m->name, s.sdf_file);
+				m->is_valid = 0;
 
 			/* Adjust bond orders of the atoms */
 			if(m->atoms[atom1 - 1].bond_order < bond_order)
@@ -497,7 +498,7 @@ static int load_molecule(FILE * const f, gzFile gz_f, struct molecule * const m)
 
 			m->atoms[i].Z = convert_symbol_to_Z(atom_symbol);
 			if(m->atoms[i].Z == 0)
-				EXIT_ERROR(IO_ERROR, "Invalid element \"%s\" in the molecule \"%s\" (%s).\n", atom_symbol, m->name, s.sdf_file);
+				m->is_valid = 0;
 
 			m->atoms[i].bond_order = 0;
 		}
@@ -532,7 +533,7 @@ static int load_molecule(FILE * const f, gzFile gz_f, struct molecule * const m)
 				EXIT_ERROR(IO_ERROR, "Invalid atom number in the molecule \"%s\" (%s).\n", m->name, s.sdf_file);
 
 			if(bond_order > 3)
-				EXIT_ERROR(IO_ERROR, "Invalid bond order (%d) in the molecule \"%s\" (%s).\n", bond_order, m->name, s.sdf_file);
+				m->is_valid = 0;
 
 			/* Adjust bond orders of the atoms */
 			if(m->atoms[atom1 - 1].bond_order < bond_order)

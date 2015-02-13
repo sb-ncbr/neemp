@@ -31,7 +31,7 @@ struct molecule {
 	struct atom *atoms;
 
 	/* Auxiliary variables */
-
+	int is_valid;
 	int has_charges;
 	int has_parameters;
 	float electronegativity;
@@ -76,6 +76,6 @@ void ts_destroy(void);
 void ts_info(void);
 
 void preprocess_molecules(void);
-void discard_molecules_without_charges_or_parameters(void);
+void discard_invalid_molecules_or_without_charges_or_parameters(void);
 
 #endif /* __STRUCTURES_H__ */

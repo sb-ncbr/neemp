@@ -66,7 +66,7 @@ int main(int argc, char **argv) {
 		case MODE_PARAMS: {
 			load_charges();
 			preprocess_molecules();
-			discard_molecules_without_charges_or_parameters();
+			discard_invalid_molecules_or_without_charges_or_parameters();
 			ts_info();
 
 			struct subset full;
@@ -127,7 +127,7 @@ int main(int argc, char **argv) {
 			kd_init(full.best);
 
 			load_parameters(full.best);
-			discard_molecules_without_charges_or_parameters();
+			discard_invalid_molecules_or_without_charges_or_parameters();
 			kd_destroy(full.best);
 
 			/* Now we have the right molecules, so we can restart the process */
@@ -156,7 +156,7 @@ int main(int argc, char **argv) {
 			kd_init(full.best);
 
 			load_parameters(full.best);
-			discard_molecules_without_charges_or_parameters();
+			discard_invalid_molecules_or_without_charges_or_parameters();
 			kd_destroy(full.best);
 
 			/* Now we have the right molecules, so we can restart the process */
@@ -183,6 +183,7 @@ int main(int argc, char **argv) {
 		}
 		case MODE_INFO:
 			preprocess_molecules();
+			discard_invalid_molecules_or_without_charges_or_parameters();
 			ts_info();
 			break;
 		case MODE_COVER: {
@@ -198,7 +199,7 @@ int main(int argc, char **argv) {
 			ts_info();
 
 			load_parameters(full.best);
-			discard_molecules_without_charges_or_parameters();
+			discard_invalid_molecules_or_without_charges_or_parameters();
 			kd_destroy(full.best);
 
 			/* Now we have the right molecules, so we can restart the process */

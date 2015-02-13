@@ -26,28 +26,33 @@ static void m_calculate_charge_stats(struct molecule * const m);
 static void fill_atom_types(void);
 static void list_molecules_without_charges(void);
 static void list_molecules_without_parameters(void);
+static void list_invalid_molecules(void);
 static void calculate_y(void);
 static void at_fill_from_atom(struct atom_type * const at, const struct atom * const a);
 static int at_compare_against_atom(const struct atom_type * const at, const struct atom * const a);
 
 /* Symbols for chemical elements */
-static const char * const elems[] = {"H","He","Li","Be","B","C","N","O","F","Ne","Na","Mg","Al","Si","P","S","Cl","Ar","K","Ca","Sc","Ti","V","Cr","Mn","Fe","Co","Ni","Cu","Zn","Ga","Ge","As","Se","Br","Kr","Rb","Sr","Y","Zr","Nb","Mo","Tc","Ru","Rh","Pd","Ag","Cd","In","Sn","Sb","Te","I","Xe","Cs","Ba","La","Ce","Pr","Nd","Pm","Sm","Eu","Gd","Tb","Dy","Ho","Er","Tm","Yb","Lu","Hf","Ta","W","Re","Os","Ir","Pt","Au","Hg","Tl","Pb","Bi","Po","At","Rn","Fr","Ra","Ac","Th","Pa","U","Np","Pu","Am","Cm","Bk","Cf","Es","Fm","Md","No","Lr"};
+static const char * const elems[] = {"??", "H","He","Li","Be","B","C","N","O","F","Ne","Na","Mg","Al","Si","P","S","Cl","Ar","K","Ca","Sc","Ti","V","Cr","Mn","Fe","Co","Ni","Cu","Zn","Ga","Ge","As","Se","Br","Kr","Rb","Sr","Y","Zr","Nb","Mo","Tc","Ru","Rh","Pd","Ag","Cd","In","Sn","Sb","Te","I","Xe","Cs","Ba","La","Ce","Pr","Nd","Pm","Sm","Eu","Gd","Tb","Dy","Ho","Er","Tm","Yb","Lu","Hf","Ta","W","Re","Os","Ir","Pt","Au","Hg","Tl","Pb","Bi","Po","At","Rn","Fr","Ra","Ac","Th","Pa","U","Np","Pu","Am","Cm","Bk","Cf","Es","Fm","Md","No","Lr"};
 
 /* Electronegativities of the chemical elements */
-static const float electronegativies[] = {2.2, 0, 0.98, 1.57, 2.04, 2.55, 3.04, 3.44, 3.98, 0, 0.93, 1.31, 1.61, 1.9, 2.19, 2.58, 3.16, 0, 0.82, 1, 1.36, 1.54, 1.63, 1.66, 1.55, 1.83, 1.88, 1.91, 1.9, 1.65, 1.81, 2.01, 2.18, 2.55, 2.96, 3, 0.82, 0.95, 1.22, 1.33, 1.6, 2.16, 1.9, 2.2, 2.28, 2.2, 1.93, 1.69, 1.78, 1.96, 2.05, 2.1, 2.66, 2.6, 0.79, 0.89, 1.1, 1.12, 1.13, 1.14, 1.13, 1.17, 1.2, 1.2, 1.2, 1.22, 1.23, 1.24, 1.25, 1.1, 1.27, 1.3, 1.5, 2.36, 1.9, 2.2, 2.2, 2.28, 2.54, 2, 2.04, 2.33, 2.02, 2, 2.2, 0, 0.7, 0.9, 1.1, 1.3, 1.5, 1.38, 1.36, 1.28, 1.3, 1.3, 1.3, 1.3, 1.3, 1.3};
+static const float electronegativies[] = {0.0, 2.2, 0, 0.98, 1.57, 2.04, 2.55, 3.04, 3.44, 3.98, 0, 0.93, 1.31, 1.61, 1.9, 2.19, 2.58, 3.16, 0, 0.82, 1, 1.36, 1.54, 1.63, 1.66, 1.55, 1.83, 1.88, 1.91, 1.9, 1.65, 1.81, 2.01, 2.18, 2.55, 2.96, 3, 0.82, 0.95, 1.22, 1.33, 1.6, 2.16, 1.9, 2.2, 2.28, 2.2, 1.93, 1.69, 1.78, 1.96, 2.05, 2.1, 2.66, 2.6, 0.79, 0.89, 1.1, 1.12, 1.13, 1.14, 1.13, 1.17, 1.2, 1.2, 1.2, 1.22, 1.23, 1.24, 1.25, 1.1, 1.27, 1.3, 1.5, 2.36, 1.9, 2.2, 2.2, 2.28, 2.54, 2, 2.04, 2.33, 2.02, 2, 2.2, 0, 0.7, 0.9, 1.1, 1.3, 1.5, 1.38, 1.36, 1.28, 1.3, 1.3, 1.3, 1.3, 1.3, 1.3};
 
 /* Convert atomic symbol to atomic number */
 int convert_symbol_to_Z(const char * const symb) {
 
 	assert(symb != NULL);
 
-	for(int i = 0; i < 103; i++)
+	for(int i = 1; i < 103; i++)
 		if(!strcmp(symb, elems[i]))
-			return i + 1;
+			return i;
 
 	/* Check for deuterium and tritium */
 	if(!strcmp(symb, "D") || !strcmp(symb, "T"))
 		return 1;
+
+	/* Check for unspecified atom by Mol file format */
+	if(!strcmp(symb, "A") || !strcmp(symb, "*") || !strcmp(symb, "R"))
+		return 0;
 
 	/* Not found */
 	return 0;
@@ -56,8 +61,8 @@ int convert_symbol_to_Z(const char * const symb) {
 /* Convert atomic number to symbol */
 const char *convert_Z_to_symbol(int Z) {
 
-	if(0 < Z && Z < 100)
-		return elems[Z - 1];
+	if(0 < Z && Z < 103)
+		return elems[Z];
 	else
 		return "??";
 }
@@ -210,7 +215,7 @@ static void m_calculate_avg_electronegativity(struct molecule * const m) {
 
 	double hsum = 0.0;
 	for(int i = 0; i < m->atoms_count; i++)
-		hsum += 1.0 / electronegativies[m->atoms[i].Z - 1];
+		hsum += 1.0 / electronegativies[m->atoms[i].Z];
 
 	m->electronegativity = (float) (m->atoms_count / hsum);
 }
@@ -471,7 +476,35 @@ static void list_molecules_without_charges(void) {
 	printf("\n");
 }
 
-void discard_molecules_without_charges_or_parameters(void) {
+/* List molecules which have wrong structure */
+static void list_invalid_molecules(void) {
+
+	/* Print some statistics */
+	int invalid_molecules_count = 0;
+	for(int i = 0; i < ts.molecules_count; i++)
+		if(!ts.molecules[i].is_valid)
+			invalid_molecules_count++;
+
+	printf("\nLoaded %d valid molecules out of total %d (%4.2f %%).\n",
+		ts.molecules_count - invalid_molecules_count, ts.molecules_count,
+		100.0f * (ts.molecules_count - invalid_molecules_count) / ts.molecules_count);
+
+	if(!invalid_molecules_count || !s.list_omitted_molecules)
+		return;
+
+	/* And the affected molecules themselves */
+	printf("List of invalid molecules:\n");
+	for(int i = 0; i < ts.molecules_count; i++)
+		if(!ts.molecules[i].is_valid)
+			printf("%s; ", ts.molecules[i].name);
+
+	printf("\n");
+}
+
+/* Remove molecules which can't be further used */
+void discard_invalid_molecules_or_without_charges_or_parameters(void) {
+
+	list_invalid_molecules();
 
 	if(s.mode == MODE_CHARGES || s.mode == MODE_CROSS || s.mode == MODE_COVER)
 		list_molecules_without_parameters();
@@ -484,14 +517,16 @@ void discard_molecules_without_charges_or_parameters(void) {
 	int number_of_discarded = 0;
 
 	while(idx < ts.molecules_count) {
-		int cond;
+		int cond = 0;
 		/* Different combination of parameters/charges are required for each mode, so act accordingly */
-		if(s.mode == MODE_CHARGES || s.mode == MODE_COVER)
+		if(s.mode == MODE_CHARGES)
+			cond = !ts.molecules[idx].has_parameters || !ts.molecules[idx].is_valid;
+		else if (s.mode == MODE_COVER)
 			cond = !ts.molecules[idx].has_parameters;
 		else if (s.mode == MODE_PARAMS)
-			cond = !ts.molecules[idx].has_charges;
-		else
-			cond = !ts.molecules[idx].has_parameters || !ts.molecules[idx].has_charges;
+			cond = !ts.molecules[idx].has_charges || !ts.molecules[idx].is_valid;
+		else if (s.mode == MODE_CROSS)
+			cond = !ts.molecules[idx].has_parameters || !ts.molecules[idx].has_charges || !ts.molecules[idx].is_valid;
 
 		if(cond) {
 			number_of_discarded++;
@@ -505,6 +540,9 @@ void discard_molecules_without_charges_or_parameters(void) {
 		} else
 			idx++;
 	}
+
+	if(number_of_discarded)
+		printf("\nDiscarded %d molecules.\n", number_of_discarded);
 
 	/* Shrink molecules array */
 	ts.molecules = (struct molecule *) realloc(ts.molecules, sizeof(struct molecule) * ts.molecules_count);
