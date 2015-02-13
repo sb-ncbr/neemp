@@ -24,7 +24,8 @@ static void m_calculate_rdists(struct molecule * const m);
 static void m_calculate_avg_electronegativity(struct molecule * const m);
 static void m_calculate_charge_stats(struct molecule * const m);
 static void fill_atom_types(void);
-static void discard_molecules_without_charges(void);
+static void list_molecules_without_charges(void);
+static void list_molecules_without_parameters(void);
 static void calculate_y(void);
 static void at_fill_from_atom(struct atom_type * const at, const struct atom * const a);
 static int at_compare_against_atom(const struct atom_type * const at, const struct atom * const a);
@@ -133,34 +134,7 @@ void ts_destroy(void) {
 	free(ts.atom_types);
 }
 
-/* Remove molecules for which the charges haven't been loaded */
-static void discard_molecules_without_charges(void) {
 
-	int i = 0;
-	int number_of_discarded = 0;
-
-	while(i < ts.molecules_count) {
-		if(!ts.molecules[i].charges_loaded) {
-			number_of_discarded++;
-
-			/* Destroy molecule without charges; fill its space with the last one */
-			ts.atoms_count -= ts.molecules[i].atoms_count;
-			m_destroy(&ts.molecules[i]);
-			ts.molecules_count--;
-			/* Check if the last molecule was discarded */
-			if(i != ts.molecules_count)
-				ts.molecules[i] = ts.molecules[ts.molecules_count];
-		} else
-			i++;
-
-	}
-
-	if(number_of_discarded)
-		printf("Discarded %d molecules without loaded charges.\n", number_of_discarded);
-
-	/* Shrink molecules array */
-	ts.molecules = (struct molecule *) realloc(ts.molecules, sizeof(struct molecule) * ts.molecules_count);
-}
 
 /* Fill atom type structures */
 static void fill_atom_types(void) {
@@ -184,6 +158,7 @@ static void fill_atom_types(void) {
 				/* Create new atom type */
 				at_fill_from_atom(&ts.atom_types[ts.atom_types_count], &ATOM);
 				ts.atom_types[ts.atom_types_count].atoms_count = 1;
+				ts.atom_types[ts.atom_types_count].has_parameters = 0;
 				ts.atom_types_count++;
 			}
 			#undef ATOM
@@ -285,9 +260,6 @@ int get_atom_type_idx(const struct atom * const a) {
 void preprocess_molecules(void) {
 
 	if(s.mode == MODE_PARAMS || s.mode == MODE_CROSS) {
-		/* Remove molecule for which the charges are not present */
-		discard_molecules_without_charges();
-
 		/* Calculate sum and average of the charges in the molecule */
 		for(int i = 0; i < ts.molecules_count; i++)
 			m_calculate_charge_stats(&ts.molecules[i]);
@@ -439,4 +411,109 @@ static int at_compare_against_atom(const struct atom_type * const at, const stru
 				/* Something bad happened */
 				assert(0);
 	}
+}
+
+/* List molecules for which we don't have parameters */
+static void list_molecules_without_parameters(void) {
+
+	/* Detect those molecules */
+	for(int i = 0; i < ts.atom_types_count; i++)
+		if(!ts.atom_types[i].has_parameters) {
+			for(int j = 0; j < ts.atom_types[i].atoms_count; j++) {
+				ts.molecules[ts.atom_types[i].atoms_molecule_idx[j]].has_parameters = 0;
+			}
+		}
+
+	/* Print some statistics */
+	int without_parameters_count = 0;
+	for(int i = 0; i < ts.molecules_count; i++)
+		if(!ts.molecules[i].has_parameters)
+			without_parameters_count++;
+
+	printf("\nLoaded parameters covering %d out of %d molecules (%4.2f %%).\n",
+	ts.molecules_count - without_parameters_count, ts.molecules_count,
+	100.0f * (ts.molecules_count - without_parameters_count) / ts.molecules_count);
+
+	if(!without_parameters_count)
+		return;
+
+	/* And the affected molecules themselves */
+	printf("List of molecules without appropriate parameters loaded:\n");
+	for(int i = 0; i < ts.molecules_count; i++)
+		if(!ts.molecules[i].has_parameters)
+			printf("%s; ", ts.molecules[i].name);
+
+	printf("\n");
+}
+
+/* List molecules for which the charges haven't been loaded */
+static void list_molecules_without_charges(void) {
+
+	/* Print some statistics */
+	int without_charges_count = 0;
+	for(int i = 0; i < ts.molecules_count; i++)
+		if(!ts.molecules[i].has_charges)
+			without_charges_count++;
+
+	printf("\nLoaded charges covering %d out of %d molecules (%4.2f %%).\n",
+		ts.molecules_count - without_charges_count, ts.molecules_count,
+		100.0f * (ts.molecules_count - without_charges_count) / ts.molecules_count);
+
+	if(!without_charges_count)
+		return;
+
+	/* And the affected molecules themselves */
+	printf("List of molecules without appropriate parameters loaded:\n");
+	for(int i = 0; i < ts.molecules_count; i++)
+		if(!ts.molecules[i].has_charges)
+			printf("%s; ", ts.molecules[i].name);
+
+	printf("\n");
+}
+
+void discard_molecules_without_charges_or_parameters(void) {
+
+	if(s.mode == MODE_CHARGES || s.mode == MODE_CROSS)
+		list_molecules_without_parameters();
+
+	if(s.mode == MODE_PARAMS || s.mode == MODE_CROSS)
+		list_molecules_without_charges();
+
+	/* Discard those molecules */
+	int idx = 0;
+	int number_of_discarded = 0;
+
+	while(idx < ts.molecules_count) {
+		int cond;
+		/* Different combination of parameters/charges are required for each mode, so act accordingly */
+		if(s.mode == MODE_CHARGES)
+			cond = !ts.molecules[idx].has_parameters;
+		else if (s.mode == MODE_PARAMS)
+			cond = !ts.molecules[idx].has_charges;
+		else
+			cond = !ts.molecules[idx].has_parameters || !ts.molecules[idx].has_charges;
+
+		if(cond) {
+			number_of_discarded++;
+			/* Destroy molecule without parameters; fill its space with the last one */
+			ts.atoms_count -= ts.molecules[idx].atoms_count;
+			m_destroy(&ts.molecules[idx]);
+			ts.molecules_count--;
+			/* Check if the last molecule was discarded */
+			if(idx != ts.molecules_count)
+				ts.molecules[idx] = ts.molecules[ts.molecules_count];
+		} else
+			idx++;
+	}
+
+	/* Shrink molecules array */
+	ts.molecules = (struct molecule *) realloc(ts.molecules, sizeof(struct molecule) * ts.molecules_count);
+
+	/* We need to rebuild atom types info */
+	for(int i = 0; i < ts.atom_types_count; i++)
+		at_destroy(&ts.atom_types[i]);
+
+	free(ts.atom_types);
+
+	fill_atom_types();
 }

@@ -80,6 +80,8 @@ void load_molecules(void) {
 					      "Increase value of MAX_MOLECULES in config.h and recompile.\n", MAX_MOLECULES);
 	}
 
+	printf("Loaded %d molecules from .sdf file.\n", i);
+
 	if(is_sdf_gzipped)
 		gzclose(gz_f);
 	else
@@ -125,7 +127,6 @@ void load_charges(void) {
 		/* Find corresponding previously loaded molecule */
 		int idx = find_molecule_by_name(line);
 		if(idx == NOT_FOUND) {
-			fprintf(stderr, "Molecule %s not loaded from .sdf file. Skipping the charge record (%s).\n", line, s.chg_file);
 			/* Skip the whole record */
 			do {
 				if(!fgets(line, MAX_LINE_LEN, f)) {
@@ -159,7 +160,7 @@ void load_charges(void) {
 			sscanf(line, "%d %s %f\n", &tmp_int, tmp_str, &ts.molecules[idx].atoms[i].reference_charge);
 		}
 
-		ts.molecules[idx].charges_loaded = 1;
+		ts.molecules[idx].has_charges = 1;
 
 		/* Read empty line */
 		if(!fgets(line, MAX_LINE_LEN, f) && !feof(f))
@@ -267,6 +268,8 @@ void load_parameters(struct kappa_data * const kd) {
 				/* Store alpha and beta parameters */
 				kd->parameters_alpha[atom_type_idx] = (float) atof((char *) parameter_a);
 				kd->parameters_beta[atom_type_idx] = (float) atof((char *) parameter_b);
+
+				ts.atom_types[atom_type_idx].has_parameters = 1;
 			}
 
 			xmlFree(parameter_a);
@@ -285,10 +288,10 @@ void load_parameters(struct kappa_data * const kd) {
 
 	/* Check if we load all necessary parameters */
 	for(int i = 0; i < ts.atom_types_count; i++) {
-		if(fabsf(kd->parameters_alpha[i] * kd->parameters_beta[i]) <= 0.0f) {
+		if(!ts.atom_types[i].has_parameters) {
 			char buff[10];
 			at_format_text(&ts.atom_types[i], buff);
-			EXIT_ERROR(RUN_ERROR, "No parameters loaded for: %s\n", buff);
+			fprintf(stderr, "No parameters loaded for: %s\n", buff);
 		}
 	}
 }
@@ -560,7 +563,10 @@ static int load_molecule(FILE * const f, gzFile gz_f, struct molecule * const m)
 	} else
 		EXIT_ERROR(IO_ERROR, "MDL file with unknown version \"%s\" (%s).\n", version, s.sdf_file);
 
-	m->charges_loaded = 0;
+	m->has_charges = 0;
+	/* Assume that we have parameters, change to zero if that's not the case
+	 * (it's easier than the other way around) */
+	m->has_parameters = 1;
 
 	return 0;
 }

@@ -66,6 +66,7 @@ int main(int argc, char **argv) {
 		case MODE_PARAMS: {
 			load_charges();
 			preprocess_molecules();
+			discard_molecules_without_charges_or_parameters();
 			ts_info();
 
 			struct subset full;
@@ -118,8 +119,6 @@ int main(int argc, char **argv) {
 		case MODE_CHARGES: {
 			struct subset full;
 			preprocess_molecules();
-			b_init(&full.molecules, ts.molecules_count);
-			b_set_all(&full.molecules);
 
 			/* We use only one particular kappa which is read from .par file */
 			full.kappa_data_count = 1;
@@ -127,6 +126,15 @@ int main(int argc, char **argv) {
 			full.best = &full.data[0];
 			kd_init(full.best);
 
+			load_parameters(full.best);
+			discard_molecules_without_charges_or_parameters();
+			kd_destroy(full.best);
+
+			/* Now we have the right molecules, so we can restart the process */
+			b_init(&full.molecules, ts.molecules_count);
+			b_set_all(&full.molecules);
+
+			kd_init(full.best);
 			load_parameters(full.best);
 			print_parameters(full.best);
 
@@ -140,8 +148,6 @@ int main(int argc, char **argv) {
 			load_charges();
 			struct subset full;
 			preprocess_molecules();
-			b_init(&full.molecules, ts.molecules_count);
-			b_set_all(&full.molecules);
 
 			/* We use only one particular kappa which is read from .par file */
 			full.kappa_data_count = 1;
@@ -149,6 +155,15 @@ int main(int argc, char **argv) {
 			full.best = &full.data[0];
 			kd_init(full.best);
 
+			load_parameters(full.best);
+			discard_molecules_without_charges_or_parameters();
+			kd_destroy(full.best);
+
+			/* Now we have the right molecules, so we can restart the process */
+			b_init(&full.molecules, ts.molecules_count);
+			b_set_all(&full.molecules);
+
+			kd_init(full.best);
 			load_parameters(full.best);
 
 			calculate_charges(&full, full.best);

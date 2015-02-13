@@ -32,7 +32,8 @@ struct molecule {
 
 	/* Auxiliary variables */
 
-	int charges_loaded;
+	int has_charges;
+	int has_parameters;
 	float electronegativity;
 	float average_charge;
 	float sum_of_charges;
@@ -51,6 +52,8 @@ struct atom_type {
 	 * identifies particular atom i of this atom type */
 	int *atoms_molecule_idx;
 	int *atoms_atom_idx;
+
+	int has_parameters;
 };
 
 int get_atom_type_idx(const struct atom * const a);
@@ -73,5 +76,6 @@ void ts_destroy(void);
 void ts_info(void);
 
 void preprocess_molecules(void);
+void discard_molecules_without_charges_or_parameters(void);
 
 #endif /* __STRUCTURES_H__ */
