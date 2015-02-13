@@ -47,6 +47,7 @@ static struct option long_options[] = {
 	{"limit-time", required_argument, 0, 41},
 	{"check-charges", no_argument, 0, 50},
 	{"max-threads", required_argument, 0, 51},
+	{"list-omitted-molecules", no_argument, 0, 52},
 	{NULL, 0, 0, 0}
 };
 
@@ -81,6 +82,7 @@ void s_init(void) {
 	s.check_charges = 0;
 	s.max_threads = 1;
 	s.total_charge = 0.0f;
+	s.list_omitted_molecules = 0;
 }
 
 /* Prints help if --version is issued */
@@ -106,6 +108,7 @@ static void print_help(void) {
 	printf("  -m, --mode MODE		 set mode for the NEEMP. Valid choices are: info, params, charges, cross, cover (required)\n");
 	printf("      --sdf-file FILE		 SDF file (required)\n");
 	printf("      --atom-types-by METHOD	 classify atoms according to the METHOD. Valid choices are: Element, ElemBond.\n");
+	printf("      --list-omitted-molecules	 list names of molecules for which we don't have charges or parameters loaded (mode dependent).\n");
 	printf("Options specific to mode: params\n");
 	printf("      --chg-file FILE		 FILE with ab-initio charges (required)\n");
 	printf("      --chg-stats-out-file FILE	 output charges statistics to the FILE\n");
@@ -293,6 +296,9 @@ void parse_options(int argc, char **argv) {
 				break;
 			case 51:
 				s.max_threads =  atoi(optarg);
+				break;
+			case 52:
+				s.list_omitted_molecules = 1;
 				break;
 			case '?':
 				EXIT_ERROR(ARG_ERROR, "%s", "Try -h/--help.\n");

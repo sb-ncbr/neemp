@@ -82,6 +82,7 @@ struct settings {
 	time_t limit_time;
 
 	int check_charges;
+	int list_omitted_molecules;
 
 	int max_threads;
 

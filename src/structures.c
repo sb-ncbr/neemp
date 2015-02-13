@@ -434,7 +434,7 @@ static void list_molecules_without_parameters(void) {
 	ts.molecules_count - without_parameters_count, ts.molecules_count,
 	100.0f * (ts.molecules_count - without_parameters_count) / ts.molecules_count);
 
-	if(!without_parameters_count)
+	if(!without_parameters_count || !s.list_omitted_molecules)
 		return;
 
 	/* And the affected molecules themselves */
@@ -459,7 +459,7 @@ static void list_molecules_without_charges(void) {
 		ts.molecules_count - without_charges_count, ts.molecules_count,
 		100.0f * (ts.molecules_count - without_charges_count) / ts.molecules_count);
 
-	if(!without_charges_count)
+	if(!without_charges_count || !s.list_omitted_molecules)
 		return;
 
 	/* And the affected molecules themselves */
