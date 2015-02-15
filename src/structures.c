@@ -468,7 +468,7 @@ static void list_molecules_without_charges(void) {
 		return;
 
 	/* And the affected molecules themselves */
-	printf("List of molecules without appropriate parameters loaded:\n");
+	printf("List of molecules without appropriate charges loaded:\n");
 	for(int i = 0; i < ts.molecules_count; i++)
 		if(!ts.molecules[i].has_charges)
 			printf("%s; ", ts.molecules[i].name);
