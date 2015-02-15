@@ -562,7 +562,7 @@ static int load_molecule(FILE * const f, gzFile gz_f, struct molecule * const m)
 				EXIT_ERROR(IO_ERROR, "Reading failed for the molecule \"%s\" (%s).\n", m->name, s.sdf_file);
 		} while(strncmp(line, "$$$$", strlen("$$$$")));
 	} else
-		EXIT_ERROR(IO_ERROR, "MDL file with unknown version \"%s\" (%s).\n", version, s.sdf_file);
+		EXIT_ERROR(IO_ERROR, "MOL record with unknown version \"%s\" (%s) for molecule \"%s\".\n", version, s.sdf_file, m->name);
 
 	m->has_charges = 0;
 	/* Assume that we have parameters, change to zero if that's not the case
