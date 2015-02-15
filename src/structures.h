@@ -47,6 +47,7 @@ struct atom_type {
 	int bond_order;
 
 	int atoms_count;
+	int molecules_count;
 
 	/* the pair (atoms_molecule_idx[i], atoms_atom_idx[i]) uniquely
 	 * identifies particular atom i of this atom type */

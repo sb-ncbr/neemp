@@ -206,6 +206,21 @@ static void fill_atom_types(void) {
 			}
 			#undef ATOM
 		}
+
+	/* Calculate number of molecules which contain particular atom type */
+	for(int i = 0; i < ts.atom_types_count; i++) {
+		#define AT ts.atom_types[i]
+		int *molecule_indices = (int *) calloc(ts.molecules_count, sizeof(int));
+		AT.molecules_count = 0;
+		for(int j = 0; j < AT.atoms_count; j++)
+			molecule_indices[AT.atoms_molecule_idx[j]] = 1;
+
+		for(int j = 0; j < ts.molecules_count; j++)
+			if(molecule_indices[j])
+				AT.molecules_count++;
+		#undef AT
+		free(molecule_indices);
+	}
 }
 
 /* Calculate average electronegativity of a molecule (harmonic mean) */
@@ -293,13 +308,13 @@ void ts_info(void) {
 	printf("\nTraining set info\n");
 
 	printf("Molecules: %5d  Atoms: %8d  Atom types: %2d\n", ts.molecules_count, ts.atoms_count, ts.atom_types_count);
-	printf("Atom type     # atoms       %% atoms \n");
+	printf("Atom type     # atoms       %% atoms     # molecules\n");
 
 	for(int i = 0; i < ts.atom_types_count; i++) {
 		#define AT ts.atom_types[i]
 		char buff[10];
 		at_format_text(&AT, buff);
-		printf(" %s %8d        %6.3f\n", buff, AT.atoms_count, 100.0f * (float) AT.atoms_count / ts.atoms_count);
+		printf(" %s %8d        %6.3f     %8d\n", buff, AT.atoms_count, 100.0f * (float) AT.atoms_count / ts.atoms_count, AT.molecules_count);
 		#undef AT
 	}
 
