@@ -136,7 +136,7 @@ void kd_print_stats(const struct kappa_data * const kd) {
 	char message[100];
 	memset(message, 0, 100 * sizeof(char));
 
-	snprintf(message, 100, "K: %6.4f |  R: %6.4f  RMSD: %4.2e  MSE: %4.2e  D_avg: %4.2e  D_max: %4.2e\n",
+	snprintf(message, 100, "K: %6.4f |  R: %6.4f  RMSD: %6.4f  MSE: %6.4f  D_avg: %6.4f  D_max: %6.4f\n",
 		kd->kappa, kd->full_stats.R, kd->full_stats.RMSD, kd->full_stats.MSE, kd->full_stats.D_avg, kd->full_stats.D_max);
 
 	/* Print '*' at the position of the stat which is used for sorting */
