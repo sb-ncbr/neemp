@@ -40,6 +40,7 @@ struct molecule {
 };
 
 void m_destroy(struct molecule * const m);
+void get_sum_formula(const struct molecule * const m, char * const buff, int n);
 
 struct atom_type {
 

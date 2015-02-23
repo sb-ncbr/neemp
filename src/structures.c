@@ -570,3 +570,26 @@ void discard_invalid_molecules_or_without_charges_or_parameters(void) {
 
 	fill_atom_types();
 }
+
+/* Print molecular formula to the string */
+void get_sum_formula(const struct molecule * const m, char * buff, int n) {
+
+	int *atoms = (int *) calloc(103, sizeof(int));
+
+	for(int i = 0; i < m->atoms_count; i++)
+		atoms[m->atoms[i].Z] += 1;
+
+	int len = 0;
+	for(int i = 0; i < 103; i++) {
+		if(atoms[i] == 1)
+			len = snprintf(buff, n - len, "%s", convert_Z_to_symbol(i));
+		else if(atoms[i] > 1)
+			len = snprintf(buff, n - len, "%s%d", convert_Z_to_symbol(i), atoms[i]);
+		else
+			continue;
+
+		buff += len;
+	}
+
+	free(atoms);
+}
