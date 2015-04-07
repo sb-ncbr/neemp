@@ -28,10 +28,12 @@ void calculate_statistics(struct subset * const ss, struct kappa_data * const kd
 
 	int atoms_processed = 0;
 
-	double D_sum_atoms = 0.0;
-	double MSE_sum_molecules = 0.0;
-	double RMSD_sum_molecules = 0.0;
 	double R_sum_molecules = 0.0;
+	double RMSD_sum_molecules = 0.0;
+	double MSE_sum_molecules = 0.0;
+	double D_avg_sum_molecules = 0.0;
+	double D_max_sum_molecules = 0.0;
+
 	int bad_molecules = 0;
 
 	double *D_sum_atom_type = (double *) calloc(ts.atom_types_count, sizeof(double));
@@ -70,7 +72,6 @@ void calculate_statistics(struct subset * const ss, struct kappa_data * const kd
 
 			double diff = kd->charges[atoms_processed + j] - MOLECULE.atoms[j].reference_charge;
 			diff2_sum += diff * diff;
-			D_sum_atoms += fabs(diff);
 			D_sum_molecule += fabs(diff);
 
 			if(max_diff_per_molecule < fabs(diff))
@@ -84,6 +85,8 @@ void calculate_statistics(struct subset * const ss, struct kappa_data * const kd
 			D_sum_atom_type[atom_type_idx] += fabs(diff);
 		}
 
+		D_max_sum_molecules += max_diff_per_molecule;
+
 
 		if(fabs(sum_xx * sum_yy) <= 0.0f)
 			bad_molecules++;
@@ -92,6 +95,7 @@ void calculate_statistics(struct subset * const ss, struct kappa_data * const kd
 
 		RMSD_sum_molecules += sqrt(diff2_sum / MOLECULE.atoms_count);
 		MSE_sum_molecules += diff2_sum;
+		D_avg_sum_molecules += D_sum_molecule / MOLECULE.atoms_count;
 
 		kd->per_molecule_stats[i].R = (float) ((sum_xy * sum_xy) / (sum_xx * sum_yy));
 		kd->per_molecule_stats[i].RMSD = (float) sqrt(diff2_sum / MOLECULE.atoms_count);
@@ -106,16 +110,12 @@ void calculate_statistics(struct subset * const ss, struct kappa_data * const kd
 	kd->full_stats.R = (float) (R_sum_molecules / (ts.molecules_count - bad_molecules));
 	kd->full_stats.RMSD = (float) (RMSD_sum_molecules / ts.molecules_count);
 	kd->full_stats.MSE = (float) (MSE_sum_molecules / ts.molecules_count);
-	kd->full_stats.D_avg = (float) (D_sum_atoms / ts.atoms_count);
+	kd->full_stats.D_avg = (float) (D_avg_sum_molecules / ts.molecules_count);
+	kd->full_stats.D_max = (float) (D_max_sum_molecules / ts.molecules_count);
 
 	/* Calculate per atom type statistics */
 	for(int i = 0; i < ts.atom_types_count; i++)
 		kd->per_at_stats[i].D_avg = (float) D_sum_atom_type[i] / ts.atom_types[i].atoms_count;
-
-	kd->full_stats.D_max = kd->per_at_stats[0].D_max;
-	for(int i = 1; i < ts.atom_types_count; i++)
-		if(kd->full_stats.D_max < kd->per_at_stats[i].D_max)
-			kd->full_stats.D_max = kd->per_at_stats[i].D_max;
 
 	free(D_sum_atom_type);
 
