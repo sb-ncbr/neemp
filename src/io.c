@@ -13,6 +13,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <unistd.h>
 #include <zlib.h>
 
 #include "neemp.h"
@@ -190,12 +191,28 @@ void load_parameters(struct kappa_data * const kd) {
 
 	xmlDocPtr doc = NULL;
 	xmlNodePtr root_node = NULL;
+	char *par_path;
 
-	if((doc = xmlReadFile(s.par_file, NULL, XML_PARSE_NOBLANKS)) == NULL)
-		EXIT_ERROR(IO_ERROR, "Cannot open or parse .par file \"%s\".\n", s.par_file);
+	if(!access(s.par_file, R_OK)) {
+		if((doc = xmlReadFile(s.par_file, NULL, XML_PARSE_NOBLANKS)) == NULL)
+			EXIT_ERROR(IO_ERROR, "Cannot parse .par file \"%s\".\n", s.par_file);
+
+	} else if (par_path = getenv("NEEMP_PAR_PATH")) {
+		/* Create new path for par file (= par_path + "/" + s.par_file) */
+		char new_par_file[strlen(par_path) + 1 + strlen(s.par_file) + 1];
+		strncpy(new_par_file, par_path, strlen(par_path) + 1);
+		new_par_file[strlen(par_path)] = '/';
+		strncpy(new_par_file + strlen(par_path) + 1, s.par_file, strlen(s.par_file) + 1);
+
+		if((doc = xmlReadFile(new_par_file, NULL, XML_PARSE_NOBLANKS)) == NULL)
+			EXIT_ERROR(IO_ERROR, "Cannot open or parse .par file \"%s\".\n", new_par_file);
+
+	} else {
+		EXIT_ERROR(IO_ERROR, "Cannot open .par file \"%s\". "
+			"Maybe check NEEMP_PAR_PATH?\n", s.par_file);
+	}
 
 	root_node = xmlDocGetRootElement(doc);
-
 
 	xmlNodePtr parameters_node = get_child_node_by_name(root_node, "Parameters");
 	if(parameters_node == NULL)
