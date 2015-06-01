@@ -197,7 +197,7 @@ void load_parameters(struct kappa_data * const kd) {
 		if((doc = xmlReadFile(s.par_file, NULL, XML_PARSE_NOBLANKS)) == NULL)
 			EXIT_ERROR(IO_ERROR, "Cannot parse .par file \"%s\".\n", s.par_file);
 
-	} else if (par_path = getenv("NEEMP_PAR_PATH")) {
+	} else if ((par_path = getenv("NEEMP_PAR_PATH"))) {
 		/* Create new path for par file (= par_path + "/" + s.par_file) */
 		char new_par_file[strlen(par_path) + 1 + strlen(s.par_file) + 1];
 		strncpy(new_par_file, par_path, strlen(par_path) + 1);
