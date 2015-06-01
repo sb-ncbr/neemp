@@ -331,6 +331,7 @@ static int load_molecule(FILE * const f, gzFile gz_f, struct molecule * const m)
 	assert(m != NULL);
 
 	m->is_valid = 1;
+	int charges_sum = 0;
 
 	/* Each molecule is stored in MOL format;
 	 * for reference, see http://c4.cabrillo.edu/404/ctfile.pdf */
@@ -451,10 +452,25 @@ static int load_molecule(FILE * const f, gzFile gz_f, struct molecule * const m)
 				m->atoms[atom2 -1].bond_order = bond_order;
 		}
 
-		/* Skip rest of the record */
+		/* Check for the formal charges lines, skip the rest of the record */
 		do {
 			if(!mygets(line, MAX_LINE_LEN, f, gz_f))
 				EXIT_ERROR(IO_ERROR, "Reading failed for the molecule \"%s\" (%s).\n", m->name, s.sdf_file);
+
+			/* Charge property lines
+			    nn8 - number of entries (1..8)
+			    aaa - atom number
+				M CHGnn8 aaa vvv ...
+				vvv: -15 to +15. Default of 0 = uncharged atom.
+			*/
+
+			if(!strncmp(line, "M  CHG", strlen("M  CHG"))) {
+				int entries_count = strn2int(line + 6, 3);
+
+				for (int i = 0; i < entries_count; i++)
+					charges_sum += strn2int(line + 14 + 8 * i, 3);
+			}
+
 		} while(strncmp(line, "$$$$", strlen("$$$$")));
 
 	} else if(!strcmp(version, "V3000")) {
@@ -506,6 +522,28 @@ static int load_molecule(FILE * const f, gzFile gz_f, struct molecule * const m)
 
 			sscanf(line + 7, "%d %2s %f %f %f", &tmp, atom_symbol,\
 				&m->atoms[i].position[0], &m->atoms[i].position[1], &m->atoms[i].position[2]);
+
+			/* Check for charges records (CHG=xxx) */
+			char *pos = strstr(line, "CHG=");
+			if(pos) {
+				int chg = 0;
+				sscanf(pos + 4, "%d", &chg);
+				charges_sum += chg;
+			}
+
+			/* Check whether the entry continues on the next line */
+			while(line[strlen(line) - 2] == '-') {
+				if(!mygets(line, MAX_LINE_LEN, f, gz_f))
+					EXIT_ERROR(IO_ERROR, "Reading failed for the molecule \"%s\" (%s).\n", m->name, s.sdf_file);
+
+				/* Check for charges records again */
+				pos = strstr(line, "CHG=");
+				if(pos) {
+					int chg = 0;
+					sscanf(pos + 4, "%d", &chg);
+					charges_sum += chg;
+				}
+			}
 
 			if(s.mode == MODE_PARAMS) {
 				m->atoms[i].rdists = (double *) calloc(m->atoms_count, sizeof(double));
@@ -581,6 +619,7 @@ static int load_molecule(FILE * const f, gzFile gz_f, struct molecule * const m)
 	} else
 		EXIT_ERROR(IO_ERROR, "MOL record with unknown version \"%s\" (%s) for molecule \"%s\".\n", version, s.sdf_file, m->name);
 
+	m->sum_of_charges = (float) charges_sum;
 	m->has_charges = 0;
 	/* Assume that we have parameters, change to zero if that's not the case
 	 * (it's easier than the other way around) */

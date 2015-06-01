@@ -40,7 +40,6 @@ static struct option long_options[] = {
 	{"kappa", required_argument, 0, 21},
 	{"kappa-preset", required_argument, 0, 22},
 	{"fs-precision", required_argument, 0, 23},
-	{"total-charge", required_argument, 0, 24},
 	{"atom-types-by", required_argument, 0, 31},
 	{"tabu-size", required_argument, 0, 32},
 	{"limit-iters", required_argument, 0, 40},
@@ -81,7 +80,6 @@ void s_init(void) {
 	s.limit_time = NO_LIMIT_TIME;
 	s.check_charges = 0;
 	s.max_threads = 1;
-	s.total_charge = 0.0f;
 	s.list_omitted_molecules = 0;
 }
 
@@ -249,9 +247,6 @@ void parse_options(int argc, char **argv) {
 				break;
 			case 23:
 				s.full_scan_precision = (float) atof(optarg);
-				break;
-			case 24:
-				s.total_charge = (float) atof(optarg);
 				break;
 			case 31: /* at-customization */
 				if(!strcmp(optarg, atom_types_by_strings[AT_CUSTOM_ELEMENT]))
