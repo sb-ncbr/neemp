@@ -36,12 +36,9 @@ struct subset *discard_iterative(const struct subset * const initial) {
 	t_init(&ban_list, ts.molecules_count * s.tabu_size);
 
 	for(int i = 0; !l_check(&limits) && !termination_flag; i++) {
-		current = (struct subset *) calloc(1, sizeof(struct subset));
-		current->parent = old;
-
 		/* Flip just one molecule from the parent */
-		b_init(&current->molecules, ts.molecules_count);
-		b_set_as(&current->molecules, &old->molecules);
+		current = (struct subset *) calloc(1, sizeof(struct subset));
+		ss_init(current, old);
 
 		/* Generate random molecule to flip, check if it's allowed */
 		int mol_idx;
@@ -102,11 +99,9 @@ struct subset *discard_simple(const struct subset * const initial) {
 	for(int i = 0; i < ts.molecules_count && !termination_flag && !l_check(&limits); i++) {
 
 		current = (struct subset *) calloc(1, sizeof(struct subset));
-		current->parent = best;
+		ss_init(current, best);
 
 		/* Flip i-th molecule from the parent */
-		b_init(&current->molecules, ts.molecules_count);
-		b_set_as(&current->molecules, &best->molecules);
 		b_flip(&current->molecules, i);
 
 		if(s.verbosity >= VERBOSE_DISCARD) {

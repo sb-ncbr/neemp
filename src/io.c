@@ -686,8 +686,8 @@ void output_charges_stats(const struct subset * const ss) {
 		char formula[1000];
 		get_sum_formula(&ts.molecules[i], formula, 1000);
 		fprintf(f, "Name: %s  Formula: %s  ", ts.molecules[i].name, formula);
-		fprintf(f, "R: %6.4f  RMSD: %6.4f  MSE: %6.4f  D_avg: %6.4f  D_max: %6.4f\n",
-			ss->best->per_molecule_stats[i].R, ss->best->per_molecule_stats[i].RMSD, ss->best->per_molecule_stats[i].MSE,
+		fprintf(f, "R: %6.4f  R_w: %6.4f  RMSD: %6.4f  D_avg: %6.4f  D_max: %6.4f\n",
+			ss->best->per_molecule_stats[i].R, ss->best->per_molecule_stats[i].R_weighted, ss->best->per_molecule_stats[i].RMSD,
 			ss->best->per_molecule_stats[i].D_avg, ss->best->per_molecule_stats[i].D_max);
 		for(int j = 0; j < ts.molecules[i].atoms_count; j++) {
 			#define ATOM ts.molecules[i].atoms[j]

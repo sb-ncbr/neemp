@@ -19,6 +19,24 @@
 extern const struct settings s;
 extern const struct training_set ts;
 
+/* Initialize new subset structure from parent */
+void ss_init(struct subset * const ss, const struct subset * const parent) {
+
+	ss->weights = (float *) calloc(ts.atom_types_count, sizeof(float));
+	if(!ss->weights)
+		EXIT_ERROR(MEM_ERROR, "%s", "Cannot allocate memory for weights array.\n");
+
+	b_init(&ss->molecules, ts.molecules_count);
+	ss->parent = parent;
+	if(parent) {
+		b_set_as(&ss->molecules, &parent->molecules);
+		memcpy(ss->weights, parent->weights, ts.atom_types_count * sizeof(float));
+	}
+	else
+		b_set_all(&ss->molecules);
+}
+
+
 /* Allocate memory for the contents of kappa_data structure */
 void kd_init(struct kappa_data * const kd) {
 
@@ -59,6 +77,7 @@ void ss_destroy(struct subset * const ss) {
 
 	b_destroy(&ss->molecules);
 	free(ss->data);
+	free(ss->weights);
 }
 
 /* Print loaded parameters */
@@ -87,13 +106,13 @@ void print_results(const struct subset * const ss) {
 	printf("\nUsed molecules: %5d\n", b_count_bits(&ss->molecules));
 	kd_print_stats(ss->best);
 
-	printf("Atom type             A       B\t\t     R\t    RMSD       MSE\t  D_avg\t  D_max\n");
+	printf("Atom type            A       B           R    RMSD   D_avg   D_max\n");
 	for(int i = 0; i < ts.atom_types_count; i++) {
 		char buff[10];
 		at_format_text(&ts.atom_types[i], buff);
-		printf(" %s   \t%7.4f\t%7.4f\t\t%6.4f  %4.2e  %4.2e\t%7.3f\t%7.3f\n",
+		printf(" %s  \t%6.4f\t%6.4f      %6.4f  %6.4f  %6.4f  %6.4f\n",
 			buff, ss->best->parameters_alpha[i], ss->best->parameters_beta[i],
-			ss->best->per_at_stats[i].R, ss->best->per_at_stats[i].RMSD, ss->best->per_at_stats[i].MSE,
+			ss->best->per_at_stats[i].R, ss->best->per_at_stats[i].RMSD,
 			ss->best->per_at_stats[i].D_avg, ss->best->per_at_stats[i].D_max);
 	}
 
@@ -106,10 +125,10 @@ float kd_sort_by_return_value(const struct kappa_data * const kd) {
 	switch(s.sort_by) {
 		case SORT_R:
 			return kd->full_stats.R;
+		case SORT_R_WEIGHTED:
+			return kd->full_stats.R_weighted;
 		case SORT_RMSD:
 			return kd->full_stats.RMSD;
-		case SORT_MSE:
-			return kd->full_stats.MSE;
 		case SORT_D_AVG:
 			return kd->full_stats.D_avg;
 		case SORT_D_MAX:
@@ -123,8 +142,9 @@ float kd_sort_by_return_value(const struct kappa_data * const kd) {
 /* Determine if kd1 is better than kd2 in terms of the sort-by value */
 int kd_sort_by_is_better(const struct kappa_data * const kd1, const struct kappa_data * const kd2) {
 
-	if(s.sort_by == SORT_R)
-		return kd1->full_stats.R > kd2->full_stats.R;
+	/* Higher R/R_weighted is better, otherwise prefer lower value */
+	if(s.sort_by == SORT_R || s.sort_by == SORT_R_WEIGHTED)
+		return kd_sort_by_return_value(kd1) > kd_sort_by_return_value(kd2);
 	else
 		return kd_sort_by_return_value(kd1) < kd_sort_by_return_value(kd2);
 }
@@ -136,30 +156,8 @@ void kd_print_stats(const struct kappa_data * const kd) {
 	char message[100];
 	memset(message, 0, 100 * sizeof(char));
 
-	snprintf(message, 100, "K: %6.4f |  R: %6.4f  RMSD: %6.4f  MSE: %6.4f  D_avg: %6.4f  D_max: %6.4f\n",
-		kd->kappa, kd->full_stats.R, kd->full_stats.RMSD, kd->full_stats.MSE, kd->full_stats.D_avg, kd->full_stats.D_max);
-
-	/* Print '*' at the position of the stat which is used for sorting */
-	switch(s.sort_by) {
-		case SORT_R:
-			message[12] = '*';
-			break;
-		case SORT_RMSD:
-			message[23] = '*';
-			break;
-		case SORT_MSE:
-			message[39] = '*';
-			break;
-		case SORT_D_AVG:
-			message[54] = '*';
-			break;
-		case SORT_D_MAX:
-			message[71] = '*';
-			break;
-		default:
-			/* Something bad happened */
-			assert(0);
-	}
+	snprintf(message, 100, "K: %6.4f |  R: %6.4f  R_w: %6.4f  RMSD: %6.4f  D_avg: %6.4f  D_max: %6.4f\n",
+		kd->kappa, kd->full_stats.R, kd->full_stats.R_weighted, kd->full_stats.RMSD, kd->full_stats.D_avg, kd->full_stats.D_max);
 
 	printf("%s", message);
 }

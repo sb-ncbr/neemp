@@ -70,8 +70,12 @@ int main(int argc, char **argv) {
 			ts_info();
 
 			struct subset full;
-			b_init(&full.molecules, ts.molecules_count);
-			b_set_all(&full.molecules);
+			ss_init(&full, NULL);
+
+			/* If weights were not supplied by user, adjust them automatically */
+			if(s.wgh_file[0] == '\0')
+				adjust_weights(&full);
+
 			find_the_best_parameters_for_subset(&full);
 
 			printf("\nResults for the full set:\n\n");
@@ -131,8 +135,7 @@ int main(int argc, char **argv) {
 			kd_destroy(full.best);
 
 			/* Now we have the right molecules, so we can restart the process */
-			b_init(&full.molecules, ts.molecules_count);
-			b_set_all(&full.molecules);
+			ss_init(&full, NULL);
 
 			kd_init(full.best);
 			load_parameters(full.best);
@@ -160,8 +163,7 @@ int main(int argc, char **argv) {
 			kd_destroy(full.best);
 
 			/* Now we have the right molecules, so we can restart the process */
-			b_init(&full.molecules, ts.molecules_count);
-			b_set_all(&full.molecules);
+			ss_init(&full, NULL);
 
 			kd_init(full.best);
 			load_parameters(full.best);
@@ -203,8 +205,7 @@ int main(int argc, char **argv) {
 			kd_destroy(full.best);
 
 			/* Now we have the right molecules, so we can restart the process */
-			b_init(&full.molecules, ts.molecules_count);
-			b_set_all(&full.molecules);
+			ss_init(&full, NULL);
 
 			kd_init(full.best);
 			load_parameters(full.best);

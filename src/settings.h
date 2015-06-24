@@ -26,8 +26,8 @@ enum app_mode {
 enum sort_mode {
 
 	SORT_R,
+	SORT_R_WEIGHTED,
 	SORT_RMSD,
-	SORT_MSE,
 	SORT_D_AVG,
 	SORT_D_MAX
 };
@@ -59,6 +59,7 @@ struct settings {
 	char sdf_file[MAX_PATH_LEN];
 	char chg_file[MAX_PATH_LEN];
 	char par_file[MAX_PATH_LEN];
+	char wgh_file[MAX_PATH_LEN];
 
 	char par_out_file[MAX_PATH_LEN];
 	char chg_out_file[MAX_PATH_LEN];

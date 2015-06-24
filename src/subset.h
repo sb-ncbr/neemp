@@ -14,8 +14,8 @@
 struct stats {
 
 	float R;
+	float R_weighted;
 	float RMSD;
-	float MSE;
 	float D_avg;
 	float D_max;
 };
@@ -47,15 +47,18 @@ struct subset {
 
 	struct bit_array molecules;
 
+	float *weights;
+
 	int kappa_data_count;
 	struct kappa_data *data;
 
 	/* Pointer to the best kappa */
 	struct kappa_data *best;
 
-	struct subset *parent;
+	const struct subset *parent;
 };
 
+void ss_init(struct subset * const ss, const struct subset * const parent);
 void ss_destroy(struct subset * const ss);
 void print_results(const struct subset * const ss);
 void print_parameters(const struct kappa_data * const kd);

@@ -186,10 +186,10 @@ void parse_options(int argc, char **argv) {
 			case 's': /* sort-by */
 				if(!strcmp(optarg, "R"))
 					s.sort_by = SORT_R;
+				else if(!strcmp(optarg, "R_w"))
+					s.sort_by = SORT_R_WEIGHTED;
 				else if(!strcmp(optarg, "RMSD"))
 					s.sort_by = SORT_RMSD;
-				else if(!strcmp(optarg, "MSE"))
-					s.sort_by = SORT_MSE;
 				else if(!strcmp(optarg, "D_avg"))
 					s.sort_by = SORT_D_AVG;
 				else if(!strcmp(optarg, "D_max"))
@@ -404,6 +404,9 @@ void print_settings(void) {
 	if(s.chg_file[0] != '\0')
 		printf(" Charges (.chg) file: %s\n", s.chg_file);
 
+	if(s.wgh_file[0] != '\0')
+		printf(" Weight (.wgh) file: %s\n", s.wgh_file);
+
 	if(s.par_out_file[0] != '\0')
 		printf(" Parameters (.par) output file: %s\n", s.par_out_file);
 
@@ -451,11 +454,15 @@ void print_settings(void) {
 			case SORT_R:
 				printf("R");
 				break;
+			case SORT_R_WEIGHTED:
+				printf("R weighted");
+				if(s.wgh_file[0] != '\0')
+					printf(" - values supplied by user");
+				else
+					printf(" - equalize atom types contributions");
+				break;
 			case SORT_RMSD:
 				printf("RMSD");
-				break;
-			case SORT_MSE:
-				printf("MSE");
 				break;
 			case SORT_D_AVG:
 				printf("Avg D");
@@ -465,7 +472,7 @@ void print_settings(void) {
 				break;
 		}
 
-		if(s.sort_by == SORT_R)
+		if(s.sort_by == SORT_R || s.sort_by == SORT_R_WEIGHTED)
 			printf(" (higher is better)\n");
 		else
 			printf(" (lower is better)\n");
