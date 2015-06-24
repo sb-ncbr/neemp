@@ -253,10 +253,6 @@ void parse_options(int argc, char **argv) {
 					s.at_customization = AT_CUSTOM_ELEMENT;
 				else if(!strcmp(optarg, atom_types_by_strings[AT_CUSTOM_ELEMENT_BOND]))
 					s.at_customization = AT_CUSTOM_ELEMENT_BOND;
-				else if(!strcmp(optarg, atom_types_by_strings[AT_CUSTOM_PARTNER]))
-					s.at_customization = AT_CUSTOM_PARTNER;
-				else if(!strcmp(optarg, atom_types_by_strings[AT_CUSTOM_VALENCE]))
-					s.at_customization = AT_CUSTOM_VALENCE;
 				else
 					EXIT_ERROR(ARG_ERROR, "Invalid atom-type-by value: %s\n", optarg);
 				break;
@@ -306,9 +302,6 @@ void parse_options(int argc, char **argv) {
 
 /* Check if options are set correctly */
 void check_settings(void) {
-
-	if(s.at_customization == AT_CUSTOM_PARTNER || s.at_customization == AT_CUSTOM_VALENCE)
-		EXIT_ERROR(ARG_ERROR, "%s", "These atom type customizations are not implemented right now. Stay tuned.\n");
 
 	if(s.mode == MODE_NOT_SET)
 		EXIT_ERROR(ARG_ERROR, "%s", "No mode set.\n");
@@ -423,12 +416,6 @@ void print_settings(void) {
 			break;
 		case AT_CUSTOM_ELEMENT_BOND:
 			printf("%s (element + bond order)\n", atom_types_by_strings[AT_CUSTOM_ELEMENT_BOND]);
-			break;
-		case AT_CUSTOM_PARTNER:
-			printf("%s (bonding partner)\n", atom_types_by_strings[AT_CUSTOM_PARTNER]);
-			break;
-		case AT_CUSTOM_VALENCE:
-			printf("%s (valence state)\n", atom_types_by_strings[AT_CUSTOM_VALENCE]);
 			break;
 	}
 

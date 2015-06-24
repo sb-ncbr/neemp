@@ -36,8 +36,6 @@ enum atom_type_customization {
 
 	AT_CUSTOM_ELEMENT = 0,
 	AT_CUSTOM_ELEMENT_BOND = 1,
-	AT_CUSTOM_PARTNER = 2,
-	AT_CUSTOM_VALENCE = 3
 };
 
 enum discarding_mode {

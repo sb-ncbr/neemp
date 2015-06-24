@@ -335,14 +335,6 @@ void at_format_text(const struct atom_type * const at, char * const buff) {
 		case AT_CUSTOM_ELEMENT_BOND:
 			snprintf(buff, 10, "%2s %1d     ", convert_Z_to_symbol(at->Z), at->bond_order);
 			break;
-		case AT_CUSTOM_PARTNER:
-			/* TODO */
-			snprintf(buff, 10, "%2s       ", convert_Z_to_symbol(at->Z));
-			break;
-		case AT_CUSTOM_VALENCE:
-			/* TODO */
-			snprintf(buff, 10, "%2s       ", convert_Z_to_symbol(at->Z));
-			break;
 		default:
 			/* Something bad happened */
 			assert(0);
@@ -368,12 +360,6 @@ int get_atom_type_idx_from_text(const char * const str) {
 			a.Z = convert_symbol_to_Z(symbol);
 			a.bond_order = bonds;
 			break;
-		case AT_CUSTOM_PARTNER:
-			/* TODO */
-			break;
-		case AT_CUSTOM_VALENCE:
-			/* TODO */
-			break;
 		default:
 			/* Something bad happened */
 			assert(0);
@@ -396,14 +382,6 @@ static void at_fill_from_atom(struct atom_type * const at, const struct atom * c
 				at->Z = a->Z;
 				at->bond_order = a->bond_order;
 				break;
-			case AT_CUSTOM_PARTNER:
-				/* TODO */
-				at->Z = a->Z;
-				break;
-			case AT_CUSTOM_VALENCE:
-				/* TODO */
-				at->Z = a->Z;
-				break;
 			default:
 				/* Something bad happened */
 				assert(0);
@@ -421,12 +399,6 @@ static int at_compare_against_atom(const struct atom_type * const at, const stru
 				return at->Z == a->Z;
 			case AT_CUSTOM_ELEMENT_BOND:
 				return at->Z ==  a->Z && at->bond_order == a->bond_order;
-			case AT_CUSTOM_PARTNER:
-				/* TODO */
-				return at->Z == a->Z;
-			case AT_CUSTOM_VALENCE:
-				/* TODO */
-				return at->Z == a->Z;
 			default:
 				/* Something bad happened */
 				assert(0);
