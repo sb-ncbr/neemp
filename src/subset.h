@@ -62,4 +62,5 @@ void ss_init(struct subset * const ss, const struct subset * const parent);
 void ss_destroy(struct subset * const ss);
 void print_results(const struct subset * const ss);
 void print_parameters(const struct kappa_data * const kd);
+void print_weights(const struct subset * const ss);
 #endif /* __SUBSET_H__ */

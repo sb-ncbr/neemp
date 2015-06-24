@@ -36,6 +36,7 @@ static struct option long_options[] = {
 	{"chg-out-file", required_argument, 0, 13},
 	{"chg-stats-out-file", required_argument, 0, 14},
 	{"par-out-file", required_argument, 0, 15},
+	{"wgh-file", required_argument, 0, 16},
 	{"kappa-max", required_argument, 0, 20},
 	{"kappa", required_argument, 0, 21},
 	{"kappa-preset", required_argument, 0, 22},
@@ -108,8 +109,9 @@ static void print_help(void) {
 	printf("      --atom-types-by METHOD	 classify atoms according to the METHOD. Valid choices are: Element, ElemBond.\n");
 	printf("      --list-omitted-molecules	 list names of molecules for which we don't have charges or parameters loaded (mode dependent).\n");
 	printf("Options specific to mode: params\n");
-	printf("      --chg-file FILE		 FILE with ab-initio charges (required)\n");
-	printf("      --chg-stats-out-file FILE	 output charges statistics to the FILE\n");
+	printf("      --wgh-file FILE            weights for calculation weighted R\n");
+	printf("      --chg-file FILE            FILE with ab-initio charges (required)\n");
+	printf("      --chg-stats-out-file FILE  output charges statistics to the FILE\n");
 	printf("      --kappa-max MAX            set maximum value for kappa (required)\n");
 	printf("      --kappa VALUE              use only one kappa VALUE for parameterization\n");
 	printf("      --fs-precision VALUE       resolution for the full scan (required)\n");
@@ -224,6 +226,10 @@ void parse_options(int argc, char **argv) {
 
 			case 15:
 				strncpy(s.par_out_file, optarg, MAX_PATH_LEN - 1);
+				break;
+
+			case 16:
+				strncpy(s.wgh_file, optarg, MAX_PATH_LEN - 1);
 				break;
 
 			case 20:
@@ -398,7 +404,7 @@ void print_settings(void) {
 		printf(" Charges (.chg) file: %s\n", s.chg_file);
 
 	if(s.wgh_file[0] != '\0')
-		printf(" Weight (.wgh) file: %s\n", s.wgh_file);
+		printf(" Weights (.wgh) file: %s\n", s.wgh_file);
 
 	if(s.par_out_file[0] != '\0')
 		printf(" Parameters (.par) output file: %s\n", s.par_out_file);

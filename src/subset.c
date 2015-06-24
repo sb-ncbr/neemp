@@ -161,3 +161,19 @@ void kd_print_stats(const struct kappa_data * const kd) {
 
 	printf("%s", message);
 }
+
+
+/* Print assigned weights for R_w calculation */
+void print_weights(const struct subset * const ss) {
+
+	assert(ss != NULL);
+
+	printf("The weights used to calculate R_w:\n");
+	for(int i = 0; i < ts.atom_types_count; i++) {
+			char buff[10];
+			at_format_text(&ts.atom_types[i], buff);
+			printf("%s: %8.4f\n", buff, ss->weights[i]);
+		}
+
+	printf("\n");
+}

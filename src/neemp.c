@@ -75,6 +75,10 @@ int main(int argc, char **argv) {
 			/* If weights were not supplied by user, adjust them automatically */
 			if(s.wgh_file[0] == '\0')
 				adjust_weights(&full);
+			else
+				load_weights(&full);
+
+			print_weights(&full);
 
 			find_the_best_parameters_for_subset(&full);
 

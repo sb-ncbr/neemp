@@ -763,3 +763,44 @@ void output_parameters(const struct subset * const ss) {
 
 	xmlFreeDoc(doc);
 }
+
+
+/* Load weights for the calculation of the weighted R */
+void load_weights(struct subset * const ss) {
+
+	assert(ss != NULL);
+
+	FILE *f = fopen(s.wgh_file, "r");
+	if(!f)
+		EXIT_ERROR(IO_ERROR, "Cannot open weights file \"%s\".\n", s.wgh_file);
+
+
+	/* Initially set all weights to 1 if they are not provided in the file */
+	for(int i = 0; i < ts.atom_types_count; i++)
+		ss->weights[i] = 1.0f;
+
+	char line[MAX_LINE_LEN];
+
+	while(fgets(line, MAX_LINE_LEN, f)) {
+		line[strcspn(line, "\n")] = '\0';
+		int at_idx = get_atom_type_idx_from_text(line);
+		int weight = 0;
+
+		int ret = 0;
+		if(at_idx != NOT_FOUND) {
+			if(s.at_customization == AT_CUSTOM_ELEMENT)
+				ret = sscanf(line, "%*2s %d", &weight);
+			else if(s.at_customization == AT_CUSTOM_ELEMENT_BOND)
+				ret = sscanf(line, "%*2s %*d %d", &weight);
+			else
+				assert(0);
+
+			if(ret != 1)
+				EXIT_ERROR(IO_ERROR, "Incorrect format of the weights file. Line:\n%s\n", line);
+
+			ss->weights[at_idx] = (float) weight;
+		}
+	}
+
+	fclose(f);
+}

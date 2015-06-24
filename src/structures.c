@@ -365,6 +365,10 @@ int get_atom_type_idx_from_text(const char * const str) {
 			assert(0);
 	}
 
+	/* Check if the conversion was succesful */
+	if(a.Z == 0)
+		EXIT_ERROR(RUN_ERROR, "Cannot convert \"%s\" to a atom type description!\n", str);
+
 	return get_atom_type_idx(&a);
 }
 
