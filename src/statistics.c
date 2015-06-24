@@ -181,6 +181,9 @@ static void set_total_D_max(struct kappa_data * const kd) {
 /* Set Pearson weighted correlation coeff. for the whole set */
 static void set_total_R_weighted(struct subset * const ss, struct kappa_data * const kd) {
 
+	assert(ss != NULL);
+	assert(kd != NULL);
+
 	int atoms_processed = 0;
 
 	int bad_molecules = 0;
