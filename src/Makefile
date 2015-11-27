@@ -3,7 +3,7 @@
 # 2013, 2014
 
 CC=icc
-CFLAGS=-Wall -Wcheck -Wremarks -std=c99 -g -Ofast -ipo -Xhost -wd981 -fopenmp
+CFLAGS=-Wall -Wcheck -Wremarks -std=c99 -g -Ofast -ipo -Xhost -wd981 -openmp
 # -wd981 disables warning about operands evaluated in an unspecified order
 EXTRA_DEFINE=-DUSE_MKL
 
