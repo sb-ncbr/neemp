@@ -72,14 +72,6 @@ int main(int argc, char **argv) {
 			struct subset full;
 			ss_init(&full, NULL);
 
-			/* If weights were not supplied by user, adjust them automatically */
-			if(s.wgh_file[0] == '\0')
-				adjust_weights(&full);
-			else
-				load_weights(&full);
-
-			print_weights(&full);
-
 			find_the_best_parameters_for_subset(&full);
 
 			printf("\nResults for the full set:\n\n");
@@ -105,6 +97,9 @@ int main(int argc, char **argv) {
 
 			if(s.par_out_file[0] != '\0')
 				output_parameters(result);
+
+			if(s.chg_out_file[0] != '\0')
+				output_charges(result);
 
 			if(result != &full) {
 				printf("\nFinal results after discarding:\n\n");

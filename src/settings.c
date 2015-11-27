@@ -72,10 +72,9 @@ void s_init(void) {
 	s.full_scan_precision = 0.0f;
 	s.kappa_max = 0.0f;
 	s.full_scan_precision = 0.0f;
-	s.sort_by = SORT_R;
+	s.sort_by = SORT_R2;
 	s.at_customization = AT_CUSTOM_ELEMENT_BOND;
 	s.discard = DISCARD_OFF;
-	s.sort_by = SORT_R;
 	s.tabu_size = 0.0f;
 	s.limit_iters = NO_LIMIT_ITERS;
 	s.limit_time = NO_LIMIT_TIME;
@@ -109,7 +108,6 @@ static void print_help(void) {
 	printf("      --atom-types-by METHOD	 classify atoms according to the METHOD. Valid choices are: Element, ElemBond.\n");
 	printf("      --list-omitted-molecules	 list names of molecules for which we don't have charges or parameters loaded (mode dependent).\n");
 	printf("Options specific to mode: params\n");
-	printf("      --wgh-file FILE            weights for calculation weighted R\n");
 	printf("      --chg-file FILE            FILE with ab-initio charges (required)\n");
 	printf("      --chg-stats-out-file FILE  output charges statistics to the FILE\n");
 	printf("      --kappa-max MAX            set maximum value for kappa (required)\n");
@@ -119,7 +117,7 @@ static void print_help(void) {
 	printf("  -f, --fs-only                  do not use additional accuracy improvement\n");
 	printf("      --par-out-file FILE        output the parameters to the FILE\n");
 	printf("  -d, --discard METHOD           perform discarding with METHOD. Valid choices are: iterative, simple and off. Default is off.\n");
-	printf("  -s, --sort-by STAT             sort solutions by STAT. Valid choices are: R, RMSD, MSE, D_max, D_avg.\n");
+	printf("  -s, --sort-by STAT             sort solutions by STAT. Valid choices are: R, R2, spearman, RMSD, D_max, D_avg.\n");
 	printf("      --limit-iters COUNT        set the maximum number of iterations for discarding.\n");
 	printf("      --limit-time HH:MM:SS      set the maximum time for discarding in format hours:minutes:seconds.\n");
 	printf("      --check-charges      	 warn about molecules with abnormal differences between QM and EEM charges.\n");
@@ -188,8 +186,10 @@ void parse_options(int argc, char **argv) {
 			case 's': /* sort-by */
 				if(!strcmp(optarg, "R"))
 					s.sort_by = SORT_R;
-				else if(!strcmp(optarg, "R_w"))
-					s.sort_by = SORT_R_WEIGHTED;
+				else if(!strcmp(optarg, "R2"))
+					s.sort_by = SORT_R2;
+				else if(!strcmp(optarg, "Spearman"))
+					s.sort_by = SORT_SPEARMAN;
 				else if(!strcmp(optarg, "RMSD"))
 					s.sort_by = SORT_RMSD;
 				else if(!strcmp(optarg, "D_avg"))
@@ -349,8 +349,8 @@ void check_settings(void) {
 		if(s.limit_time != NO_LIMIT_TIME && s.limit_time > 36000 * 1000)
 			EXIT_ERROR(ARG_ERROR, "%s", "Maximum time should not be higher than 1000 hours.\n");
 
-		if(!s.full_scan_only && s.sort_by != SORT_R)
-			EXIT_ERROR(ARG_ERROR, "%s", "Full scan must be used for sort-by other than R.\n");
+		if(!s.full_scan_only && (s.sort_by != SORT_R && s.sort_by != SORT_R2 && s.sort_by != SORT_SPEARMAN))
+			EXIT_ERROR(ARG_ERROR, "%s", "Full scan must be used for sort-by other than R, R2 or Spearman.\n");
 
 	} else if(s.mode == MODE_CHARGES) {
 		if(s.par_file[0] == '\0')
@@ -447,12 +447,11 @@ void print_settings(void) {
 			case SORT_R:
 				printf("R");
 				break;
-			case SORT_R_WEIGHTED:
-				printf("R weighted");
-				if(s.wgh_file[0] != '\0')
-					printf(" - values supplied by user");
-				else
-					printf(" - equalize atom types contributions");
+			case SORT_R2:
+				printf("R2");
+				break;
+			case SORT_SPEARMAN:
+				printf("Sp");
 				break;
 			case SORT_RMSD:
 				printf("RMSD");
@@ -465,7 +464,7 @@ void print_settings(void) {
 				break;
 		}
 
-		if(s.sort_by == SORT_R || s.sort_by == SORT_R_WEIGHTED)
+		if(s.sort_by == SORT_R || s.sort_by == SORT_R2 || s.sort_by == SORT_SPEARMAN)
 			printf(" (higher is better)\n");
 		else
 			printf(" (lower is better)\n");

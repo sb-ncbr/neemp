@@ -118,7 +118,7 @@ static void brent(struct subset * const ss) {
 	KAPPA_DATA_BRENT.kappa = x;
 	perform_calculations(ss, &KAPPA_DATA_BRENT);
 	/* The code is for minimization, so take the negative of R */
-	fw = fv = fx=  - KAPPA_DATA_BRENT.full_stats.R;
+	fw = fv = fx=  - kd_sort_by_return_value(&KAPPA_DATA_BRENT);
 
 	if(s.verbosity >= VERBOSE_KAPPA) {
 			printf("B> ");
@@ -161,7 +161,7 @@ static void brent(struct subset * const ss) {
 		KAPPA_DATA_BRENT.kappa = u;
 		perform_calculations(ss, &KAPPA_DATA_BRENT);
 		/* The code is for minimization, so take the negative of R */
-		fu = - KAPPA_DATA_BRENT.full_stats.R;
+		fu = - kd_sort_by_return_value(&KAPPA_DATA_BRENT);
 
 		if(s.verbosity >= VERBOSE_KAPPA) {
 				printf("B> ");

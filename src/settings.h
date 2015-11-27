@@ -26,7 +26,8 @@ enum app_mode {
 enum sort_mode {
 
 	SORT_R,
-	SORT_R_WEIGHTED,
+	SORT_R2,
+	SORT_SPEARMAN,
 	SORT_RMSD,
 	SORT_D_AVG,
 	SORT_D_MAX
