@@ -28,6 +28,7 @@ static void adjust_ranks_via_pointers(float **array, int n);
 
 static void set_total_Spearman(struct kappa_data * const kd);
 static void set_total_R(struct kappa_data * const kd);
+static void set_total_R_w(struct kappa_data *const kd);
 static void set_total_RMSD(struct kappa_data * const kd);
 static void set_total_D_avg(struct kappa_data * const kd);
 static void set_total_D_max(struct kappa_data * const kd);
@@ -70,6 +71,23 @@ static void adjust_ranks_via_pointers(float **array, int n) {
 		latest_rank += j;
 		i += j;
 	}
+}
+
+
+/* Set total weighted correlation computed of individual Pearson's coeff per atom type */
+static void set_total_R_w(struct kappa_data * const kd) {
+
+	assert(kd != NULL);
+
+	double weighted_corr_sum = 0.0;
+
+	for(int i = 0; i < ts.atom_types_count; i++) {
+			double weight = pow(s.rw, kd->per_at_stats[i].R);
+			weighted_corr_sum += weight * kd->per_at_stats[i].R;
+	}
+
+	/* Normalize the results */
+	kd->full_stats.R_w = (float) (weighted_corr_sum / (ts.atom_types_count * s.rw));
 }
 
 
@@ -209,8 +227,8 @@ static void set_total_R2(struct kappa_data * const kd) {
 	double R2_sum_molecules = 0.0;
 
 	for(int i = 0; i < ts.molecules_count; i++) {
-		float molecule_R = kd->per_molecule_stats[i].R;
-		kd->per_molecule_stats[i].R2 = molecule_R * molecule_R;
+		double molecule_R = kd->per_molecule_stats[i].R;
+		kd->per_molecule_stats[i].R2 = (float) (molecule_R * molecule_R);
 		R2_sum_molecules += molecule_R * molecule_R;
 	}
 
@@ -533,6 +551,7 @@ void calculate_statistics(struct subset * const ss, struct kappa_data * const kd
 	assert(ss != NULL);
 	assert(kd != NULL);
 
+	/* Calculate total statistics */
 	set_total_Spearman(kd);
 	set_total_R(kd);
 	set_total_R2(kd);
@@ -546,6 +565,9 @@ void calculate_statistics(struct subset * const ss, struct kappa_data * const kd
 	set_per_at_RMSD(kd);
 	set_per_at_D_max(kd);
 	set_per_at_D_avg(kd);
+
+	/* Computed from per atom type stats, needs to go last */
+	set_total_R_w(kd);
 }
 
 /* Check for abnormal charge differences */

@@ -8,6 +8,7 @@
 
 #include <assert.h>
 #include <getopt.h>
+#include <math.h>
 #include <string.h>
 
 #include "limits.h"
@@ -48,6 +49,7 @@ static struct option long_options[] = {
 	{"check-charges", no_argument, 0, 50},
 	{"max-threads", required_argument, 0, 51},
 	{"list-omitted-molecules", no_argument, 0, 52},
+	{"rw", required_argument, 0, 53},
 	{NULL, 0, 0, 0}
 };
 
@@ -81,6 +83,7 @@ void s_init(void) {
 	s.check_charges = 0;
 	s.max_threads = 1;
 	s.list_omitted_molecules = 0;
+	s.rw = 0.5f;
 }
 
 /* Prints help if --version is issued */
@@ -188,6 +191,8 @@ void parse_options(int argc, char **argv) {
 					s.sort_by = SORT_R;
 				else if(!strcmp(optarg, "R2"))
 					s.sort_by = SORT_R2;
+				else if(!strcmp(optarg, "R_w"))
+					s.sort_by = SORT_RW;
 				else if(!strcmp(optarg, "Spearman"))
 					s.sort_by = SORT_SPEARMAN;
 				else if(!strcmp(optarg, "RMSD"))
@@ -297,6 +302,9 @@ void parse_options(int argc, char **argv) {
 			case 52:
 				s.list_omitted_molecules = 1;
 				break;
+			case 53:
+				s.rw = (float) atof(optarg);
+				break;
 			case '?':
 				EXIT_ERROR(ARG_ERROR, "%s", "Try -h/--help.\n");
 			default:
@@ -349,7 +357,7 @@ void check_settings(void) {
 		if(s.limit_time != NO_LIMIT_TIME && s.limit_time > 36000 * 1000)
 			EXIT_ERROR(ARG_ERROR, "%s", "Maximum time should not be higher than 1000 hours.\n");
 
-		if(!s.full_scan_only && (s.sort_by != SORT_R && s.sort_by != SORT_R2 && s.sort_by != SORT_SPEARMAN))
+		if(!s.full_scan_only && (s.sort_by != SORT_R && s.sort_by != SORT_R2 && s.sort_by != SORT_SPEARMAN && s.sort_by != SORT_RW))
 			EXIT_ERROR(ARG_ERROR, "%s", "Full scan must be used for sort-by other than R, R2 or Spearman.\n");
 
 	} else if(s.mode == MODE_CHARGES) {
@@ -368,6 +376,9 @@ void check_settings(void) {
 		if(s.par_file[0] == '\0')
 			EXIT_ERROR(ARG_ERROR, "%s", "No .par file provided.\n");
 	}
+
+	if(s.rw < 1.0f / 2.718281828f || s.rw >= 1.0f)
+		EXIT_ERROR(ARG_ERROR, "%s", "--rw argument has to be in range [1/e; 1)\n");
 }
 
 void print_settings(void) {
@@ -449,6 +460,9 @@ void print_settings(void) {
 				break;
 			case SORT_R2:
 				printf("R2");
+				break;
+			case SORT_RW:
+				printf("RW");
 				break;
 			case SORT_SPEARMAN:
 				printf("Sp");

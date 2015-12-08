@@ -60,6 +60,7 @@ struct subset *discard_iterative(const struct subset * const initial) {
 		if(s.verbosity >= VERBOSE_DISCARD) {
 			printf(" %c ", kd_sort_by_is_better(current->best, old->best) ? '+' : '-');
 			kd_print_stats(current->best);
+			print_results(current);
 		}
 
 		/* Check if the new subset is better than the old one */

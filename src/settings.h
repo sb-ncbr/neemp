@@ -27,6 +27,7 @@ enum sort_mode {
 
 	SORT_R,
 	SORT_R2,
+	SORT_RW,
 	SORT_SPEARMAN,
 	SORT_RMSD,
 	SORT_D_AVG,
@@ -86,6 +87,7 @@ struct settings {
 
 	int max_threads;
 
+	float rw;
 };
 
 void s_init(void);

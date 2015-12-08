@@ -15,6 +15,7 @@ struct stats {
 
 	float R;
 	float R2;
+	float R_w;
 	float spearman;
 	float RMSD;
 	float D_avg;

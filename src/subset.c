@@ -122,6 +122,8 @@ float kd_sort_by_return_value(const struct kappa_data * const kd) {
 			return kd->full_stats.R;
 		case SORT_R2:
 			return kd->full_stats.R2;
+		case SORT_RW:
+			return kd->full_stats.R_w;
 		case SORT_SPEARMAN:
 			return kd->full_stats.spearman;
 		case SORT_RMSD:
@@ -140,7 +142,7 @@ float kd_sort_by_return_value(const struct kappa_data * const kd) {
 int kd_sort_by_is_better(const struct kappa_data * const kd1, const struct kappa_data * const kd2) {
 
 	/* Higher correlation is better, otherwise prefer lower value */
-	if(s.sort_by == SORT_R || s.sort_by == SORT_R2 || s.sort_by == SORT_SPEARMAN)
+	if(s.sort_by == SORT_R || s.sort_by == SORT_R2 || s.sort_by == SORT_RW || s.sort_by == SORT_SPEARMAN)
 		return kd_sort_by_return_value(kd1) > kd_sort_by_return_value(kd2);
 	else
 		return kd_sort_by_return_value(kd1) < kd_sort_by_return_value(kd2);
@@ -150,11 +152,11 @@ int kd_sort_by_is_better(const struct kappa_data * const kd1, const struct kappa
 void kd_print_stats(const struct kappa_data * const kd) {
 
 	/* Allocate buffer large enough to hold the entire message */
-	char message[100];
-	memset(message, 0, 100 * sizeof(char));
+	char message[200];
+	memset(message, 0, 200 * sizeof(char));
 
-	snprintf(message, 100, "K: %6.4f |  R: %6.4f  R2: %6.4f  Sp: %6.4f  RMSD: %6.4f  D_avg: %6.4f  D_max: %6.4f\n",
-		kd->kappa, kd->full_stats.R, kd->full_stats.R2, kd->full_stats.spearman, kd->full_stats.RMSD, kd->full_stats.D_avg, kd->full_stats.D_max);
+	snprintf(message, 200, "K: %6.4f |  R: %6.4f  R2: %6.4f  RW: %6.4f  Sp: %6.4f  RMSD: %6.4f  D_avg: %6.4f  D_max: %6.4f\n",
+		kd->kappa, kd->full_stats.R, kd->full_stats.R2, kd->full_stats.R_w, kd->full_stats.spearman, kd->full_stats.RMSD, kd->full_stats.D_avg, kd->full_stats.D_max);
 
 	printf("%s", message);
 }
