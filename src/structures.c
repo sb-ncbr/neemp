@@ -10,6 +10,7 @@
 #include <math.h>
 #include <stdlib.h>
 #include <string.h>
+#include <strings.h>
 
 #include "config.h"
 #include "neemp.h"
@@ -43,7 +44,7 @@ int convert_symbol_to_Z(const char * const symb) {
 	assert(symb != NULL);
 
 	for(int i = 1; i < 103; i++)
-		if(!strcmp(symb, elems[i]))
+		if(!strcasecmp(symb, elems[i]))
 			return i;
 
 	/* Check for deuterium and tritium */
