@@ -19,6 +19,7 @@
 #include "subset.h"
 #include "statistics.h"
 #include "structures.h"
+#include "diffevolution.h"
 
 extern const struct training_set ts;
 extern const struct settings s;
@@ -217,7 +218,8 @@ void find_the_best_parameters_for_subset(struct subset * const ss) {
 	}
 	else {
 		/* The last item in ss->data array is reserved for Brent whether it's used or not */
-		ss->kappa_data_count = 1 + (int) (s.kappa_max / s.full_scan_precision);
+		//TODO add DE (and Brent) to settings and make this if-clause to include that
+		/*ss->kappa_data_count = 1 + (int) (s.kappa_max / s.full_scan_precision);
 		ss->data = (struct kappa_data *) calloc(ss->kappa_data_count, sizeof(struct kappa_data));
 		if(!ss->data)
 			EXIT_ERROR(MEM_ERROR, "%s", "Cannot allocate memory for kappa data array.\n");
@@ -229,6 +231,9 @@ void find_the_best_parameters_for_subset(struct subset * const ss) {
 			full_scan(ss);
 		else
 			brent(ss);
+		*/
+		//runs a differential evolution algorithm to find the best parameters, ss->best is set after the call
+		run_diff_evolution(ss);
 
 		/* Determine the best parameters for computed data */
 		ss->best = &ss->data[0];
