@@ -26,30 +26,38 @@ static struct option long_options[] = {
 
 	{"help", no_argument, 0, 'h'},
 	{"mode", required_argument, 0, 'm'},
-	{"fs-only", no_argument, 0, 'f'},
+	{"params-method", required_argument, 0, 'p'},
 	{"verbose", no_argument, 0, 'v'},
 	{"discard", required_argument, 0, 'd'},
 	{"sort-by", required_argument, 0, 's'},
-	{"version", no_argument, 0, 5},
-	{"sdf-file", required_argument, 0, 10},
-	{"par-file", required_argument, 0, 11},
-	{"chg-file", required_argument, 0, 12},
-	{"chg-out-file", required_argument, 0, 13},
-	{"chg-stats-out-file", required_argument, 0, 14},
-	{"par-out-file", required_argument, 0, 15},
-	{"wgh-file", required_argument, 0, 16},
-	{"kappa-max", required_argument, 0, 20},
-	{"kappa", required_argument, 0, 21},
-	{"kappa-preset", required_argument, 0, 22},
-	{"fs-precision", required_argument, 0, 23},
-	{"atom-types-by", required_argument, 0, 31},
-	{"tabu-size", required_argument, 0, 32},
-	{"limit-iters", required_argument, 0, 40},
-	{"limit-time", required_argument, 0, 41},
-	{"check-charges", no_argument, 0, 50},
-	{"max-threads", required_argument, 0, 51},
-	{"list-omitted-molecules", no_argument, 0, 52},
-	{"rw", required_argument, 0, 53},
+	{"version", no_argument, 0, 129},
+	{"sdf-file", required_argument, 0, 130},
+	{"par-file", required_argument, 0, 131},
+	{"chg-file", required_argument, 0, 132},
+	{"chg-out-file", required_argument, 0, 133},
+	{"chg-stats-out-file", required_argument, 0, 134},
+	{"par-out-file", required_argument, 0, 135},
+	{"wgh-file", required_argument, 0, 136},
+	{"kappa-max", required_argument, 0, 140},
+	{"kappa", required_argument, 0, 141},
+	{"kappa-preset", required_argument, 0, 142},
+	{"fs-precision", required_argument, 0, 143},
+	{"atom-types-by", required_argument, 0, 151},
+	{"tabu-size", required_argument, 0, 152},
+	{"limit-iters", required_argument, 0, 160},
+	{"limit-time", required_argument, 0, 161},
+	{"check-charges", no_argument, 0, 170},
+	{"max-threads", required_argument, 0, 171},
+	{"list-omitted-molecules", no_argument, 0, 172},
+	{"rw", required_argument, 0, 173},
+	{"de-pop-size", required_argument, 0, 180},
+	{"de-f", required_argument, 0, 181},
+	{"de-cr", required_argument, 0, 182},
+	{"de-iters-max", required_argument, 0, 183},
+	{"de-time-max", required_argument, 0, 184},
+	{"de-take-only-best", no_argument, 0, 185},
+	{"de-dither", no_argument, 0, 186},
+	{"de-evolve-partially", no_argument, 0, 187},
 	{NULL, 0, 0, 0}
 };
 
@@ -70,10 +78,18 @@ void s_init(void) {
 	memset(s.chg_stats_out_file, 0x0, MAX_PATH_LEN * sizeof(char));
 
 	s.mode = MODE_NOT_SET;
-	s.full_scan_only = 0;
+	s.params_method = PARAMS_NOT_SET;
 	s.full_scan_precision = 0.0f;
 	s.kappa_max = 0.0f;
 	s.full_scan_precision = 0.0f;
+	s.population_size = 0;
+	s.recombination_constant = 0.0f;
+	s.mutation_constant = 0.0f;
+	s.dither = 0;
+	s.evolve_by_element = 0;
+	s.take_only_best = 0;
+	s.limit_de_iters = NO_LIMIT_ITERS;
+	s.limit_de_time = NO_LIMIT_TIME;
 	s.sort_by = SORT_R2;
 	s.at_customization = AT_CUSTOM_ELEMENT_BOND;
 	s.discard = DISCARD_OFF;
@@ -107,17 +123,26 @@ static void print_help(void) {
 	printf("      --version			 display version information and exit\n");
 	printf("      --max-threads N		 use up to N threads to solve EEM system in parallel\n");
 	printf("  -m, --mode MODE		 set mode for the NEEMP. Valid choices are: info, params, charges, cross, cover (required)\n");
+	printf("  -p, --params-method METHOD set optimization method used for calculation of parameters. Valid choices are: lr-full, lr-full-brent, de (optional)\n");
 	printf("      --sdf-file FILE		 SDF file (required)\n");
 	printf("      --atom-types-by METHOD	 classify atoms according to the METHOD. Valid choices are: Element, ElemBond.\n");
 	printf("      --list-omitted-molecules	 list names of molecules for which we don't have charges or parameters loaded (mode dependent).\n");
-	printf("Options specific to mode: params\n");
+	printf("Options specific to mode: params using linear regression as calculation method\n");
 	printf("      --chg-file FILE            FILE with ab-initio charges (required)\n");
 	printf("      --chg-stats-out-file FILE  output charges statistics to the FILE\n");
 	printf("      --kappa-max MAX            set maximum value for kappa (required)\n");
 	printf("      --kappa VALUE              use only one kappa VALUE for parameterization\n");
 	printf("      --fs-precision VALUE       resolution for the full scan (required)\n");
 	printf("      --kappa-preset PRESET      set kappa-max and fs-precision to safe values. Valid choices are: small, protein.\n");
-	printf("  -f, --fs-only                  do not use additional accuracy improvement\n");
+	printf("Options specific to mode: params using differential evolution as calculation method\n");
+	printf("      --de-pop-size VALUE        set population size for DE (optional).\n");
+	printf("      --de-f VALUE               set mutation constant for DE (optional).\n");
+	printf("      --de-cr VALUE              set crossover recombination constant for DE (optional).\n");
+	printf("      --de-iters-max COUNT       set the maximum number of iterations for DE (optional).\n");
+	printf("      --de-time-max HH:MM:SS     set the maximum time for DE in format hours:minutes:seconds (optional).\n");
+	printf("      --de-take-only-best        turn on using only the better half of population for evolution.\n");
+	printf("      --de-dither                set the mutation constant to random value from [0.5;1] for ech iteration, can improve convergence.\n");
+	printf("      --de-evolve-partially      turn on evolution driven by sort per atom type.\n");
 	printf("      --par-out-file FILE        output the parameters to the FILE\n");
 	printf("  -d, --discard METHOD           perform discarding with METHOD. Valid choices are: iterative, simple and off. Default is off.\n");
 	printf("  -s, --sort-by STAT             sort solutions by STAT. Valid choices are: R, R2, spearman, RMSD, D_max, D_avg.\n");
@@ -144,14 +169,10 @@ void parse_options(int argc, char **argv) {
 	int c;
 	int option_idx;
 
-	while((c = getopt_long(argc, argv, "fvd:s:hm:", long_options, &option_idx)) != -1)
+	while((c = getopt_long(argc, argv, "p:vd:s:hm:", long_options, &option_idx)) != -1)
 	{
 
 		switch(c) {
-			case 'f':
-				s.full_scan_only = 1;
-				break;
-
 			case 'h':
 				print_help();
 				exit(RETURN_OK);
@@ -169,6 +190,17 @@ void parse_options(int argc, char **argv) {
 					s.mode = MODE_COVER;
 				else
 					EXIT_ERROR(ARG_ERROR, "Invalid mode: %s\n", optarg);
+				break;
+
+			case 'p': /*parameters' calculation optimization method */
+				if (!strcmp(optarg, "lr-full"))
+					s.params_method = PARAMS_LR_FULL;
+				else if (!strcmp(optarg, "lr-full-brent"))
+					s.params_method = PARAMS_LR_FULL_BRENT;
+				else if (!strcmp(optarg, "de"))
+					s.params_method = PARAMS_DE;
+				else 
+					EXIT_ERROR(ARG_ERROR, "Invalid params-method: %s\n", optarg);
 				break;
 
 			case 'v':
@@ -205,46 +237,46 @@ void parse_options(int argc, char **argv) {
 					EXIT_ERROR(ARG_ERROR, "Invalid sort-by value: %s\n", optarg);
 				break;
 
-			case 5:
+			case 129:
 				print_version();
 				exit(RETURN_OK);
 
-			case 10:
+			case 130:
 				strncpy(s.sdf_file, optarg, MAX_PATH_LEN - 1);
 				break;
 
-			case 11:
+			case 131:
 				strncpy(s.par_file, optarg, MAX_PATH_LEN - 1);
 				break;
 
-			case 12:
+			case 132:
 				strncpy(s.chg_file, optarg, MAX_PATH_LEN - 1);
 				break;
 
-			case 13:
+			case 133:
 				strncpy(s.chg_out_file, optarg, MAX_PATH_LEN - 1);
 				break;
 
-			case 14:
+			case 134:
 				strncpy(s.chg_stats_out_file, optarg, MAX_PATH_LEN - 1);
 				break;
 
-			case 15:
+			case 135:
 				strncpy(s.par_out_file, optarg, MAX_PATH_LEN - 1);
 				break;
 
-			case 16:
+			case 136:
 				strncpy(s.wgh_file, optarg, MAX_PATH_LEN - 1);
 				break;
 
-			case 20:
+			case 140:
 				s.kappa_max = (float) atof(optarg);
 				break;
 
-			case 21:
+			case 141:
 				s.kappa_set = (float) atof(optarg);
 				break;
-			case 22:
+			case 142:
 				if(!strcmp(optarg, "small")) {
 					s.kappa_max = 1.5f;
 					s.full_scan_precision = 0.1f;
@@ -256,10 +288,10 @@ void parse_options(int argc, char **argv) {
 				else
 					EXIT_ERROR(ARG_ERROR, "Invalid kappa-preset value: %s\n", optarg);
 				break;
-			case 23:
+			case 143:
 				s.full_scan_precision = (float) atof(optarg);
 				break;
-			case 31: /* at-customization */
+			case 151: /* at-customization */
 				if(!strcmp(optarg, atom_types_by_strings[AT_CUSTOM_ELEMENT]))
 					s.at_customization = AT_CUSTOM_ELEMENT;
 				else if(!strcmp(optarg, atom_types_by_strings[AT_CUSTOM_ELEMENT_BOND]))
@@ -268,43 +300,83 @@ void parse_options(int argc, char **argv) {
 					EXIT_ERROR(ARG_ERROR, "Invalid atom-type-by value: %s\n", optarg);
 				break;
 
-			case 32:
+			case 152:
 				s.tabu_size = (float) atof(optarg);
 				break;
-			case 40:
+			case 160:
 				s.limit_iters =  atoi(optarg);
 				break;
-			case 41: {
-					char *part;
-					int hours = 0;
-					int mins = 0;
-					int secs = 0;
+			case 161: {
+						 char *part;
+						 int hours = 0;
+						 int mins = 0;
+						 int secs = 0;
 
-					part = strtok(optarg, ":");
-					if(part != NULL)
-						hours = atoi(part);
-					part = strtok(NULL, ":");
-					if(part != NULL)
-						mins = atoi(part);
-					part = strtok(NULL, ":");
-					if(part != NULL)
-						secs = atoi(part);
+						 part = strtok(optarg, ":");
+						 if(part != NULL)
+							 hours = atoi(part);
+						 part = strtok(NULL, ":");
+						 if(part != NULL)
+							 mins = atoi(part);
+						 part = strtok(NULL, ":");
+						 if(part != NULL)
+							 secs = atoi(part);
 
-					s.limit_time = 3600 * hours + 60 * mins + secs;
-					break;
-				}
-			case 50:
-				s.check_charges = 1;
-				break;
-			case 51:
-				s.max_threads =  atoi(optarg);
-				break;
-			case 52:
-				s.list_omitted_molecules = 1;
-				break;
-			case 53:
-				s.rw = (float) atof(optarg);
-				break;
+						 s.limit_time = 3600 * hours + 60 * mins + secs;
+						 break;
+					 }
+			case 170:
+					 s.check_charges = 1;
+					 break;
+			case 171:
+					 s.max_threads =  atoi(optarg);
+					 break;
+			case 172:
+					 s.list_omitted_molecules = 1;
+					 break;
+			case 173:
+					 s.rw = (float) atof(optarg);
+					 break;
+			case 180:
+					 s.population_size = atoi(optarg);
+					 break;
+			case 181:
+					 s.mutation_constant = (float) atof(optarg);
+					 break;
+			case 182:
+					 s.recombination_constant = (float) atof(optarg);
+					 break;
+			case 183:
+					 s.limit_de_iters = atoi(optarg);
+					 break;
+			case 184: {
+						 char *part;
+						 int hours = 0;
+						 int mins = 0;
+						 int secs = 0;
+
+						 part = strtok(optarg, ":");
+						 if(part != NULL)
+							 hours = atoi(part);
+						 part = strtok(NULL, ":");
+						 if(part != NULL)
+							 mins = atoi(part);
+						 part = strtok(NULL, ":");
+						 if(part != NULL)
+							 secs = atoi(part);
+
+						 s.limit_de_time = 3600 * hours + 60 * mins + secs;
+						 break;
+					 }
+			case 185:
+					 s.take_only_best = 1;
+					 break;
+			case 186:
+					 s.dither = 1;
+					 break;
+			case 187:
+					 s.evolve_by_element = 1;
+					 break;  
 			case '?':
 				EXIT_ERROR(ARG_ERROR, "%s", "Try -h/--help.\n");
 			default:
@@ -329,23 +401,40 @@ void check_settings(void) {
 	if(s.mode == MODE_PARAMS) {
 		if(s.chg_file[0] == '\0')
 			EXIT_ERROR(ARG_ERROR, "%s", "No .chg file provided.\n");
+		//if user did not specify the optimization method for parameters calculation, set linear regression 
+		if (s.params_method == PARAMS_NOT_SET)
+			s.params_method = PARAMS_LR_FULL;
 
-		if(s.kappa_set < 1e-10) {
-			if(s.full_scan_precision < 1e-10)
-				EXIT_ERROR(ARG_ERROR, "%s", "Full scan precision must be set correctly in params mode.\n");
+		if (s.params_method == PARAMS_LR_FULL || s.params_method == PARAMS_LR_FULL_BRENT) {
+			if(s.kappa_set < 1e-10) {
+				if(s.full_scan_precision < 1e-10)
+					EXIT_ERROR(ARG_ERROR, "%s", "Full scan precision must be set correctly in params mode.\n");
 
-			if(s.kappa_max < 1e-10)
-				EXIT_ERROR(ARG_ERROR, "%s", "Maximum for kappa must be set correctly in params mode.\n");
+				if(s.kappa_max < 1e-10)
+					EXIT_ERROR(ARG_ERROR, "%s", "Maximum for kappa must be set correctly in params mode.\n");
 
-			if(s.full_scan_precision > s.kappa_max)
-				EXIT_ERROR(ARG_ERROR, "%s", "Full scan precision must be less than kappa max.\n");
+				if(s.full_scan_precision > s.kappa_max)
+					EXIT_ERROR(ARG_ERROR, "%s", "Full scan precision must be less than kappa max.\n");
+			}
+			else {
+				if(s.full_scan_precision > 1e-10 || s.kappa_max > 1e-10)
+					EXIT_ERROR(ARG_ERROR, "%s", "Cannot set full scan precision and/or kappa max if --kappa is used.\n");
+
+				if(s.params_method == PARAMS_LR_FULL)
+					EXIT_ERROR(ARG_ERROR, "%s", "Cannot use full scan if single kappa is selected.\n");
+			}
 		}
-		else {
-			if(s.full_scan_precision > 1e-10 || s.kappa_max > 1e-10)
-				EXIT_ERROR(ARG_ERROR, "%s", "Cannot set full scan precision and/or kappa max if --kappa is used.\n");
+		
+		if (s.params_method == PARAMS_DE) {
+			if (s.mutation_constant == 0)
+				s.mutation_constant = 0.75;
+			if (s.recombination_constant == 0)
+				s.recombination_constant = 0.7;
+			if (s.population_size == 0)
+				s.population_size = 200;//10*(ts.atom_types_count*2+1);
+			if (s.limit_de_iters == NO_LIMIT_ITERS && s.limit_de_time == NO_LIMIT_TIME)
+				s.limit_de_iters = 250;
 
-			if(s.full_scan_only)
-				EXIT_ERROR(ARG_ERROR, "%s", "Cannot use full scan if single kappa is selected.\n");
 		}
 
 		if(s.tabu_size < 0.0f || s.tabu_size > 1.0f)
@@ -356,8 +445,8 @@ void check_settings(void) {
 
 		if(s.limit_time != NO_LIMIT_TIME && s.limit_time > 36000 * 1000)
 			EXIT_ERROR(ARG_ERROR, "%s", "Maximum time should not be higher than 1000 hours.\n");
-
-		if(!s.full_scan_only && (s.sort_by != SORT_R && s.sort_by != SORT_R2 && s.sort_by != SORT_SPEARMAN && s.sort_by != SORT_RW))
+		//TODO verify with Tomas if this is the intended behavior
+		if(s.params_method == PARAMS_LR_FULL_BRENT /*!s.full_scan_only*/ && (s.sort_by != SORT_R && s.sort_by != SORT_R2 && s.sort_by != SORT_SPEARMAN && s.sort_by != SORT_RW))
 			EXIT_ERROR(ARG_ERROR, "%s", "Full scan must be used for sort-by other than R, R2 or Spearman.\n");
 
 	} else if(s.mode == MODE_CHARGES) {
@@ -391,7 +480,13 @@ void print_settings(void) {
 			printf("info (print info about the training set)\n");
 			break;
 		case MODE_PARAMS:
-			printf("params (calculate EEM parameters)\n");
+			printf("params (calculate EEM parameters)");
+			if (s.params_method == PARAMS_LR_FULL)
+				printf(" with full scan of kappa range with linear regression\n");
+			if (s.params_method == PARAMS_LR_FULL_BRENT)
+				printf(" with full scan of kappa with Brent's method\n");
+			if (s.params_method == PARAMS_DE)
+				printf(" with differential evolution method\n");
 			break;
 		case MODE_CHARGES:
 			printf("charges (calculate EEM charges)\n");
@@ -445,7 +540,7 @@ void print_settings(void) {
 			printf("1 (include discarding info)\n");
 			break;
 		case VERBOSE_KAPPA:
-			printf("2 (include discarding + kappa search info)\n");
+			printf("2 (include discarding + kappa search/de info)\n");
 			break;
 		default:
 			printf("%u (I won't tell you more than on level 2. Sorry about that.)\n", s.verbosity);
@@ -517,17 +612,19 @@ void print_settings(void) {
 		else
 			printf("%d\n", s.limit_iters);
 
-		printf("\nKappa search:\n");
-		printf(" Mode: ");
-		if(s.kappa_set > 0.0f)
-			printf("single kappa value = %5.3f\n", s.kappa_set);
-		else {
-			printf("full scan from 0.0 to %5.3f with step %5.3f", s.kappa_max, s.full_scan_precision);
+		if (s.params_method == PARAMS_LR_FULL || s.params_method == PARAMS_LR_FULL_BRENT) {
+			printf("\nKappa search:\n");
+			printf(" Mode: ");
+			if(s.kappa_set > 0.0f)
+				printf("single kappa value = %5.3f\n", s.kappa_set);
+			else {
+				printf("full scan from 0.0 to %5.3f with step %5.3f", s.kappa_max, s.full_scan_precision);
 
-			if(!s.full_scan_only)
-				printf(" + iterative refinement\n");
-			else
-				printf("\n");
+				if(s.params_method == PARAMS_LR_FULL_BRENT)
+					printf(" + iterative refinement\n");
+				else
+					printf("\n");
+			}
 		}
 	}
 

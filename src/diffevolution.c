@@ -32,9 +32,8 @@ void run_diff_evolution(struct subset * const ss)
 {
 	//create a set of random points in vector space of kappa_data
 	//TODO allocate memory for kappa_data array in separate method according to optimization method, should be called also from kappa.c:find_the_best_parameters
-	int population_size = 500;//10*(ts.atom_types_count*2+1);
-	printf("DE Generating population of size %d\n", population_size);
-	ss->kappa_data_count = population_size;
+	printf("DE Generating population of size %d\n", s.population_size);
+	ss->kappa_data_count = s.population_size;
 	ss->data = (struct kappa_data*) calloc(ss->kappa_data_count, sizeof(struct kappa_data));
 	if(!ss->data)
 		EXIT_ERROR(MEM_ERROR, "%s", "Cannot allocate memory for kappa data array.\n");
@@ -47,10 +46,10 @@ void run_diff_evolution(struct subset * const ss)
 	float bounds[6]; //[kappa_low, kappa_high, alpha_low, alpha_high, beta_low, beta_high]
 	bounds[0] = 0.0005;
 	bounds[1] = 3.5;
-	bounds[2] = -0.2;
-	bounds[3] = 0.5;
-	bounds[4] = -0.2;
-	bounds[5] = 0.5;
+	bounds[2] = 2;
+	bounds[3] = 3;
+	bounds[4] = 0;
+	bounds[5] = 0.8;
 	generate_random_population(ss, bounds);
 
 	//evaluate the fitness function for all points and assign the best
@@ -69,7 +68,6 @@ void run_diff_evolution(struct subset * const ss)
 	//run the optimization until converged or for max_iter
 	//TODO include iters_max for DE in limits or use one already there (that is used for discard)
 	int iter = 0;
-	int iters_max = 1000;
 	struct kappa_data *trial = (struct kappa_data*)malloc(sizeof(struct kappa_data));
 	struct kappa_data *so_far_best = (struct kappa_data*)malloc(sizeof(struct kappa_data));
 	kd_init(trial);
@@ -80,10 +78,8 @@ void run_diff_evolution(struct subset * const ss)
 	kd_copy_parameters(ss->best, so_far_best);
 	calculate_charges(ss, so_far_best);
 	calculate_statistics(ss, so_far_best);
-
-	double mutation_constant = 0.75;
-	double recombination_constant = 0.7;
-	while (iter < iters_max)
+	float mutation_constant = s.mutation_constant;
+	while (iter < s.limit_de_iters)
 	{
 		iter++;
 		printf("DE iteration %d\n", iter);
@@ -93,9 +89,10 @@ void run_diff_evolution(struct subset * const ss)
 		int rand2 = rand() % ss->kappa_data_count;
 		struct kappa_data a = ss->data[rand1];
 		struct kappa_data b = ss->data[rand2];
-		mutation_constant = get_random_float(0.5, 1);
+		if (s.dither)
+			mutation_constant = get_random_float(0.5, 1);
 		//recombine parts of best, a and b to obtain new trial structure
-		evolve_kappa(trial, so_far_best, &a, &b, bounds, mutation_constant, recombination_constant);
+		evolve_kappa(trial, so_far_best, &a, &b, bounds, mutation_constant, s.recombination_constant);
 		calculate_charges(ss, trial);
 		calculate_statistics(ss, trial);
 		//if the new structure is better than what we have before, reassign

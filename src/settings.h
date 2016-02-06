@@ -23,6 +23,13 @@ enum app_mode {
 	MODE_NOT_SET
 };
 
+enum params_calc_method {
+	PARAMS_LR_FULL,
+	PARAMS_LR_FULL_BRENT,
+	PARAMS_DE,
+	PARAMS_NOT_SET
+};
+
 enum sort_mode {
 
 	SORT_R,
@@ -66,14 +73,25 @@ struct settings {
 	char chg_stats_out_file[MAX_PATH_LEN];
 
 	enum app_mode mode;
+	enum params_calc_method params_method;
 	enum sort_mode sort_by;
 	enum atom_type_customization at_customization;
 	enum discarding_mode discard;
-	int full_scan_only;
 
+	//settings regarding PARAMS_LR_FULL* parameters' calculation method
 	float kappa_max;
 	float kappa_set;
 	float full_scan_precision;
+
+	//settings regarding PARAMS_DE optimization method
+	int population_size;
+	int take_only_best; //generate population of double size and take only better half for further evolution
+	float mutation_constant;
+	int dither; //set mutation constant to random value from [0.5, 1] each iteration
+	float recombination_constant;
+	int evolve_by_element; //incorporate partial changes when evolving new trial if fitness function is higher for given element
+	int limit_de_iters;
+	time_t limit_de_time;
 
 	enum verbosity_levels verbosity;
 

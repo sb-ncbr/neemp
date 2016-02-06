@@ -218,34 +218,40 @@ void find_the_best_parameters_for_subset(struct subset * const ss) {
 	}
 	else {
 		/* The last item in ss->data array is reserved for Brent whether it's used or not */
-		//TODO add DE (and Brent) to settings and make this if-clause to include that
-		/*ss->kappa_data_count = 1 + (int) (s.kappa_max / s.full_scan_precision);
-		ss->data = (struct kappa_data *) calloc(ss->kappa_data_count, sizeof(struct kappa_data));
-		if(!ss->data)
-			EXIT_ERROR(MEM_ERROR, "%s", "Cannot allocate memory for kappa data array.\n");
+		if (s.params_method == PARAMS_LR_FULL || s.params_method == PARAMS_LR_FULL_BRENT) {
 
-		for(int i = 0; i < ss->kappa_data_count; i++)
-			kd_init(&ss->data[i]);
+			ss->kappa_data_count = 1 + (int) (s.kappa_max / s.full_scan_precision);
+			ss->data = (struct kappa_data *) calloc(ss->kappa_data_count, sizeof(struct kappa_data));
+			if(!ss->data)
+				EXIT_ERROR(MEM_ERROR, "%s", "Cannot allocate memory for kappa data array.\n");
 
-		if(s.full_scan_only)
-			full_scan(ss);
-		else
-			brent(ss);
-		*/
-		//runs a differential evolution algorithm to find the best parameters, ss->best is set after the call
-		run_diff_evolution(ss);
+			for(int i = 0; i < ss->kappa_data_count; i++)
+				kd_init(&ss->data[i]);
 
+			if(s.params_method == PARAMS_LR_FULL)
+				full_scan(ss);
+			else
+				brent(ss);
+		}
+
+		if (s.params_method == PARAMS_DE) {
+			//runs a differential evolution algorithm to find the best parameters, ss->best is set after the call
+			run_diff_evolution(ss);
+		}
 		/* Determine the best parameters for computed data */
-		ss->best = &ss->data[0];
 
-		if(s.full_scan_only) {
+		if(s.params_method == PARAMS_LR_FULL) {
+			ss->best = &ss->data[0];
 			for(int i = 0; i < ss->kappa_data_count - 1; i++)
 				if(kd_sort_by_is_better(&ss->data[i], ss->best))
 					ss->best = &ss->data[i];
 		}
-		else {
+		else if (s.params_method == PARAMS_LR_FULL_BRENT){
 			/* If Brent is used, the maximum is stored in the last item */
 			ss->best = &ss->data[ss->kappa_data_count - 1];
+		}
+		else if (s.params_method == PARAMS_DE) {
+			//well, nothing, the best structure has been already set
 		}
 
 	}
