@@ -57,7 +57,7 @@ void run_diff_evolution(struct subset * const ss)
 	for (int i = 0; i < ss->kappa_data_count; i++)
 	{
 		calculate_charges(ss, &ss->data[i]);
-		calculate_statistics(ss, &ss->data[i]);
+		calculate_statistics_by_sort_mode(ss, &ss->data[i]);
 	}
 	//TODO extract to separate method, also used in kappa.c:find_the_best_parameters
 	ss->best = &ss->data[0];
@@ -94,7 +94,7 @@ void run_diff_evolution(struct subset * const ss)
 		//recombine parts of best, a and b to obtain new trial structure
 		evolve_kappa(trial, so_far_best, &a, &b, bounds, mutation_constant, s.recombination_constant);
 		calculate_charges(ss, trial);
-		calculate_statistics(ss, trial);
+		calculate_statistics_by_sort_mode(ss, trial);
 		//if the new structure is better than what we have before, reassign
 		if (kd_sort_by_is_better(trial, so_far_best))
 		{

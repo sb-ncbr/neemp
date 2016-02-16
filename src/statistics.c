@@ -570,6 +570,41 @@ void calculate_statistics(struct subset * const ss, struct kappa_data * const kd
 	set_total_R_w(kd);
 }
 
+/* Calculate statistics according to set sort type */
+void calculate_statistics_by_sort_mode(struct subset* ss, struct kappa_data* kd) {
+	assert(kd != NULL);
+	switch (s.sort_by) {
+		case SORT_R:
+		case SORT_R2:
+			set_total_R(kd);
+			set_total_R2(kd);
+			set_per_at_R_R2(kd);
+			break;
+		case SORT_RMSD:
+			set_total_RMSD(kd);
+			set_per_at_RMSD(kd);
+			break;
+		case SORT_SPEARMAN:
+			set_total_Spearman(kd);
+			set_per_at_Spearman(kd);
+			break;
+		case SORT_D_AVG:
+			set_total_D_avg(kd);
+			set_per_at_D_avg(kd);
+			break;
+		case SORT_D_MAX:
+			set_total_D_max(kd);
+			set_per_at_D_max(kd);
+			break;
+		case SORT_RW:
+			calculate_statistics(ss,kd);
+			break;
+		default:
+			break;
+
+	}
+}
+
 /* Check for abnormal charge differences */
 void check_charges(const struct kappa_data * const kd) {
 
