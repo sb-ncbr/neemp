@@ -27,9 +27,11 @@ extern const struct settings s;
 
 void generate_random_population(struct subset* ss, float *bounds);
 int evolve_kappa(struct kappa_data* trial, struct kappa_data* x, struct kappa_data* a, struct kappa_data *b, float *bounds, double mutation_constant, double recombination_constant);
+int compare_and_set(struct kappa_data* trial, struct kappa_data* so_far_best);
 void compute_parameters_bounds(float* bounds, int by_atom_type);
 float get_random_float(float low, float high);
 float interpolate_to_different_bounds(float x, float low, float high);
+int sum(int* vector, int size);
 void kd_copy_parameters(struct kappa_data* from, struct kappa_data* to);
 
 void run_diff_evolution(struct subset * const ss)
@@ -97,9 +99,7 @@ void run_diff_evolution(struct subset * const ss)
 			calculate_charges(ss, trial);
 			calculate_statistics_by_sort_mode(ss, trial);
 			//if the new structure is better than what we have before, reassign
-			if (kd_sort_by_is_better(trial, so_far_best))
-			{
-				kd_copy_parameters(trial, so_far_best);
+			if (compare_and_set(trial, so_far_best)) {
 				calculate_charges(ss, so_far_best);
 				calculate_statistics(ss, so_far_best);
 			}
@@ -170,8 +170,62 @@ int evolve_kappa(struct kappa_data* trial, struct kappa_data* x, struct kappa_da
 	if (bounds[0] > trial->kappa || bounds[1] < trial->kappa) {
 		trial->kappa -= mutation_constant*(a->kappa - b->kappa)/(bounds[1]-bounds[0]);
 	}
-	
 	return changed;
+}
+
+int compare_and_set(struct kappa_data* trial, struct kappa_data* so_far_best) {
+	//if we cannot evolve by element, compare just full_stats
+	if (s.evolve_by_element == 0) {
+		if (kd_sort_by_is_better(trial, so_far_best)) {
+			kd_copy_parameters(trial, so_far_best);
+			return 1;
+		}
+	}
+
+	//we can evolve by element
+	float compare_full_stats = kd_sort_by_return_value(trial) - kd_sort_by_return_value(so_far_best);
+	int trial_is_better = compare_full_stats > 0;
+	compare_full_stats = fabs(compare_full_stats);
+	float compare_kappas = fabs(trial->kappa - so_far_best->kappa);
+	float kappas_threshold = 0.05;
+	float full_stats_threshold = 0.01;
+	float per_atom_threshold = 0.1;
+	//if full_stats are much different, we change or not change according to them
+	if (compare_full_stats >= full_stats_threshold) {
+		if (trial_is_better) {
+			kd_copy_parameters(trial, so_far_best);
+			return 1;
+		}
+		else 
+			return 0;
+	}
+
+	//if kappas are too different, we behave according to full_stats
+	if (compare_kappas >= kappas_threshold) {
+		if (trial_is_better) {
+			kd_copy_parameters(trial, so_far_best);
+			return 1;
+		}
+		else
+			return 0;
+	}
+
+	//if we get here, we might consider change to a bit worse or keep a bit worse if per atom stats show great differences
+	int* better_per_atom = (int*) malloc(ts.atom_types_count*sizeof(int));
+	kd_sort_by_is_better_per_atom(better_per_atom, trial, so_far_best, per_atom_threshold);
+	//if kappa is close, trial is a bit worse in full stats, but much better in one (or more) of the elements, than allow a bit of worsening and set so_far_best to trial 
+	if (!trial_is_better && sum(better_per_atom, ts.atom_types_count)) {
+		printf("DE allowing a bit worse\n");
+		kd_copy_parameters(trial, so_far_best);
+		return 1;
+	}
+
+	//if trial is a bit better in full stats, but much worse in one of the elements, that prevent a bettering and keep so_far_best the same
+	if (trial_is_better && sum(better_per_atom, ts.atom_types_count) < 0) {
+		printf("DE preventing a bit better\n");
+		return 0;
+	}
+	return 0;
 }
 
 void compute_parameters_bounds(float* bounds, int by_atom_type) {          
@@ -204,6 +258,13 @@ float get_random_float(float low, float high) {
 
 float interpolate_to_different_bounds(float x, float low, float high) {
 	return low + x*(high-low);
+}
+
+int sum(int* vector, int size) {
+	int sum = 0;
+	for (int i = 0; i < size; i++)
+		sum+=vector[i];
+	return sum;
 }
 
 void kd_copy_parameters(struct kappa_data* from, struct kappa_data* to)
