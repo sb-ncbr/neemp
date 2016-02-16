@@ -19,13 +19,17 @@
 #include "subset.h"
 #include "statistics.h"
 #include "structures.h"
+#include "latin_random.h"
+#include "diffevolution.h"
 
 extern const struct training_set ts;
 extern const struct settings s;
 
 void generate_random_population(struct subset* ss, float *bounds);
 void evolve_kappa(struct kappa_data* trial, struct kappa_data* x, struct kappa_data* a, struct kappa_data *b, float *bounds, double mutation_constant, double recombination_constant);
+void compute_parameters_bounds(float* bounds, int by_atom_type);
 float get_random_float(float low, float high);
+float interpolate_to_different_bounds(float x, float low, float high);
 void kd_copy_parameters(struct kappa_data* from, struct kappa_data* to);
 
 void run_diff_evolution(struct subset * const ss)
@@ -42,14 +46,8 @@ void run_diff_evolution(struct subset * const ss)
 		kd_init(&ss->data[i]);
 	}
 	//set bounds for parameters
-	//TODO this should be parameter, ideally possible to set from settings or as described in python prototype by atom type
-	float bounds[6]; //[kappa_low, kappa_high, alpha_low, alpha_high, beta_low, beta_high]
-	bounds[0] = 0.0005;
-	bounds[1] = 3.5;
-	bounds[2] = 2;
-	bounds[3] = 3;
-	bounds[4] = 0;
-	bounds[5] = 0.8;
+	float *bounds = (float*) malloc((ts.atom_types_count*2+1)*2*sizeof(float));
+	compute_parameters_bounds(bounds, 0);
 	generate_random_population(ss, bounds);
 
 	//evaluate the fitness function for all points and assign the best
@@ -107,6 +105,7 @@ void run_diff_evolution(struct subset * const ss)
 	}
 	kd_destroy(trial);
 	free(trial);
+	free(bounds);
 	kd_copy_parameters(so_far_best, ss->best);
 	calculate_charges(ss, ss->best);
 	calculate_statistics(ss, ss->best);
@@ -117,17 +116,22 @@ void run_diff_evolution(struct subset * const ss)
 
 void generate_random_population(struct subset* ss, float *bounds)
 {
+	//get random number by Latin Hypercube Sampling
+	int dimensions_count = ts.atom_types_count*2+1;
+	int points_count = s.population_size;
+	int seed = 100;
+	float* random_lhs = latin_random_new(dimensions_count, points_count, &seed);
 
-	//assign random value to each parameter of each kappa_data
-	for (int i = 0; i < ss->kappa_data_count; i++)
-	{
-		ss->data[i].kappa = get_random_float(bounds[0], bounds[1]);
-		for (int j = 0; j < ts.atom_types_count; j++)
-		{
-			ss->data[i].parameters_alpha[j] = get_random_float(bounds[2], bounds[3]);
-			ss->data[i].parameters_beta[j] = get_random_float(bounds[4], bounds[5]);
+	//redistribute random_lhs[dim_num, point_num] to ss->data
+	for (int i = 0; i < points_count; i++) {
+		ss->data[i].kappa = interpolate_to_different_bounds(random_lhs[i*dimensions_count + 1], bounds[0], bounds[1]);
+		for (int j = 0; j < ts.atom_types_count; j++) {
+			//interpolate random numbers from [0,1] to new bounds
+			ss->data[i].parameters_alpha[j] = interpolate_to_different_bounds(random_lhs[i*dimensions_count + 1 + j*2], bounds[2 + j*2], bounds[2 + j*2 + 1]);
+			ss->data[i].parameters_beta[j] = interpolate_to_different_bounds(random_lhs[i*dimensions_count + 1 + j*2 + 1], bounds[2 + j*2 + 2], bounds[2 + j*2 + 3]);
 		}
 	}
+
 }
 
 void evolve_kappa(struct kappa_data* trial, struct kappa_data* x, struct kappa_data* a, struct kappa_data *b, float *bounds, double mutation_constant, double recombination_constant)
@@ -143,25 +147,50 @@ void evolve_kappa(struct kappa_data* trial, struct kappa_data* x, struct kappa_d
 		if (get_random_float(0,1) < recombination_constant)
 		{
 			trial->parameters_alpha[i] += mutation_constant*(a->parameters_alpha[i] - b->parameters_alpha[i]);
-			if (bounds[2] > trial->parameters_alpha[i] || bounds[3] < trial->parameters_alpha[i])
+			if (bounds[2 + i*2] > trial->parameters_alpha[i] || bounds[2 + i*2 + 1] < trial->parameters_alpha[i])
 				trial->parameters_alpha[i] = x->parameters_alpha[i];
 		}
 	for (int i = 0; i < ts.atom_types_count; i++)
 		if (get_random_float(0,1) < recombination_constant)
 		{
 			trial->parameters_beta[i] += mutation_constant*(a->parameters_beta[i] - b->parameters_beta[i]);
-			if (bounds[4] > trial->parameters_beta[i] || bounds[5] < trial->parameters_beta[i])
+			if (bounds[2 + i*2 + 2] > trial->parameters_beta[i] || bounds[2 + i*2 + 3] < trial->parameters_beta[i])
 				trial->parameters_beta[i] = x->parameters_beta[i];
 		}
 
 
 }
 
-float get_random_float(float low, float high)
-{
-	//TODO return something closer to random value, this is really pathetic
+void compute_parameters_bounds(float* bounds, int by_atom_type) {          
+	//returns bounds[kappa_low, kappa_high, alpha_1_low, alpha_1_high, beta_1_low, beta_1_high, alpha_2_low, ...]
+	float toH = 0.036749309;
+	bounds[0] = 0.0005; //kappa_low
+	bounds[1] = 3.5; //kappa_high
+	for (int j = 0; j < ts.atom_types_count; j++) {	
+		if (by_atom_type) {
+			//set bounds for particular atom type
+			int atom_number = ts.atom_types[j].Z;
+			bounds[2 + j*2] = (ionenergies[atom_number] + affinities[atom_number])/2*toH - 0.1; //alpha_low
+			bounds[2 + j*2 + 1] = bounds[2 + j*2] + 0.2; //alpha_high
+			bounds[2 + j*2 + 2] = (ionenergies[atom_number] - affinities[atom_number])/2*toH - 0.1; //beta_low
+			bounds[2 + j*2 + 3]	= bounds[2 + j*2 + 2] + 0.2; //beta_high
+		}
+		else {
+			bounds[2 + j*2] = 2;
+			bounds[2 + j*2 + 1] = 3;
+			bounds[2 + j*2 + 2] = 0;
+			bounds[2 + j*2 + 3] = 0.8;
+		}
+	}
+}
+
+float get_random_float(float low, float high) {
 	float n = low + (float)(rand())/((float)(RAND_MAX/(high-low)));
 	return n;
+}
+
+float interpolate_to_different_bounds(float x, float low, float high) {
+	return low + x*(high-low);
 }
 
 void kd_copy_parameters(struct kappa_data* from, struct kappa_data* to)
