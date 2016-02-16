@@ -26,7 +26,7 @@ extern const struct training_set ts;
 extern const struct settings s;
 
 void generate_random_population(struct subset* ss, float *bounds);
-void evolve_kappa(struct kappa_data* trial, struct kappa_data* x, struct kappa_data* a, struct kappa_data *b, float *bounds, double mutation_constant, double recombination_constant);
+int evolve_kappa(struct kappa_data* trial, struct kappa_data* x, struct kappa_data* a, struct kappa_data *b, float *bounds, double mutation_constant, double recombination_constant);
 void compute_parameters_bounds(float* bounds, int by_atom_type);
 float get_random_float(float low, float high);
 float interpolate_to_different_bounds(float x, float low, float high);
@@ -77,6 +77,7 @@ void run_diff_evolution(struct subset * const ss)
 	calculate_charges(ss, so_far_best);
 	calculate_statistics(ss, so_far_best);
 	float mutation_constant = s.mutation_constant;
+	int iters_with_evolution=0;
 	while (iter < s.limit_de_iters)
 	{
 		iter++;
@@ -90,18 +91,21 @@ void run_diff_evolution(struct subset * const ss)
 		if (s.dither)
 			mutation_constant = get_random_float(0.5, 1);
 		//recombine parts of best, a and b to obtain new trial structure
-		evolve_kappa(trial, so_far_best, &a, &b, bounds, mutation_constant, s.recombination_constant);
-		calculate_charges(ss, trial);
-		calculate_statistics_by_sort_mode(ss, trial);
-		//if the new structure is better than what we have before, reassign
-		if (kd_sort_by_is_better(trial, so_far_best))
+		if (evolve_kappa(trial, so_far_best, &a, &b, bounds, mutation_constant, s.recombination_constant))
 		{
-			kd_copy_parameters(trial, so_far_best);
-			calculate_charges(ss, so_far_best);
-			calculate_statistics(ss, so_far_best);
+			iters_with_evolution++;
+			calculate_charges(ss, trial);
+			calculate_statistics_by_sort_mode(ss, trial);
+			//if the new structure is better than what we have before, reassign
+			if (kd_sort_by_is_better(trial, so_far_best))
+			{
+				kd_copy_parameters(trial, so_far_best);
+				calculate_charges(ss, so_far_best);
+				calculate_statistics(ss, so_far_best);
+			}
+			kd_print_stats(so_far_best);
+			print_parameters(so_far_best);
 		}
-		kd_print_stats(so_far_best);
-		print_parameters(so_far_best);
 	}
 	kd_destroy(trial);
 	free(trial);
@@ -109,6 +113,7 @@ void run_diff_evolution(struct subset * const ss)
 	kd_copy_parameters(so_far_best, ss->best);
 	calculate_charges(ss, ss->best);
 	calculate_statistics(ss, ss->best);
+	printf("From %d iterations, %d introduced a change\n", s.limit_de_iters, iters_with_evolution);
 
 
 }
@@ -134,31 +139,39 @@ void generate_random_population(struct subset* ss, float *bounds)
 
 }
 
-void evolve_kappa(struct kappa_data* trial, struct kappa_data* x, struct kappa_data* a, struct kappa_data *b, float *bounds, double mutation_constant, double recombination_constant)
+int evolve_kappa(struct kappa_data* trial, struct kappa_data* x, struct kappa_data* a, struct kappa_data *b, float *bounds, double mutation_constant, double recombination_constant)
 {
+	int changed = 0;
 	kd_copy_parameters(x, trial);
-	if (get_random_float(0,1) < recombination_constant)
-	{
-		trial->kappa += mutation_constant*(a->kappa - b->kappa);
-		if (bounds[0] > trial->kappa || bounds[1] < trial->kappa)
-			trial->kappa = x->kappa;
-	}
 	for (int i = 0; i < ts.atom_types_count; i++)
 		if (get_random_float(0,1) < recombination_constant)
 		{
+			changed++;
 			trial->parameters_alpha[i] += mutation_constant*(a->parameters_alpha[i] - b->parameters_alpha[i]);
-			if (bounds[2 + i*4] > trial->parameters_alpha[i] || bounds[2 + i*4 + 1] < trial->parameters_alpha[i])
+			if (bounds[2 + i*4] > trial->parameters_alpha[i] || bounds[2 + i*4 + 1] < trial->parameters_alpha[i]) {
 				trial->parameters_alpha[i] = x->parameters_alpha[i];
+				changed--;
+			}
 		}
 	for (int i = 0; i < ts.atom_types_count; i++)
 		if (get_random_float(0,1) < recombination_constant)
 		{
+			changed++;
 			trial->parameters_beta[i] += mutation_constant*(a->parameters_beta[i] - b->parameters_beta[i]);
-			if (bounds[2 + i*4 + 2] > trial->parameters_beta[i] || bounds[2 + i*4 + 3] < trial->parameters_beta[i])
+			if (bounds[2 + i*4 + 2] > trial->parameters_beta[i] || bounds[2 + i*4 + 3] < trial->parameters_beta[i]) {
 				trial->parameters_beta[i] = x->parameters_beta[i];
+				changed--;
+			}
 		}
 
-
+	//always change kappa
+	trial->kappa += mutation_constant*(a->kappa - b->kappa)/(bounds[1]-bounds[0]);
+	changed++;
+	if (bounds[0] > trial->kappa || bounds[1] < trial->kappa) {
+		trial->kappa -= mutation_constant*(a->kappa - b->kappa)/(bounds[1]-bounds[0]);
+	}
+	
+	return changed;
 }
 
 void compute_parameters_bounds(float* bounds, int by_atom_type) {          
