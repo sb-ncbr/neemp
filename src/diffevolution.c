@@ -120,15 +120,15 @@ void generate_random_population(struct subset* ss, float *bounds)
 	int dimensions_count = ts.atom_types_count*2+1;
 	int points_count = s.population_size;
 	int seed = 100;
-	float* random_lhs = latin_random_new(dimensions_count, points_count, &seed);
+	double* random_lhs = latin_random_new(dimensions_count, points_count, &seed);
 
 	//redistribute random_lhs[dim_num, point_num] to ss->data
 	for (int i = 0; i < points_count; i++) {
-		ss->data[i].kappa = interpolate_to_different_bounds(random_lhs[i*dimensions_count + 1], bounds[0], bounds[1]);
+		ss->data[i].kappa = interpolate_to_different_bounds(random_lhs[i*dimensions_count], bounds[0], bounds[1]);
 		for (int j = 0; j < ts.atom_types_count; j++) {
 			//interpolate random numbers from [0,1] to new bounds
-			ss->data[i].parameters_alpha[j] = interpolate_to_different_bounds(random_lhs[i*dimensions_count + 1 + j*2], bounds[2 + j*2], bounds[2 + j*2 + 1]);
-			ss->data[i].parameters_beta[j] = interpolate_to_different_bounds(random_lhs[i*dimensions_count + 1 + j*2 + 1], bounds[2 + j*2 + 2], bounds[2 + j*2 + 3]);
+			ss->data[i].parameters_alpha[j] = interpolate_to_different_bounds(random_lhs[i*dimensions_count + 1 + j*2], bounds[2 + j*4], bounds[2 + j*4 + 1]);
+			ss->data[i].parameters_beta[j] = interpolate_to_different_bounds(random_lhs[i*dimensions_count + 2 + j*2 ], bounds[2 + j*4 + 2], bounds[2 + j*4 + 3]);
 		}
 	}
 
@@ -147,14 +147,14 @@ void evolve_kappa(struct kappa_data* trial, struct kappa_data* x, struct kappa_d
 		if (get_random_float(0,1) < recombination_constant)
 		{
 			trial->parameters_alpha[i] += mutation_constant*(a->parameters_alpha[i] - b->parameters_alpha[i]);
-			if (bounds[2 + i*2] > trial->parameters_alpha[i] || bounds[2 + i*2 + 1] < trial->parameters_alpha[i])
+			if (bounds[2 + i*4] > trial->parameters_alpha[i] || bounds[2 + i*4 + 1] < trial->parameters_alpha[i])
 				trial->parameters_alpha[i] = x->parameters_alpha[i];
 		}
 	for (int i = 0; i < ts.atom_types_count; i++)
 		if (get_random_float(0,1) < recombination_constant)
 		{
 			trial->parameters_beta[i] += mutation_constant*(a->parameters_beta[i] - b->parameters_beta[i]);
-			if (bounds[2 + i*2 + 2] > trial->parameters_beta[i] || bounds[2 + i*2 + 3] < trial->parameters_beta[i])
+			if (bounds[2 + i*4 + 2] > trial->parameters_beta[i] || bounds[2 + i*4 + 3] < trial->parameters_beta[i])
 				trial->parameters_beta[i] = x->parameters_beta[i];
 		}
 
@@ -170,16 +170,16 @@ void compute_parameters_bounds(float* bounds, int by_atom_type) {
 		if (by_atom_type) {
 			//set bounds for particular atom type
 			int atom_number = ts.atom_types[j].Z;
-			bounds[2 + j*2] = (ionenergies[atom_number] + affinities[atom_number])/2*toH - 0.1; //alpha_low
-			bounds[2 + j*2 + 1] = bounds[2 + j*2] + 0.2; //alpha_high
-			bounds[2 + j*2 + 2] = (ionenergies[atom_number] - affinities[atom_number])/2*toH - 0.1; //beta_low
-			bounds[2 + j*2 + 3]	= bounds[2 + j*2 + 2] + 0.2; //beta_high
+			bounds[2 + j*4] = (ionenergies[atom_number] + affinities[atom_number])/2*toH - 0.1; //alpha_low
+			bounds[2 + j*4 + 1] = bounds[2 + j*4] + 0.2; //alpha_high
+			bounds[2 + j*4 + 2] = (ionenergies[atom_number] - affinities[atom_number])/2*toH - 0.1; //beta_low
+			bounds[2 + j*4 + 3]	= bounds[2 + j*4 + 2] + 0.2; //beta_high
 		}
 		else {
-			bounds[2 + j*2] = 2;
-			bounds[2 + j*2 + 1] = 3;
-			bounds[2 + j*2 + 2] = 0;
-			bounds[2 + j*2 + 3] = 0.8;
+			bounds[2 + j*4] = 2;
+			bounds[2 + j*4 + 1] = 3;
+			bounds[2 + j*4 + 2] = 0;
+			bounds[2 + j*4 + 3] = 0.8;
 		}
 	}
 }
