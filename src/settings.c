@@ -433,7 +433,7 @@ void check_settings(void) {
 			if (s.recombination_constant == 0)
 				s.recombination_constant = 0.7;
 			if (s.population_size == 0)
-				s.population_size = 1.2*(ts.atom_types_count*2+1);
+				s.population_size = 20; //1.2*(ts.atom_types_count*2+1);
 			if (s.limit_de_iters == NO_LIMIT_ITERS && s.limit_de_time == NO_LIMIT_TIME)
 				s.limit_de_iters = 250;
 

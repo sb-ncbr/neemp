@@ -37,17 +37,10 @@ void kd_copy_parameters(struct kappa_data* from, struct kappa_data* to);
 /* Run differential evolution algorithm to find the best set of parameters for calculation of partial charges. */ 
 void run_diff_evolution(struct subset * const ss) {
 
-	//TODO allocate memory for kappa_data array in separate method according to optimization method, should be called also from kappa.c:find_the_best_parameters
 	/* Create a set of random points in vector space of kappa_data */            
 	if (s.verbosity >= VERBOSE_KAPPA)
 		printf("DE Generating population of size %d\n", s.population_size);
-	ss->kappa_data_count = s.population_size;
-	ss->data = (struct kappa_data*) calloc(ss->kappa_data_count, sizeof(struct kappa_data));
-	if(!ss->data)
-		EXIT_ERROR(MEM_ERROR, "%s", "Cannot allocate memory for kappa data array.\n");
-	for (int i = 0; i< ss->kappa_data_count; i++) {
-		kd_init(&ss->data[i]);
-	}
+	fill_ss(ss, s.population_size); 
 
 	/* Set bounds for each parameters in kappa_data */
 	float *bounds = (float*) malloc((ts.atom_types_count*2+1)*2*sizeof(float));

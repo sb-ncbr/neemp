@@ -31,6 +31,16 @@ void ss_init(struct subset * const ss, const struct subset * const parent) {
 		b_set_all(&ss->molecules);
 }
 
+/* Initialize empty subset with kappa_data */
+void fill_ss(struct subset * const ss, int size) {
+	ss->kappa_data_count = size;
+	ss->data = (struct kappa_data*) calloc(ss->kappa_data_count, sizeof(struct kappa_data));
+	if(!ss->data)
+		EXIT_ERROR(MEM_ERROR, "%s", "Cannot allocate memory for kappa data array.\n");
+	for (int i = 0; i< ss->kappa_data_count; i++) {
+		kd_init(&ss->data[i]);
+	}
+}
 
 /* Allocate memory for the contents of kappa_data structure */
 void kd_init(struct kappa_data * const kd) {
