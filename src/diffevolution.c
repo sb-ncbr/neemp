@@ -38,7 +38,8 @@ void run_diff_evolution(struct subset * const ss)
 {
 	//create a set of random points in vector space of kappa_data
 	//TODO allocate memory for kappa_data array in separate method according to optimization method, should be called also from kappa.c:find_the_best_parameters
-	printf("DE Generating population of size %d\n", s.population_size);
+	if (s.verbosity >= VERBOSE_KAPPA)
+		printf("DE Generating population of size %d\n", s.population_size);
 	ss->kappa_data_count = s.population_size;
 	ss->data = (struct kappa_data*) calloc(ss->kappa_data_count, sizeof(struct kappa_data));
 	if(!ss->data)
@@ -53,7 +54,8 @@ void run_diff_evolution(struct subset * const ss)
 	generate_random_population(ss, bounds);
 
 	//evaluate the fitness function for all points and assign the best
-	printf("DE Evaluating fitness function for whole population\n");
+	if (s.verbosity >= VERBOSE_KAPPA)
+		printf("DE Calculating charges and evaluating fitness function for whole population\n");
 	for (int i = 0; i < ss->kappa_data_count; i++)
 	{
 		calculate_charges(ss, &ss->data[i]);
@@ -83,7 +85,8 @@ void run_diff_evolution(struct subset * const ss)
 	while (iter < s.limit_de_iters)
 	{
 		iter++;
-		printf("DE iteration %d\n", iter);
+		if (s.verbosity >= VERBOSE_KAPPA)
+			printf("DE iteration %d\n", iter);
 		//select randomly two points from population
 		//TODO replace with some real random number generator
 		int rand1 = rand() % ss->kappa_data_count;
@@ -103,8 +106,10 @@ void run_diff_evolution(struct subset * const ss)
 				calculate_charges(ss, so_far_best);
 				calculate_statistics(ss, so_far_best);
 			}
-			kd_print_stats(so_far_best);
-			print_parameters(so_far_best);
+			if (s.verbosity >= VERBOSE_KAPPA) {
+				kd_print_stats(so_far_best);
+				print_parameters(so_far_best);
+			}
 		}
 	}
 	kd_destroy(trial);
@@ -113,8 +118,6 @@ void run_diff_evolution(struct subset * const ss)
 	kd_copy_parameters(so_far_best, ss->best);
 	calculate_charges(ss, ss->best);
 	calculate_statistics(ss, ss->best);
-	printf("From %d iterations, %d introduced a change\n", s.limit_de_iters, iters_with_evolution);
-
 
 }
 
@@ -215,14 +218,16 @@ int compare_and_set(struct kappa_data* trial, struct kappa_data* so_far_best) {
 	kd_sort_by_is_better_per_atom(better_per_atom, trial, so_far_best, per_atom_threshold);
 	//if kappa is close, trial is a bit worse in full stats, but much better in one (or more) of the elements, than allow a bit of worsening and set so_far_best to trial 
 	if (!trial_is_better && sum(better_per_atom, ts.atom_types_count)) {
-		printf("DE allowing a bit worse\n");
+		if (s.verbosity >= VERBOSE_KAPPA)
+			printf("DE allowing a bit worse\n");
 		kd_copy_parameters(trial, so_far_best);
 		return 1;
 	}
 
 	//if trial is a bit better in full stats, but much worse in one of the elements, that prevent a bettering and keep so_far_best the same
 	if (trial_is_better && sum(better_per_atom, ts.atom_types_count) < 0) {
-		printf("DE preventing a bit better\n");
+		if (s.verbosity >= VERBOSE_KAPPA)
+			printf("DE preventing a bit better\n");
 		return 0;
 	}
 	return 0;
@@ -247,6 +252,14 @@ void compute_parameters_bounds(float* bounds, int by_atom_type) {
 			bounds[2 + j*4 + 1] = 3;
 			bounds[2 + j*4 + 2] = 0;
 			bounds[2 + j*4 + 3] = 0.8;
+		}
+	}
+	if (s.verbosity >= VERBOSE_KAPPA) {
+		printf("DE Bounds set to:\n");
+		for (int i = 0; i < ts.atom_types_count; i++) {
+			char buff[10];
+			at_format_text(&ts.atom_types[i], buff);
+			printf("%s %5.3f - %5.3f, %5.3f - %5.3f\n", buff, bounds[2+i*4], bounds[2+i*4+1], bounds[2+i*4+2], bounds[2+i*4+3]);
 		}
 	}
 }
