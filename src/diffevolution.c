@@ -34,30 +34,31 @@ float interpolate_to_different_bounds(float x, float low, float high);
 int sum(int* vector, int size);
 void kd_copy_parameters(struct kappa_data* from, struct kappa_data* to);
 
-void run_diff_evolution(struct subset * const ss)
-{
-	//create a set of random points in vector space of kappa_data
+/* Run differential evolution algorithm to find the best set of parameters for calculation of partial charges. */ 
+void run_diff_evolution(struct subset * const ss) {
+
 	//TODO allocate memory for kappa_data array in separate method according to optimization method, should be called also from kappa.c:find_the_best_parameters
+	/* Create a set of random points in vector space of kappa_data */            
 	if (s.verbosity >= VERBOSE_KAPPA)
 		printf("DE Generating population of size %d\n", s.population_size);
 	ss->kappa_data_count = s.population_size;
 	ss->data = (struct kappa_data*) calloc(ss->kappa_data_count, sizeof(struct kappa_data));
 	if(!ss->data)
 		EXIT_ERROR(MEM_ERROR, "%s", "Cannot allocate memory for kappa data array.\n");
-	for (int i = 0; i< ss->kappa_data_count; i++)
-	{
+	for (int i = 0; i< ss->kappa_data_count; i++) {
 		kd_init(&ss->data[i]);
 	}
-	//set bounds for parameters
+
+	/* Set bounds for each parameters in kappa_data */
 	float *bounds = (float*) malloc((ts.atom_types_count*2+1)*2*sizeof(float));
+	//compute bounds, 0 means set them to fixed numbers taken from Tomas's full scan, 1 means try to find them with broad search
 	compute_parameters_bounds(bounds, 0);
 	generate_random_population(ss, bounds);
 
-	//evaluate the fitness function for all points and assign the best
+	/* Evaluate the fitness function for all points and assign the best */
 	if (s.verbosity >= VERBOSE_KAPPA)
 		printf("DE Calculating charges and evaluating fitness function for whole population\n");
-	for (int i = 0; i < ss->kappa_data_count; i++)
-	{
+	for (int i = 0; i < ss->kappa_data_count; i++) {
 		calculate_charges(ss, &ss->data[i]);
 		calculate_statistics_by_sort_mode(ss, &ss->data[i]);
 	}
@@ -67,8 +68,9 @@ void run_diff_evolution(struct subset * const ss)
 		if (kd_sort_by_is_better(&ss->data[i], ss->best))
 			ss->best = &ss->data[i];
 
-	//run the optimization until converged or for max_iter
+	/* Run the optimization for max iterations */
 	//TODO include iters_max for DE in limits or use one already there (that is used for discard)
+	//TODO can we tell we have converged? if yes, include to while condition
 	int iter = 0;
 	struct kappa_data *trial = (struct kappa_data*)malloc(sizeof(struct kappa_data));
 	struct kappa_data *so_far_best = (struct kappa_data*)malloc(sizeof(struct kappa_data));
@@ -82,30 +84,33 @@ void run_diff_evolution(struct subset * const ss)
 	calculate_statistics(ss, so_far_best);
 	float mutation_constant = s.mutation_constant;
 	int iters_with_evolution=0;
-	while (iter < s.limit_de_iters)
-	{
+
+	while (iter < s.limit_de_iters)	{
 		iter++;
 		if (s.verbosity >= VERBOSE_KAPPA)
 			printf("DE iteration %d\n", iter);
-		//select randomly two points from population
+
+		/* Select randomly two points from population */
 		//TODO replace with some real random number generator
 		int rand1 = rand() % ss->kappa_data_count;
 		int rand2 = rand() % ss->kappa_data_count;
 		struct kappa_data a = ss->data[rand1];
 		struct kappa_data b = ss->data[rand2];
+
 		if (s.dither)
 			mutation_constant = get_random_float(0.5, 1);
-		//recombine parts of best, a and b to obtain new trial structure
-		if (evolve_kappa(trial, so_far_best, &a, &b, bounds, mutation_constant, s.recombination_constant))
-		{
+		/* Recombine parts of best, a and b to obtain new trial structure */
+		if (evolve_kappa(trial, so_far_best, &a, &b, bounds, mutation_constant, s.recombination_constant)) {
 			iters_with_evolution++;
+			/* Evaluate the new trial structure */
 			calculate_charges(ss, trial);
 			calculate_statistics_by_sort_mode(ss, trial);
-			//if the new structure is better than what we have before, reassign
+			/* If the new structure is better than what we have before, reassign */
 			if (compare_and_set(trial, so_far_best)) {
 				calculate_charges(ss, so_far_best);
 				calculate_statistics(ss, so_far_best);
 			}
+
 			if (s.verbosity >= VERBOSE_KAPPA) {
 				kd_print_stats(so_far_best);
 				print_parameters(so_far_best);
@@ -118,37 +123,33 @@ void run_diff_evolution(struct subset * const ss)
 	kd_copy_parameters(so_far_best, ss->best);
 	calculate_charges(ss, ss->best);
 	calculate_statistics(ss, ss->best);
-
 }
 
-
-void generate_random_population(struct subset* ss, float *bounds)
-{
-	//get random number by Latin Hypercube Sampling
+/* Generate random population by Latin HyperCube Sampling */
+void generate_random_population(struct subset* ss, float *bounds) {
+	/* Get random numbers by Latin Hypercube Sampling */
 	int dimensions_count = ts.atom_types_count*2+1;
 	int points_count = s.population_size;
-	int seed = 100;
+	int seed = 200;
 	double* random_lhs = latin_random_new(dimensions_count, points_count, &seed);
 
-	//redistribute random_lhs[dim_num, point_num] to ss->data
+	/* Redistribute random_lhs[dim_num, point_num] to ss->data */
 	for (int i = 0; i < points_count; i++) {
 		ss->data[i].kappa = interpolate_to_different_bounds(random_lhs[i*dimensions_count], bounds[0], bounds[1]);
 		for (int j = 0; j < ts.atom_types_count; j++) {
-			//interpolate random numbers from [0,1] to new bounds
+			/* Interpolate random numbers from [0,1] to our bounds */
 			ss->data[i].parameters_alpha[j] = interpolate_to_different_bounds(random_lhs[i*dimensions_count + 1 + j*2], bounds[2 + j*4], bounds[2 + j*4 + 1]);
 			ss->data[i].parameters_beta[j] = interpolate_to_different_bounds(random_lhs[i*dimensions_count + 2 + j*2 ], bounds[2 + j*4 + 2], bounds[2 + j*4 + 3]);
 		}
 	}
-
 }
 
-int evolve_kappa(struct kappa_data* trial, struct kappa_data* x, struct kappa_data* a, struct kappa_data *b, float *bounds, double mutation_constant, double recombination_constant)
-{
+/* Evolve kappa_data, i.e. create a new trial structure */
+int evolve_kappa(struct kappa_data* trial, struct kappa_data* x, struct kappa_data* a, struct kappa_data *b, float *bounds, double mutation_constant, double recombination_constant) {
 	int changed = 0;
 	kd_copy_parameters(x, trial);
 	for (int i = 0; i < ts.atom_types_count; i++)
-		if (get_random_float(0,1) < recombination_constant)
-		{
+		if (get_random_float(0,1) < recombination_constant)	{
 			changed++;
 			trial->parameters_alpha[i] += mutation_constant*(a->parameters_alpha[i] - b->parameters_alpha[i]);
 			if (bounds[2 + i*4] > trial->parameters_alpha[i] || bounds[2 + i*4 + 1] < trial->parameters_alpha[i]) {
@@ -157,8 +158,7 @@ int evolve_kappa(struct kappa_data* trial, struct kappa_data* x, struct kappa_da
 			}
 		}
 	for (int i = 0; i < ts.atom_types_count; i++)
-		if (get_random_float(0,1) < recombination_constant)
-		{
+		if (get_random_float(0,1) < recombination_constant)	{
 			changed++;
 			trial->parameters_beta[i] += mutation_constant*(a->parameters_beta[i] - b->parameters_beta[i]);
 			if (bounds[2 + i*4 + 2] > trial->parameters_beta[i] || bounds[2 + i*4 + 3] < trial->parameters_beta[i]) {
@@ -176,8 +176,9 @@ int evolve_kappa(struct kappa_data* trial, struct kappa_data* x, struct kappa_da
 	return changed;
 }
 
+/* Compare trial structure with so far best structure and save the better */
 int compare_and_set(struct kappa_data* trial, struct kappa_data* so_far_best) {
-	//if we cannot evolve by element, compare just full_stats
+	/* If we consider only total statistics */
 	if (s.evolve_by_element == 0) {
 		if (kd_sort_by_is_better(trial, so_far_best)) {
 			kd_copy_parameters(trial, so_far_best);
@@ -185,7 +186,7 @@ int compare_and_set(struct kappa_data* trial, struct kappa_data* so_far_best) {
 		}
 	}
 
-	//we can evolve by element
+	/* We consider also per atom statistics */
 	float compare_full_stats = kd_sort_by_return_value(trial) - kd_sort_by_return_value(so_far_best);
 	int trial_is_better = compare_full_stats > 0;
 	compare_full_stats = fabs(compare_full_stats);
@@ -233,19 +234,25 @@ int compare_and_set(struct kappa_data* trial, struct kappa_data* so_far_best) {
 	return 0;
 }
 
+/* Compute bounds for each parameter of each atom type */
 void compute_parameters_bounds(float* bounds, int by_atom_type) {          
 	//returns bounds[kappa_low, kappa_high, alpha_1_low, alpha_1_high, beta_1_low, beta_1_high, alpha_2_low, ...]
 	float toH = 0.036749309;
+	float toEV = 27.2113966413;
 	bounds[0] = 0.0005; //kappa_low
 	bounds[1] = 3.5; //kappa_high
 	for (int j = 0; j < ts.atom_types_count; j++) {	
 		if (by_atom_type) {
 			//set bounds for particular atom type
 			int atom_number = ts.atom_types[j].Z;
-			bounds[2 + j*4] = (ionenergies[atom_number] + affinities[atom_number])/2*toH - 0.1; //alpha_low
+			bounds[2 + j*4] = (ionenergies[atom_number] + affinities[atom_number]*5)/2*toH - 0.1; //alpha_low
 			bounds[2 + j*4 + 1] = bounds[2 + j*4] + 0.2; //alpha_high
-			bounds[2 + j*4 + 2] = (ionenergies[atom_number] - affinities[atom_number])/2*toH - 0.1; //beta_low
+			//bounds[2 + j*4] *= toEV;
+			//bounds[2 + j*4 + 1] *= toEV;
+			bounds[2 + j*4 + 2] = (ionenergies[atom_number] - affinities[atom_number]*5)/2*toH - 0.1; //beta_low
 			bounds[2 + j*4 + 3]	= bounds[2 + j*4 + 2] + 0.2; //beta_high
+			//bounds[2 + j*4 + 2] *= toEV;
+			//bounds[2 + j*4 + 3] *= toEV;
 		}
 		else {
 			bounds[2 + j*4] = 2;
@@ -264,15 +271,18 @@ void compute_parameters_bounds(float* bounds, int by_atom_type) {
 	}
 }
 
+/* Get random float within the bounds */
 float get_random_float(float low, float high) {
 	float n = low + (float)(rand())/((float)(RAND_MAX/(high-low)));
 	return n;
 }
 
+/* Interpolate the number from [0,1] to [low, high] */ 
 float interpolate_to_different_bounds(float x, float low, float high) {
 	return low + x*(high-low);
 }
 
+/* Compute the sum of the vector */
 int sum(int* vector, int size) {
 	int sum = 0;
 	for (int i = 0; i < size; i++)
@@ -280,11 +290,10 @@ int sum(int* vector, int size) {
 	return sum;
 }
 
-void kd_copy_parameters(struct kappa_data* from, struct kappa_data* to)
-{
+/* Copy data from one kappa_data to another */
+void kd_copy_parameters(struct kappa_data* from, struct kappa_data* to) {
 	to->kappa = from->kappa;
-	for (int i = 0; i < ts.atom_types_count; i++)
-	{
+	for (int i = 0; i < ts.atom_types_count; i++) {
 		to->parameters_alpha[i] = from->parameters_alpha[i];
 		to->parameters_beta[i] = from->parameters_beta[i];
 	}

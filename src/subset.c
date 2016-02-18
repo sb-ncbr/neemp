@@ -172,17 +172,14 @@ int kd_sort_by_is_better(const struct kappa_data * const kd1, const struct kappa
 
 /* Determine if kd1 is much better or much worse in some element than kd2 in terms of the sort-by value per atom */
 void kd_sort_by_is_better_per_atom(int* results_per_atom, const struct kappa_data * const kd1, const struct kappa_data * const kd2, float threshold) {
-	for (int i = 0; i < ts.atom_types_count; i++)
-	{
+	for (int i = 0; i < ts.atom_types_count; i++) {
 		if (kd_sort_by_return_value_per_atom(kd1, i)-kd_sort_by_return_value_per_atom(kd2, i) >= threshold)
 			results_per_atom[i] = 1;
 		else if (kd_sort_by_return_value_per_atom(kd2, i) - kd_sort_by_return_value_per_atom(kd1, i) >= threshold)
 			results_per_atom[i] = -1;
 		else
 			results_per_atom[i] = 0;
-
 	}
-    
 }
 
 /* Print all the statistics for the particular kappa data */

@@ -159,6 +159,8 @@ static void print_help(void) {
 
 	printf("neemp -m params --sdf-file molecules.sdf --chg-file charges.chg --kappa-max 1.0 --fs-precision 0.2 --sort-by RMSD --fs-only.\n\
 		Compute parameters for the given molecules in file molecules.sdf and ab-initio charges in charges.chg. Set maximum value for kappa to 1.0, step for the full scan to 0.2, no iterative refinement, sort results according to the relative mean square deviation.\n");
+	printf("neemp -m params -p de --sdf-file molecules.sdf --chg-file charges.chg --sort-by R --de-pop-size 20 --de-iters-max 500 --de-evolve-partially -vv.\n\
+		Compute parameters for the given molecules in file molecules.sdf and ab-initio charges in charges.chg. The chosen optimization method: differential evolution will create population of 20 sets of parameters and evolve these in maximum of 500 iterations. The fitness function evaluating the set of parameters is Pearson coefficient. Partial great improvements in evolution are permitted at the cost of slight decrease in total R.\n");
 
 	printf("neemp -m charges --sdf-file molecules.sdf --par-file parameters --chg-out-file output.chg\n\
 		Calculate and store EEM charges to the file output.chg\n");
@@ -431,7 +433,7 @@ void check_settings(void) {
 			if (s.recombination_constant == 0)
 				s.recombination_constant = 0.7;
 			if (s.population_size == 0)
-				s.population_size = 200;//10*(ts.atom_types_count*2+1);
+				s.population_size = 1.2*(ts.atom_types_count*2+1);
 			if (s.limit_de_iters == NO_LIMIT_ITERS && s.limit_de_time == NO_LIMIT_TIME)
 				s.limit_de_iters = 250;
 
