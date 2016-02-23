@@ -181,7 +181,7 @@ int kd_sort_by_is_better(const struct kappa_data * const kd1, const struct kappa
 }
 
 /* Determine if kd1 is much better or much worse in some element than kd2 in terms of the sort-by value per atom */
-void kd_sort_by_is_better_per_atom(int* results_per_atom, const struct kappa_data * const kd1, const struct kappa_data * const kd2, float threshold) {
+void kd_sort_by_is_much_better_per_atom(int* results_per_atom, const struct kappa_data * const kd1, const struct kappa_data * const kd2, float threshold) {
 	for (int i = 0; i < ts.atom_types_count; i++) {
 		if (kd_sort_by_return_value_per_atom(kd1, i)-kd_sort_by_return_value_per_atom(kd2, i) >= threshold)
 			results_per_atom[i] = 1;
@@ -191,6 +191,17 @@ void kd_sort_by_is_better_per_atom(int* results_per_atom, const struct kappa_dat
 			results_per_atom[i] = 0;
 	}
 }
+
+/* Determine if kd1 is better in some element than kd2 in terms of the sort-by value per atom */
+int kd_sort_by_is_better_per_atom(const struct kappa_data * const kd1, const struct kappa_data * const kd2, int idx) {
+
+	/* Higher correlation is better, otherwise prefer lower value */
+	if(s.sort_by == SORT_R || s.sort_by == SORT_R2 || s.sort_by == SORT_RW || s.sort_by == SORT_SPEARMAN)
+		return kd_sort_by_return_value_per_atom(kd1, idx) > kd_sort_by_return_value_per_atom(kd2, idx);
+	else
+		return kd_sort_by_return_value_per_atom(kd1, idx) < kd_sort_by_return_value_per_atom(kd2, idx);
+}
+
 
 /* Print all the statistics for the particular kappa data */
 void kd_print_stats(const struct kappa_data * const kd) {

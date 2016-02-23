@@ -45,7 +45,8 @@ void kd_print_stats(const struct kappa_data * const kd);
 float kd_sort_by_return_value(const struct kappa_data * const kd);
 float kd_sort_by_return_value_per_atom(const struct kappa_data * const kd, int i);
 int kd_sort_by_is_better(const struct kappa_data * const kd1, const struct kappa_data * const kd2);
-void kd_sort_by_is_better_per_atom(int* results_per_atom, const struct kappa_data * const kd1, const struct kappa_data * const kd2, float threshold);
+void kd_sort_by_is_much_better_per_atom(int* results_per_atom, const struct kappa_data * const kd1, const struct kappa_data * const kd2, float threshold);
+int kd_sort_by_is_better_per_atom(const struct kappa_data * const kd1, const struct kappa_data * const kd2, int idx);
 
 struct subset {
 
