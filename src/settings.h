@@ -90,6 +90,7 @@ struct settings {
 	int dither; //set mutation constant to random value from [0.5, 1] each iteration
 	float recombination_constant;
 	int evolve_by_element; //incorporate partial changes when evolving new trial if fitness function is higher for given element
+	float fixed_kappa; //fix kappa to given value
 	int limit_de_iters;
 	time_t limit_de_time;
 

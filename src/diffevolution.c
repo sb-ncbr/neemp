@@ -119,16 +119,19 @@ void run_diff_evolution(struct subset * const ss) {
 }
 
 /* Generate random population by Latin HyperCube Sampling */
-void generate_random_population(struct subset* ss, float *bounds) {
+void generate_random_population(struct subset* ss, float *bounds, int size) {
 	/* Get random numbers by Latin Hypercube Sampling */
 	int dimensions_count = ts.atom_types_count*2+1;
-	int points_count = s.population_size;
-	int seed = 200;
+	int points_count = size;
+	int seed = 200; //get_seed();
 	double* random_lhs = latin_random_new(dimensions_count, points_count, &seed);
 
 	/* Redistribute random_lhs[dim_num, point_num] to ss->data */
 	for (int i = 0; i < points_count; i++) {
-		ss->data[i].kappa = interpolate_to_different_bounds(random_lhs[i*dimensions_count], bounds[0], bounds[1]);
+		if (s.fixed_kappa == 0)
+			ss->data[i].kappa = interpolate_to_different_bounds(random_lhs[i*dimensions_count], bounds[0], bounds[1]);
+		else
+			ss->data[i].kappa = s.fixed_kappa;
 		for (int j = 0; j < ts.atom_types_count; j++) {
 			/* Interpolate random numbers from [0,1] to our bounds */
 			ss->data[i].parameters_alpha[j] = interpolate_to_different_bounds(random_lhs[i*dimensions_count + 1 + j*2], bounds[2 + j*4], bounds[2 + j*4 + 1]);
@@ -161,11 +164,15 @@ int evolve_kappa(struct kappa_data* trial, struct kappa_data* x, struct kappa_da
 		}
 
 	//always change kappa
-	trial->kappa += mutation_constant*(a->kappa - b->kappa)/(bounds[1]-bounds[0]);
-	changed++;
-	if (bounds[0] > trial->kappa || bounds[1] < trial->kappa) {
-		trial->kappa -= mutation_constant*(a->kappa - b->kappa)/(bounds[1]-bounds[0]);
+	if (s.fixed_kappa == 0)	{
+		trial->kappa += mutation_constant*(a->kappa - b->kappa)/(bounds[1]-bounds[0]);
+		changed++;
+		if (bounds[0] > trial->kappa || bounds[1] < trial->kappa) {
+			trial->kappa -= mutation_constant*(a->kappa - b->kappa)/(bounds[1]-bounds[0]);
+		}
 	}
+	else 
+		trial->kappa = s.fixed_kappa;
 	return changed;
 }
 
