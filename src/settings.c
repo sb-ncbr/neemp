@@ -14,6 +14,7 @@
 #include "limits.h"
 #include "neemp.h"
 #include "settings.h"
+#include "latin_random.h"
 
 extern struct settings s;
 
@@ -38,6 +39,7 @@ static struct option long_options[] = {
 	{"chg-stats-out-file", required_argument, 0, 134},
 	{"par-out-file", required_argument, 0, 135},
 	{"wgh-file", required_argument, 0, 136},
+	{"random-seed", required_argument, 0, 137},
 	{"kappa-max", required_argument, 0, 140},
 	{"kappa", required_argument, 0, 141},
 	{"kappa-preset", required_argument, 0, 142},
@@ -78,6 +80,7 @@ void s_init(void) {
 	memset(s.chg_out_file, 0x0, MAX_PATH_LEN * sizeof(char));
 	memset(s.chg_stats_out_file, 0x0, MAX_PATH_LEN * sizeof(char));
 
+	s.random_seed = -1;
 	s.mode = MODE_NOT_SET;
 	s.params_method = PARAMS_NOT_SET;
 	s.full_scan_precision = 0.0f;
@@ -132,6 +135,7 @@ static void print_help(void) {
 	printf("Options specific to mode: params using linear regression as calculation method\n");
 	printf("      --chg-file FILE            FILE with ab-initio charges (required)\n");
 	printf("      --chg-stats-out-file FILE  output charges statistics to the FILE\n");
+	printf("      --random-seed VALUE        set random seed\n");
 	printf("      --kappa-max MAX            set maximum value for kappa (required)\n");
 	printf("      --kappa VALUE              use only one kappa VALUE for parameterization\n");
 	printf("      --fs-precision VALUE       resolution for the full scan (required)\n");
@@ -272,6 +276,10 @@ void parse_options(int argc, char **argv) {
 
 			case 136:
 				strncpy(s.wgh_file, optarg, MAX_PATH_LEN - 1);
+				break;
+
+			case 137:
+				s.random_seed = atoi(optarg);
 				break;
 
 			case 140:
@@ -444,6 +452,9 @@ void check_settings(void) {
 				s.limit_de_iters = 250;
 
 		}
+
+		if (s.random_seed == -1)
+			s.random_seed = get_seed();
 
 		if(s.tabu_size < 0.0f || s.tabu_size > 1.0f)
 			EXIT_ERROR(ARG_ERROR, "%s", "Tabu size has to be number in range [0.0; 1.0]\n");

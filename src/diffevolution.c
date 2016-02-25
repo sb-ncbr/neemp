@@ -124,7 +124,7 @@ void generate_random_population(struct subset* ss, float *bounds, int size) {
 	/* Get random numbers by Latin Hypercube Sampling */
 	int dimensions_count = ts.atom_types_count*2+1;
 	int points_count = size;
-	int seed = 200; //get_seed();
+	int seed = rand(); //get_seed();
 	double* random_lhs = latin_random_new(dimensions_count, points_count, &seed);
 
 	/* Redistribute random_lhs[dim_num, point_num] to ss->data */

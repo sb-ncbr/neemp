@@ -94,6 +94,7 @@ struct settings {
 	int limit_de_iters;
 	time_t limit_de_time;
 
+	int random_seed;
 	enum verbosity_levels verbosity;
 
 	float tabu_size;
