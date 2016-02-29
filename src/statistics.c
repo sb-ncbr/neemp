@@ -225,14 +225,20 @@ static void set_total_R2(struct kappa_data * const kd) {
 	assert(kd != NULL);
 
 	double R2_sum_molecules = 0.0;
+	int bad_molecules = 0;
 
 	for(int i = 0; i < ts.molecules_count; i++) {
 		double molecule_R = kd->per_molecule_stats[i].R;
 		kd->per_molecule_stats[i].R2 = (float) (molecule_R * molecule_R);
-		R2_sum_molecules += molecule_R * molecule_R;
+
+		/* Avoid NaN values spoiling the result */
+		if(isnan(molecule_R))
+			bad_molecules++;
+		else
+			R2_sum_molecules += molecule_R * molecule_R;
 	}
 
-	kd->full_stats.R2 = (float) R2_sum_molecules / ts.molecules_count;
+	kd->full_stats.R2 = (float) R2_sum_molecules / (ts.molecules_count - bad_molecules);
 }
 
 
