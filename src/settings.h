@@ -91,6 +91,7 @@ struct settings {
 	float recombination_constant;
 	int evolve_by_element; //incorporate partial changes when evolving new trial if fitness function is higher for given element
 	float fixed_kappa; //fix kappa to given value
+	int de_threads; //number of threads used to paralellize DE
 	int limit_de_iters;
 	time_t limit_de_time;
 

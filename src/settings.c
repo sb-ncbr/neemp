@@ -61,6 +61,7 @@ static struct option long_options[] = {
 	{"de-dither", no_argument, 0, 186},
 	{"de-evolve-partially", no_argument, 0, 187},
 	{"de-fix-kappa",required_argument, 0, 188},
+	{"de-threads",required_argument, 0, 189},
 	{NULL, 0, 0, 0}
 };
 
@@ -92,6 +93,7 @@ void s_init(void) {
 	s.dither = 0;
 	s.evolve_by_element = 0;
 	s.fixed_kappa = 0;
+	s.de_threads = 1;
 	s.take_only_best = 0;
 	s.limit_de_iters = NO_LIMIT_ITERS;
 	s.limit_de_time = NO_LIMIT_TIME;
@@ -150,6 +152,7 @@ static void print_help(void) {
 	printf("      --de-dither                set the mutation constant to random value from [0.5;1] for ech iteration, can improve convergence.\n");
 	printf("      --de-evolve-partially      turn on evolution driven by sort per atom type.\n");
 	printf("      --de-fix-kappa      		 set kappa to one fixed value.\n");
+	printf("      --de-threads      		 set number of threads for DE.\n");
 	printf("      --par-out-file FILE        output the parameters to the FILE\n");
 	printf("  -d, --discard METHOD           perform discarding with METHOD. Valid choices are: iterative, simple and off. Default is off.\n");
 	printf("  -s, --sort-by STAT             sort solutions by STAT. Valid choices are: R, R2, spearman, RMSD, D_max, D_avg.\n");
@@ -393,6 +396,9 @@ void parse_options(int argc, char **argv) {
 			case 188:
 					 s.fixed_kappa = atof(optarg);
 					 break;
+			case 189:
+					 s.de_threads = atoi(optarg);
+					 break;
 			case '?':
 				EXIT_ERROR(ARG_ERROR, "%s", "Try -h/--help.\n");
 			default:
@@ -413,6 +419,12 @@ void check_settings(void) {
 
 	if(s.max_threads < 1)
 		EXIT_ERROR(ARG_ERROR, "%s", "Maximum number of threads has to be at least 1 (default).\n");
+
+	if(s.de_threads < 1)
+		EXIT_ERROR(ARG_ERROR, "%s", "Maximum number of DE threads has to be at least 1 (default).\n");
+
+	if(s.max_threads < s.de_threads)
+		EXIT_ERROR(ARG_ERROR, "%s", "Maximum number of DE threads has to be smaller than maximum number of threads.\n");
 
 	if(s.mode == MODE_PARAMS) {
 		if(s.chg_file[0] == '\0')

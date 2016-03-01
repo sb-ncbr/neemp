@@ -52,7 +52,9 @@ void run_diff_evolution(struct subset * const ss) {
 	/* Evaluate the fitness function for all points and assign the best */
 	if (s.verbosity >= VERBOSE_KAPPA)
 		printf("DE Calculating charges and evaluating fitness function for whole population\n");
-	for (int i = 0; i < ss->kappa_data_count; i++) {
+    int i;
+#pragma omp parallel for num_threads(s.de_threads) private(i)
+	for (i = 0; i < ss->kappa_data_count; i++) {
 		calculate_charges(ss, &ss->data[i]);
 		calculate_statistics_by_sort_mode(&ss->data[i]);
 	}
@@ -92,14 +94,17 @@ void run_diff_evolution(struct subset * const ss) {
 		struct kappa_data b = ss->data[rand2];
 
 		if (s.dither)
-			mutation_constant = get_random_float(0.1, 1);
+			mutation_constant = get_random_float(0.5, 1);
 		/* Recombine parts of best, a and b to obtain new trial structure */
-		if (evolve_kappa(trial, so_far_best, &a, &b, bounds, mutation_constant, s.recombination_constant)) {
+//#pragma omp parallel 
+		{
+		evolve_kappa(trial, so_far_best, &a, &b, bounds, mutation_constant, s.recombination_constant);
 			iters_with_evolution++;
 			/* Evaluate the new trial structure */
 			calculate_charges(ss, trial);
 			calculate_statistics_by_sort_mode(trial);
 			/* If the new structure is better than what we have before, reassign */
+//#pragma omp critical
 			if (compare_and_set(trial, so_far_best)) {
 				calculate_charges(ss, so_far_best);
 				calculate_statistics(ss, so_far_best);
