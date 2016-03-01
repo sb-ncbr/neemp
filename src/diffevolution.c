@@ -54,7 +54,7 @@ void run_diff_evolution(struct subset * const ss) {
 		printf("DE Calculating charges and evaluating fitness function for whole population\n");
 	for (int i = 0; i < ss->kappa_data_count; i++) {
 		calculate_charges(ss, &ss->data[i]);
-		calculate_statistics_by_sort_mode(ss, &ss->data[i]);
+		calculate_statistics_by_sort_mode(&ss->data[i]);
 	}
 	//TODO extract to separate method, also used in kappa.c:find_the_best_parameters
 	ss->best = &ss->data[0];
@@ -98,7 +98,7 @@ void run_diff_evolution(struct subset * const ss) {
 			iters_with_evolution++;
 			/* Evaluate the new trial structure */
 			calculate_charges(ss, trial);
-			calculate_statistics_by_sort_mode(ss, trial);
+			calculate_statistics_by_sort_mode(trial);
 			/* If the new structure is better than what we have before, reassign */
 			if (compare_and_set(trial, so_far_best)) {
 				calculate_charges(ss, so_far_best);

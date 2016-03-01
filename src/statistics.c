@@ -571,7 +571,7 @@ void calculate_statistics(struct subset * const ss, struct kappa_data * const kd
 }
 
 /* Calculate statistics according to set sort type */
-void calculate_statistics_by_sort_mode(struct subset* ss, struct kappa_data* kd) {
+void calculate_statistics_by_sort_mode(struct kappa_data* kd) {
 	assert(kd != NULL);
 	switch (s.sort_by) {
 		case SORT_R:
@@ -597,7 +597,9 @@ void calculate_statistics_by_sort_mode(struct subset* ss, struct kappa_data* kd)
 			set_per_at_D_max(kd);
 			break;
 		case SORT_RW:
-			calculate_statistics(ss,kd);
+			set_total_R(kd);
+			set_per_at_R_R2(kd);
+			set_total_R_w(kd);
 			break;
 		default:
 			break;
