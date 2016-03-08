@@ -96,23 +96,23 @@ void run_diff_evolution(struct subset * const ss) {
 		if (s.dither)
 			mutation_constant = get_random_float(0.5, 1);
 		/* Recombine parts of best, a and b to obtain new trial structure */
-//#pragma omp parallel 
+#pragma omp parallel num_threads(s.de_threads)
 		{
-		evolve_kappa(trial, so_far_best, &a, &b, bounds, mutation_constant, s.recombination_constant);
+			evolve_kappa(trial, so_far_best, &a, &b, bounds, mutation_constant, s.recombination_constant);
 			iters_with_evolution++;
 			/* Evaluate the new trial structure */
 			calculate_charges(ss, trial);
 			calculate_statistics_by_sort_mode(trial);
 			/* If the new structure is better than what we have before, reassign */
-//#pragma omp critical
+#pragma omp critical
 			if (compare_and_set(trial, so_far_best)) {
 				calculate_charges(ss, so_far_best);
 				calculate_statistics(ss, so_far_best);
-			}
 
-			if (s.verbosity >= VERBOSE_KAPPA) {
-				kd_print_stats(so_far_best);
-				print_parameters(so_far_best);
+				if (s.verbosity >= VERBOSE_KAPPA) {
+					kd_print_stats(so_far_best);
+					print_parameters(so_far_best);
+				}
 			}
 		}
 	}
@@ -133,16 +133,22 @@ void generate_random_population(struct subset* ss, float *bounds, int size) {
 	double* random_lhs = latin_random_new(dimensions_count, points_count, &seed);
 
 	/* Redistribute random_lhs[dim_num, point_num] to ss->data */
+
+	//every row contains values of one dimension for all population members
+	//start with alpha and beta for all atom types
+	for (int i = 0; i < points_count; i++) {
+		for (int j = 0; j < ts.atom_types_count; j++) {
+			ss->data[i].parameters_alpha[j] = interpolate_to_different_bounds(random_lhs[j*points_count + i], bounds[2+j*4], bounds[2+j*4+1]);
+			ss->data[i].parameters_beta[j] = interpolate_to_different_bounds(random_lhs[(j+1)*points_count + i], bounds[2+j*4+2], bounds[2+j*4+3]);
+		}
+	}
+
+	//the last row of random_lhs is kappa for all population members
 	for (int i = 0; i < points_count; i++) {
 		if (s.fixed_kappa == 0)
-			ss->data[i].kappa = interpolate_to_different_bounds(random_lhs[i*dimensions_count], bounds[0], bounds[1]);
+			ss->data[i].kappa = interpolate_to_different_bounds(random_lhs[(dimensions_count-2)*points_count + i], bounds[0], bounds[1]);
 		else
 			ss->data[i].kappa = s.fixed_kappa;
-		for (int j = 0; j < ts.atom_types_count; j++) {
-			/* Interpolate random numbers from [0,1] to our bounds */
-			ss->data[i].parameters_alpha[j] = interpolate_to_different_bounds(random_lhs[i*dimensions_count + 1 + j*2], bounds[2 + j*4], bounds[2 + j*4 + 1]);
-			ss->data[i].parameters_beta[j] = interpolate_to_different_bounds(random_lhs[i*dimensions_count + 2 + j*2 ], bounds[2 + j*4 + 2], bounds[2 + j*4 + 3]);
-		}
 	}
 }
 
