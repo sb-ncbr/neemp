@@ -44,7 +44,7 @@ void run_diff_evolution(struct subset * const ss) {
 	/* Set bounds for each parameters in kappa_data */
 	float *bounds = (float*) malloc((ts.atom_types_count*2+1)*2*sizeof(float));
 	//compute bounds, 0 means set them to fixed numbers taken from Tomas's full scan, 1 means try to find them with broad search
-	compute_parameters_bounds(ss,bounds, 1);
+	compute_parameters_bounds(ss,bounds, 0);
 	//we must create "regular" population only after computing bounds, as sometimes we can compute bounds with usage of preliminary population
 	fill_ss(ss, s.population_size); 
 	generate_random_population(ss, bounds, s.population_size);
@@ -263,10 +263,10 @@ void compute_parameters_bounds(struct subset *ss, float* bounds, int by_atom_typ
 			//bounds[2 + j*4 + 3] *= toEV;
 		}
 		else if (by_atom_type == 0) {
-			bounds[2 + j*4] = 0;//2;
-			bounds[2 + j*4 + 1] = 20;//3;
+			bounds[2 + j*4] = 2;
+			bounds[2 + j*4 + 1] = 3;
 			bounds[2 + j*4 + 2] = 0;//0;
-			bounds[2 + j*4 + 3] = 5;//0.8;
+			bounds[2 + j*4 + 3] = 0.8;
 		}
 		else if (by_atom_type == 2) {
 			bounds[2 + j*4] = 0;
