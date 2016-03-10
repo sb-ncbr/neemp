@@ -24,6 +24,7 @@
 
 extern const struct training_set ts;
 extern const struct settings s;
+struct subset* de_ss;
 
 void generate_random_population(struct subset* ss, float *bounds, int size);
 int evolve_kappa(struct kappa_data* trial, struct kappa_data* x, struct kappa_data* a, struct kappa_data *b, float *bounds, double mutation_constant, double recombination_constant);
@@ -33,6 +34,10 @@ float get_random_float(float low, float high);
 float interpolate_to_different_bounds(float x, float low, float high);
 int sum(int* vector, int size);
 void kd_copy_parameters(struct kappa_data* from, struct kappa_data* to);
+void minimize_locally(struct kappa_data* trial);
+extern void newuoa_(int* n, int* npt, double* x, double* rhobeg, double* rhoend, int* iprint, int* maxfun, double* w);
+void kappa_data_to_double_array(struct kappa_data* trial, double* x);
+void double_array_to_kappa_data(double* x, struct kappa_data* trial);
 
 /* Run differential evolution algorithm to find the best set of parameters for calculation of partial charges. */ 
 void run_diff_evolution(struct subset * const ss) {
@@ -48,11 +53,11 @@ void run_diff_evolution(struct subset * const ss) {
 	//we must create "regular" population only after computing bounds, as sometimes we can compute bounds with usage of preliminary population
 	fill_ss(ss, s.population_size); 
 	generate_random_population(ss, bounds, s.population_size);
-
+	de_ss = ss;
 	/* Evaluate the fitness function for all points and assign the best */
 	if (s.verbosity >= VERBOSE_KAPPA)
 		printf("DE Calculating charges and evaluating fitness function for whole population\n");
-    int i;
+	int i;
 #pragma omp parallel for num_threads(s.de_threads) private(i)
 	for (i = 0; i < ss->kappa_data_count; i++) {
 		calculate_charges(ss, &ss->data[i]);
@@ -116,6 +121,7 @@ void run_diff_evolution(struct subset * const ss) {
 			}
 		}
 	}
+	minimize_locally(so_far_best);
 	kd_destroy(trial);
 	free(trial);
 	free(bounds);
@@ -246,11 +252,53 @@ int compare_and_set(struct kappa_data* trial, struct kappa_data* so_far_best) {
 	return 0;
 }
 
+void minimize_locally(struct kappa_data* trial) {
+	int n = 2*ts.atom_types_count + 1; //number of variables
+	int npt = 2*n + 1; //number of interpolation conditions
+	double* x = (double*) malloc(n*sizeof(double));
+	kappa_data_to_double_array(trial, x);
+	double rhobeg = 0.2;
+	double rhoend = 0.000001;
+	int iprint = 3;
+	int maxfun = 100;
+	double* w = (double*) malloc(((npt+13)*(npt+n) + 3*n*(n+3)/2)*sizeof(double));
+	//call fortran code NEWUOA for local minimization
+	newuoa_(&n, &npt, x, &rhobeg, &rhoend, &iprint, &maxfun, w);
+	double_array_to_kappa_data(x, trial);
+}
+
+extern void calfun_(int n, double*x, double* f) {
+	struct kappa_data* trial = (struct kappa_data*) malloc (sizeof(struct kappa_data));
+	kd_init(trial);
+	double_array_to_kappa_data(x, trial);
+	calculate_charges(de_ss, trial);
+	calculate_statistics(de_ss, trial);
+	float result = kd_sort_by_return_value(trial);
+	*f = 1 - (double) result;
+	kd_destroy(trial);
+	free(trial);
+}
+
+void kappa_data_to_double_array(struct kappa_data* trial, double* x) {
+	x[0] = trial->kappa;
+	for (int i = 0; i < ts.atom_types_count; i++) {
+		x[i*2 + 1] = trial->parameters_alpha[i];
+		x[i*2 + 2] = trial->parameters_beta[i];
+	}
+}
+
+void double_array_to_kappa_data(double* x, struct kappa_data* trial) {
+	trial->kappa = x[0];
+	for (int i = 0; i < ts.atom_types_count; i++) {
+		trial->parameters_alpha[i] = x[i*2 + 1];
+		trial->parameters_beta[i] = x[i*2 + 2];
+	}
+}
+
 /* Compute bounds for each parameter of each atom type */
 void compute_parameters_bounds(struct subset *ss, float* bounds, int by_atom_type) {          
 	//returns bounds[kappa_low, kappa_high, alpha_1_low, alpha_1_high, beta_1_low, beta_1_high, alpha_2_low, ...]
 	float toH = 0.036749309;
-	float toEV = 27.2113966413;
 	bounds[0] = 0.0005; //kappa_low
 	bounds[1] = 3.5; //kappa_high
 	for (int j = 0; j < ts.atom_types_count; j++) {	
