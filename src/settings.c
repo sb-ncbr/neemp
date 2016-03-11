@@ -62,6 +62,7 @@ static struct option long_options[] = {
 	{"de-evolve-partially", no_argument, 0, 187},
 	{"de-fix-kappa",required_argument, 0, 188},
 	{"de-threads",required_argument, 0, 189},
+	{"de-polish", required_argument, 0, 190},
 	{NULL, 0, 0, 0}
 };
 
@@ -97,6 +98,7 @@ void s_init(void) {
 	s.take_only_best = 0;
 	s.limit_de_iters = NO_LIMIT_ITERS;
 	s.limit_de_time = NO_LIMIT_TIME;
+	s.polish = 0; //0 off, 1 only result, 2 result + during evolve, 3 result, evolve and some structures in initial population
 	s.sort_by = SORT_R2;
 	s.at_customization = AT_CUSTOM_ELEMENT_BOND;
 	s.discard = DISCARD_OFF;
@@ -153,6 +155,7 @@ static void print_help(void) {
 	printf("      --de-evolve-partially      turn on evolution driven by sort per atom type.\n");
 	printf("      --de-fix-kappa      		 set kappa to one fixed value.\n");
 	printf("      --de-threads      		 set number of threads for DE.\n");
+	printf("      --de-polish VALUE    		 apply polishing on parameters. Valid choices: 0 (off), 1 (result), 2 (during evolving), 3 (at the beginning).\n");
 	printf("      --par-out-file FILE        output the parameters to the FILE\n");
 	printf("  -d, --discard METHOD           perform discarding with METHOD. Valid choices are: iterative, simple and off. Default is off.\n");
 	printf("  -s, --sort-by STAT             sort solutions by STAT. Valid choices are: R, R2, spearman, RMSD, D_max, D_avg.\n");
@@ -399,6 +402,9 @@ void parse_options(int argc, char **argv) {
 			case 189:
 					 s.de_threads = atoi(optarg);
 					 break;
+			case 190:
+					  s.polish = atoi(optarg);
+					  break;
 			case '?':
 				EXIT_ERROR(ARG_ERROR, "%s", "Try -h/--help.\n");
 			default:
@@ -663,11 +669,11 @@ void print_settings(void) {
 			printf("\t - max iterations  %d\n", s.limit_de_iters);
 			if (s.polish != 0) {
 				printf("\t - polishing ");
-				if (s.polish == 1)
+				if (s.polish >= 1)
 					printf("the result\n");
-				if (s.polish == 2)
+				if (s.polish >= 2)
 					printf(" and during evolving\n");
-				if (s.polish == 3)
+				if (s.polish >= 3)
 					printf(" and some of the initial population\n");
 			}
 			printf("\t - number of threads used for DE %d\n", s.de_threads);

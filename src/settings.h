@@ -94,6 +94,7 @@ struct settings {
 	int de_threads; //number of threads used to paralellize DE
 	int limit_de_iters;
 	time_t limit_de_time;
+	int polish; //use NEWUOA minimization to polish trial or results
 
 	int random_seed;
 	enum verbosity_levels verbosity;
