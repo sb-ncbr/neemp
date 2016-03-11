@@ -657,6 +657,29 @@ void print_settings(void) {
 					printf("\n");
 			}
 		}
+		if (s.params_method == PARAMS_DE) {
+			printf("\n Differential evolution settings:\n");
+			printf("\t - population size %d\n", s.population_size);
+			printf("\t - max iterations  %d\n", s.limit_de_iters);
+			if (s.polish != 0) {
+				printf("\t - polishing ");
+				if (s.polish == 1)
+					printf("the result\n");
+				if (s.polish == 2)
+					printf(" and during evolving\n");
+				if (s.polish == 3)
+					printf(" and some of the initial population\n");
+			}
+			printf("\t - number of threads used for DE %d\n", s.de_threads);
+			printf("\t - mutation constant %5.3lf\n", s.mutation_constant);
+			printf("\t - recombination constant %5.3lf\n", s.recombination_constant);
+			if (s.dither != 0)
+				printf("\t - dither on\n");
+			if (s.fixed_kappa != -1)
+				printf("\t - kappa fixed on value %5.3lf\n", s.fixed_kappa);
+
+
+		}
 	}
 
 	printf("\n");
