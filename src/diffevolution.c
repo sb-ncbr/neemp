@@ -26,6 +26,7 @@ extern const struct training_set ts;
 extern const struct settings s;
 
 void generate_random_population(struct subset* ss, float *bounds, int size);
+void minimize_part_of_population(struct subset* ss, int count);
 int evolve_kappa(struct kappa_data* trial, struct kappa_data* x, struct kappa_data* a, struct kappa_data *b, float *bounds, double mutation_constant, double recombination_constant);
 int compare_and_set(struct kappa_data* trial, struct kappa_data* so_far_best);
 void compute_parameters_bounds(struct subset* ss, float* bounds, int by_atom_type);
@@ -53,6 +54,8 @@ void run_diff_evolution(struct subset * const ss) {
 	fill_ss(ss, s.population_size); 
 	generate_random_population(ss, bounds, s.population_size);
 	de_ss = ss;
+	if (s.polish > 2)
+		minimize_part_of_population(ss, s.population_size/2);
 	/* Evaluate the fitness function for all points and assign the best */
 	if (s.verbosity >= VERBOSE_KAPPA)
 		printf("DE Calculating charges and evaluating fitness function for whole population\n");
@@ -85,7 +88,7 @@ void run_diff_evolution(struct subset * const ss) {
 	float mutation_constant = s.mutation_constant;
 	int iters_with_evolution=0;
 
-#pragma omp parallel num_threads(s.de_threads) shared(iter, trial, so_far_best)
+#pragma omp parallel num_threads((s.de_threads > 1) ? 2 : 1) shared(iter, trial, so_far_best)
 	{
 		while (iter < s.limit_de_iters)	{
 #pragma omp sections nowait
@@ -134,7 +137,7 @@ void run_diff_evolution(struct subset * const ss) {
 						kd_init(min_trial);
 						min_trial->parent_subset = ss;
 						kd_copy_parameters(trial, min_trial);
-						minimize_locally(min_trial, 20);
+						minimize_locally(min_trial, 50);
 						calculate_charges(de_ss, min_trial);
 						calculate_statistics(de_ss, min_trial);
 #pragma omp critical
@@ -156,7 +159,7 @@ void run_diff_evolution(struct subset * const ss) {
 		}
 	}
 	if (s.polish > 0)
-		minimize_locally(so_far_best, 500);
+		minimize_locally(so_far_best, 1000);
 	kd_destroy(trial);
 	free(trial);
 	free(bounds);
@@ -191,6 +194,22 @@ void generate_random_population(struct subset* ss, float *bounds, int size) {
 		else
 			ss->data[i].kappa = s.fixed_kappa;
 	}
+
+}
+
+void minimize_part_of_population(struct subset* ss, int count) {
+	struct kappa_data* m = (struct kappa_data*) malloc (sizeof(struct kappa_data));
+	kd_init(m);
+	m->parent_subset = ss;
+	for (int i = 0; i < count; i++) {
+		int rand = (int) get_random_float(0, ss->kappa_data_count-1);
+		kd_copy_parameters(&ss->data[rand], m);
+		minimize_locally(m, 20);
+		kd_copy_parameters(m, &ss->data[rand]);
+
+	}
+	kd_destroy(m);
+	free(m);
 }
 
 /* Evolve kappa_data, i.e. create a new trial structure */
