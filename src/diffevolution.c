@@ -293,7 +293,7 @@ void minimize_locally(struct kappa_data* t, int max_calls) {
 	int n = 2*ts.atom_types_count + 1; //number of variables
 	int npt = 2*n + 1; //number of interpolation conditions
 	double* x = (double*) malloc(n*sizeof(double));
-	kappa_data_to_double_array(trial, x);
+	kappa_data_to_double_array(t, x);
 	double rhobeg = 0.2;
 	double rhoend = 0.000001;
 	int iprint = 0;
@@ -301,34 +301,34 @@ void minimize_locally(struct kappa_data* t, int max_calls) {
 	double* w = (double*) malloc(((npt+13)*(npt+n) + 3*n*(n+3)/2)*sizeof(double));
 	//call fortran code NEWUOA for local minimization
 	newuoa_(&n, &npt, x, &rhobeg, &rhoend, &iprint, &maxfun, w);
-	double_array_to_kappa_data(x, trial);
+	double_array_to_kappa_data(x, t);
 }
 
 extern void calfun_(int n, double*x, double* f) {
-	struct kappa_data* trial = (struct kappa_data*) malloc (sizeof(struct kappa_data));
-	kd_init(trial);
-	double_array_to_kappa_data(x, trial);
-	calculate_charges(de_ss, trial);
-	calculate_statistics(de_ss, trial);
-	float result = kd_sort_by_return_value(trial);
-	*f = 1 - (double) result;
-	kd_destroy(trial);
-	free(trial);
+	struct kappa_data* t = (struct kappa_data*) malloc (sizeof(struct kappa_data));
+	kd_init(t);
+	double_array_to_kappa_data(x, t);
+	calculate_charges(de_ss, t);
+	calculate_statistics_by_sort_mode(t);
+	float result = kd_sort_by_return_value(t);
+	*f = 2 - (double)(result);
+	kd_destroy(t);
+	free(t);
 }
 
-void kappa_data_to_double_array(struct kappa_data* trial, double* x) {
-	x[0] = trial->kappa;
+void kappa_data_to_double_array(struct kappa_data* t, double* x) {
+	x[0] = t->kappa;
 	for (int i = 0; i < ts.atom_types_count; i++) {
-		x[i*2 + 1] = trial->parameters_alpha[i];
-		x[i*2 + 2] = trial->parameters_beta[i];
+		x[i*2 + 1] = t->parameters_alpha[i];
+		x[i*2 + 2] = t->parameters_beta[i];
 	}
 }
 
-void double_array_to_kappa_data(double* x, struct kappa_data* trial) {
-	trial->kappa = x[0];
+void double_array_to_kappa_data(double* x, struct kappa_data* t) {
+	t->kappa = x[0];
 	for (int i = 0; i < ts.atom_types_count; i++) {
-		trial->parameters_alpha[i] = x[i*2 + 1];
-		trial->parameters_beta[i] = x[i*2 + 2];
+		t->parameters_alpha[i] = x[i*2 + 1];
+		t->parameters_beta[i] = x[i*2 + 2];
 	}
 }
 
