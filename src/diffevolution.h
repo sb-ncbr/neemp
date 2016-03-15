@@ -13,4 +13,5 @@
 
 void run_diff_evolution(struct subset * const ss);
 
+struct subset * de_ss;
 #endif /* __DIFFEVOLUTION_H__ */

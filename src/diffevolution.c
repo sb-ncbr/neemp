@@ -24,7 +24,6 @@
 
 extern const struct training_set ts;
 extern const struct settings s;
-struct subset* de_ss;
 
 void generate_random_population(struct subset* ss, float *bounds, int size);
 int evolve_kappa(struct kappa_data* trial, struct kappa_data* x, struct kappa_data* a, struct kappa_data *b, float *bounds, double mutation_constant, double recombination_constant);
@@ -34,7 +33,7 @@ float get_random_float(float low, float high);
 float interpolate_to_different_bounds(float x, float low, float high);
 int sum(int* vector, int size);
 void kd_copy_parameters(struct kappa_data* from, struct kappa_data* to);
-void minimize_locally(struct kappa_data* trial);
+void minimize_locally(struct kappa_data* trial, int max_calls);
 extern void newuoa_(int* n, int* npt, double* x, double* rhobeg, double* rhoend, int* iprint, int* maxfun, double* w);
 void kappa_data_to_double_array(struct kappa_data* trial, double* x);
 void double_array_to_kappa_data(double* x, struct kappa_data* trial);
@@ -86,42 +85,78 @@ void run_diff_evolution(struct subset * const ss) {
 	float mutation_constant = s.mutation_constant;
 	int iters_with_evolution=0;
 
-	while (iter < s.limit_de_iters)	{
-		iter++;
-		if (s.verbosity >= VERBOSE_KAPPA)
-			printf("DE iteration %d\n", iter);
+#pragma omp parallel num_threads(s.de_threads) shared(iter, trial, so_far_best)
+	{
+		while (iter < s.limit_de_iters)	{
+#pragma omp sections nowait
+			{
+#pragma omp section
+				{
+					iter++;
+					if (s.verbosity >= VERBOSE_KAPPA) {
+						if (iter % 100 == 0)
+							printf("\nDE iter %d ", iter);
+						else
+							printf(".");
+					}
+					/* Select randomly two points from population */
+					//TODO replace with some real random number generator
+					int rand1 = rand() % ss->kappa_data_count;
+					int rand2 = rand() % ss->kappa_data_count;
+					struct kappa_data a = ss->data[rand1];
+					struct kappa_data b = ss->data[rand2];
 
-		/* Select randomly two points from population */
-		//TODO replace with some real random number generator
-		int rand1 = rand() % ss->kappa_data_count;
-		int rand2 = rand() % ss->kappa_data_count;
-		struct kappa_data a = ss->data[rand1];
-		struct kappa_data b = ss->data[rand2];
-
-		if (s.dither)
-			mutation_constant = get_random_float(0.5, 1);
-		/* Recombine parts of best, a and b to obtain new trial structure */
-#pragma omp parallel num_threads(s.de_threads)
-		{
-			evolve_kappa(trial, so_far_best, &a, &b, bounds, mutation_constant, s.recombination_constant);
-			iters_with_evolution++;
-			/* Evaluate the new trial structure */
-			calculate_charges(ss, trial);
-			calculate_statistics_by_sort_mode(trial);
-			/* If the new structure is better than what we have before, reassign */
+					if (s.dither)
+						mutation_constant = get_random_float(0.5, 1);
+					/* Recombine parts of best, a and b to obtain new trial structure */
+					evolve_kappa(trial, so_far_best, &a, &b, bounds, mutation_constant, s.recombination_constant);
+					iters_with_evolution++;
+					/* Evaluate the new trial structure */
+					calculate_charges(ss, trial);
+					calculate_statistics_by_sort_mode(trial);
+					/* If the new structure is better than what we have before, reassign */
 #pragma omp critical
-			if (compare_and_set(trial, so_far_best)) {
-				calculate_charges(ss, so_far_best);
-				calculate_statistics(ss, so_far_best);
-
-				if (s.verbosity >= VERBOSE_KAPPA) {
-					kd_print_stats(so_far_best);
-					print_parameters(so_far_best);
+					{
+						if (compare_and_set(trial, so_far_best)) {
+							calculate_charges(ss, so_far_best);
+							calculate_statistics(ss, so_far_best);
+							if (s.verbosity >= VERBOSE_KAPPA) {
+								printf("\n");
+								kd_print_results(so_far_best);
+							}
+						}
+					}
+				}
+#pragma omp section
+				{
+					if (s.polish > 1) {
+						struct kappa_data *min_trial = (struct kappa_data*)malloc(sizeof(struct kappa_data));
+						kd_init(min_trial);
+						min_trial->parent_subset = ss;
+						kd_copy_parameters(trial, min_trial);
+						minimize_locally(min_trial, 20);
+						calculate_charges(de_ss, min_trial);
+						calculate_statistics(de_ss, min_trial);
+#pragma omp critical
+						{
+							if (kd_sort_by_is_better(min_trial, trial) && compare_and_set(min_trial, so_far_best)) {
+								calculate_charges(ss, so_far_best);
+								calculate_statistics(ss, so_far_best);
+								if(s.verbosity >= VERBOSE_KAPPA) {
+									printf("\n");
+									kd_print_results(so_far_best);
+								}
+							}
+						}
+						kd_destroy(min_trial);
+						free(min_trial);
+					}
 				}
 			}
 		}
 	}
-	minimize_locally(so_far_best);
+	if (s.polish > 0)
+		minimize_locally(so_far_best, 500);
 	kd_destroy(trial);
 	free(trial);
 	free(bounds);
@@ -252,15 +287,15 @@ int compare_and_set(struct kappa_data* trial, struct kappa_data* so_far_best) {
 	return 0;
 }
 
-void minimize_locally(struct kappa_data* trial) {
+void minimize_locally(struct kappa_data* t, int max_calls) {
 	int n = 2*ts.atom_types_count + 1; //number of variables
 	int npt = 2*n + 1; //number of interpolation conditions
 	double* x = (double*) malloc(n*sizeof(double));
 	kappa_data_to_double_array(trial, x);
 	double rhobeg = 0.2;
 	double rhoend = 0.000001;
-	int iprint = 3;
-	int maxfun = 100;
+	int iprint = 0;
+	int maxfun = max_calls;
 	double* w = (double*) malloc(((npt+13)*(npt+n) + 3*n*(n+3)/2)*sizeof(double));
 	//call fortran code NEWUOA for local minimization
 	newuoa_(&n, &npt, x, &rhobeg, &rhoend, &iprint, &maxfun, w);
