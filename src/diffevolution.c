@@ -237,6 +237,8 @@ int compare_and_set(struct kappa_data* trial, struct kappa_data* so_far_best) {
 			kd_copy_parameters(trial, so_far_best);
 			return 1;
 		}
+		else
+			return 0;
 	}
 
 	/* We consider also per atom statistics */
