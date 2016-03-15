@@ -124,6 +124,27 @@ void print_results(const struct subset * const ss) {
 	printf("\n");
 }
 
+/* Prints the parameters and associated stats */
+void kd_print_results(const struct kappa_data * const kd) {
+
+	assert(kd != NULL);
+
+	kd_print_stats(kd);
+
+	printf("Atom type            A       B           R      R2      Sp      RMSD    D_avg   D_max\n");
+	for(int i = 0; i < ts.atom_types_count; i++) {
+		char buff[10];
+		at_format_text(&ts.atom_types[i], buff);
+		printf(" %s  \t%6.4f\t%6.4f      %6.4f  %6.4f  %6.4f    %6.4f   %6.4f  %6.4f\n",
+			buff, kd->parameters_alpha[i], kd->parameters_beta[i],
+			kd->per_at_stats[i].R, kd->per_at_stats[i].R2,
+			kd->per_at_stats[i].spearman, kd->per_at_stats[i].RMSD,
+			kd->per_at_stats[i].D_avg, kd->per_at_stats[i].D_max);
+	}
+
+	printf("\n");
+}
+
 /* Return the value which we selected for sorting */
 float kd_sort_by_return_value(const struct kappa_data * const kd) {
 
