@@ -38,6 +38,8 @@ void minimize_locally(struct kappa_data* trial, int max_calls);
 extern void newuoa_(int* n, int* npt, double* x, double* rhobeg, double* rhoend, int* iprint, int* maxfun, double* w);
 void kappa_data_to_double_array(struct kappa_data* trial, double* x);
 void double_array_to_kappa_data(double* x, struct kappa_data* trial);
+int is_good_enough(struct kappa_data* t);
+int is_quite_good(struct kappa_data* t);
 
 /* Run differential evolution algorithm to find the best set of parameters for calculation of partial charges. */ 
 void run_diff_evolution(struct subset * const ss) {
@@ -54,8 +56,11 @@ void run_diff_evolution(struct subset * const ss) {
 	fill_ss(ss, s.population_size); 
 	generate_random_population(ss, bounds, s.population_size);
 	de_ss = ss;
-	if (s.polish > 2)
-		minimize_part_of_population(ss, s.population_size/2);
+	if (s.polish > 2) {
+		if (s.verbosity >= VERBOSE_KAPPA)
+			printf("DE minimizing part of population\n");
+		minimize_part_of_population(ss, s.population_size*0.75);
+	}
 	/* Evaluate the fitness function for all points and assign the best */
 	if (s.verbosity >= VERBOSE_KAPPA)
 		printf("DE Calculating charges and evaluating fitness function for whole population\n");
@@ -88,19 +93,18 @@ void run_diff_evolution(struct subset * const ss) {
 	float mutation_constant = s.mutation_constant;
 	int iters_with_evolution=0;
 
-#pragma omp parallel num_threads((s.de_threads > 1) ? 2 : 1) shared(iter, trial, so_far_best)
+#pragma omp parallel num_threads(s.de_threads) shared(iter, trial, so_far_best)
 	{
-		while (iter < s.limit_de_iters)	{
-#pragma omp sections nowait
+		while (iter < s.limit_de_iters || (!is_good_enough(so_far_best) && iter < 2*s.limit_de_iters))	{
 			{
-#pragma omp section
+#pragma omp master
 				{
 					iter++;
 					if (s.verbosity >= VERBOSE_KAPPA) {
-						if (iter % 100 == 0)
-							printf("\nDE iter %d ", iter);
-						else
-							printf(".");
+						//if (iter % 100 == 0)
+						printf("\nDE iter %d evolve thread %d\n", iter, omp_get_thread_num());
+						//else
+						//	printf(".");
 					}
 					/* Select randomly two points from population */
 					//TODO replace with some real random number generator
@@ -130,36 +134,35 @@ void run_diff_evolution(struct subset * const ss) {
 						}
 					}
 				}
-#pragma omp section
+				/* All other threads do this */ 
+				if (s.polish > 1 && (is_quite_good(trial) || (s.de_threads == 0 || omp_get_thread_num() != 0)))
 				{
-					if (s.polish > 1) {
-						struct kappa_data *min_trial = (struct kappa_data*)malloc(sizeof(struct kappa_data));
-						kd_init(min_trial);
-						min_trial->parent_subset = ss;
-						kd_copy_parameters(trial, min_trial);
-						minimize_locally(min_trial, 50);
-						calculate_charges(de_ss, min_trial);
-						calculate_statistics(de_ss, min_trial);
+					printf("\nDE min thread %d\n", omp_get_thread_num());
+					struct kappa_data *min_trial = (struct kappa_data*)malloc(sizeof(struct kappa_data));
+					kd_init(min_trial);
+					min_trial->parent_subset = ss;
+					kd_copy_parameters(trial, min_trial);
+					minimize_locally(min_trial, 50);
+					calculate_charges(de_ss, min_trial);
+					calculate_statistics(de_ss, min_trial);
 #pragma omp critical
-						{
-							if (kd_sort_by_is_better(min_trial, trial) && compare_and_set(min_trial, so_far_best)) {
-								calculate_charges(ss, so_far_best);
-								calculate_statistics(ss, so_far_best);
-								if(s.verbosity >= VERBOSE_KAPPA) {
-									printf("\n");
-									kd_print_results(so_far_best);
-								}
+					{
+						if (kd_sort_by_is_better(min_trial, trial) && compare_and_set(min_trial, so_far_best)) {
+							calculate_charges(ss, so_far_best);
+							calculate_statistics(ss, so_far_best);
+							if(s.verbosity >= VERBOSE_KAPPA) {
+								kd_print_results(so_far_best);
 							}
 						}
-						kd_destroy(min_trial);
-						free(min_trial);
 					}
+					kd_destroy(min_trial);
+					free(min_trial);
 				}
 			}
 		}
 	}
-	if (s.polish > 0)
-		minimize_locally(so_far_best, 1000);
+    if (s.polish > 0)
+    	minimize_locally(so_far_best, 1000);
 	kd_destroy(trial);
 	free(trial);
 	free(bounds);
@@ -330,7 +333,7 @@ extern void calfun_(int n, double*x, double* f) {
 	calculate_charges(de_ss, t);
 	calculate_statistics_by_sort_mode(t);
 	float result = kd_sort_by_return_value(t);
-	*f = 2 - (double)(result);
+	*f = 1 - (double)(result);
 	kd_destroy(t);
 	free(t);
 }
@@ -349,6 +352,26 @@ void double_array_to_kappa_data(double* x, struct kappa_data* t) {
 		t->parameters_alpha[i] = x[i*2 + 1];
 		t->parameters_beta[i] = x[i*2 + 2];
 	}
+}
+
+int is_good_enough(struct kappa_data* t) {
+	if (t->full_stats.R2 < 0.85)
+		return 0;
+	for (int i = 0; i < ts.atom_types_count; i++) {
+		if (t->per_at_stats[i].R2 < 0.6)
+			return 0; 
+	}
+	return 1;
+}
+
+int is_quite_good(struct kappa_data* t) {
+	if (t->full_stats.R2 < 0.6)
+		return 0;
+	for (int i = 0; i < ts.atom_types_count; i++) {
+		if (t->per_at_stats[i].R2 < 0.5)
+			return 0; 
+	}
+	return 1;
 }
 
 /* Compute bounds for each parameter of each atom type */
