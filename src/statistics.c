@@ -87,7 +87,7 @@ static void set_total_R_w(struct kappa_data * const kd) {
 	}
 
 	//consider total R
-	weighted_corr_sum += 2 * (pow(s.rw, kd->full_stats.R2)) * kd->full_stats.R2; 
+	weighted_corr_sum += 2 * (pow(s.rw, kd->full_stats.R2)) * kd->full_stats.R2 - kd->full_stats.RMSD/5; 
 
 	/* Normalize the results */
 	kd->full_stats.R_w = (float) (weighted_corr_sum / (ts.atom_types_count * s.rw + 2 * s.rw));
@@ -602,6 +602,8 @@ void calculate_statistics_by_sort_mode(struct kappa_data* kd) {
 		case SORT_RW:
 			set_total_R(kd);
 			set_per_at_R_R2(kd);
+			set_total_RMSD(kd);
+			set_per_at_RMSD(kd);
 			set_total_R_w(kd);
 			break;
 		default:
