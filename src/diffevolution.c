@@ -51,8 +51,8 @@ void run_diff_evolution(struct subset * const ss) {
 	/* Evaluate the fitness function for all points and assign the best */
 	if (s.verbosity >= VERBOSE_KAPPA)
 		printf("DE Calculating charges and evaluating fitness function for whole population\n");
-	int i;
-#pragma omp parallel for num_threads(s.de_threads) private(i)
+	int i = 0;
+#pragma omp parallel for num_threads(s.de_threads) shared(ss) private(i)
 	for (i = 0; i < ss->kappa_data_count; i++) {
 		calculate_charges(ss, &ss->data[i]);
 		calculate_statistics_by_sort_mode(&ss->data[i]);
@@ -80,7 +80,7 @@ void run_diff_evolution(struct subset * const ss) {
 	float mutation_constant = s.mutation_constant;
 	int iters_with_evolution=0;
 
-#pragma omp parallel num_threads(s.de_threads) shared(iter, trial, so_far_best)
+#pragma omp parallel num_threads(s.de_threads) shared(trial, so_far_best, iter, ss, de_ss, ts, s, mutation_constant)
 	{
 		while (iter < s.limit_de_iters || (!is_good_enough(so_far_best) && iter < 2*s.limit_de_iters))	{
 			{
@@ -95,15 +95,17 @@ void run_diff_evolution(struct subset * const ss) {
 					}
 					/* Select randomly two points from population */
 					//TODO replace with some real random number generator
-					int rand1 = rand() % ss->kappa_data_count;
-					int rand2 = rand() % ss->kappa_data_count;
-					struct kappa_data a = ss->data[rand1];
-					struct kappa_data b = ss->data[rand2];
+					int rand1 = (int)(floor(get_random_float(0, ss->kappa_data_count -1 )));
+					int rand2 = (int)(floor(get_random_float(0, ss->kappa_data_count -1 )));
+
+					struct kappa_data* a = &(ss->data[rand1]);
+					struct kappa_data* b = &(ss->data[rand2]);
 
 					if (s.dither)
 						mutation_constant = get_random_float(0.5, 1);
 					/* Recombine parts of best, a and b to obtain new trial structure */
-					evolve_kappa(trial, so_far_best, &a, &b, bounds, mutation_constant, s.recombination_constant);
+#pragma omp critical
+					evolve_kappa(trial, so_far_best, a, b, bounds, mutation_constant, s.recombination_constant);
 					iters_with_evolution++;
 					/* Evaluate the new trial structure */
 					calculate_charges(ss, trial);
@@ -149,8 +151,8 @@ void run_diff_evolution(struct subset * const ss) {
 			}
 		}
 	}
-    if (s.polish > 0)
-    	minimize_locally(so_far_best, 1000);
+	if (s.polish > 0)
+		minimize_locally(so_far_best, 1000);
 	kd_destroy(trial);
 	free(trial);
 	free(bounds);
@@ -193,7 +195,7 @@ void minimize_part_of_population(struct subset* ss, int count) {
 	kd_init(m);
 	m->parent_subset = ss;
 	for (int i = 0; i < count; i++) {
-		int r = rand() % (ss->kappa_data_count -1);
+		int r = (int) (floor(get_random_float(0, ss->kappa_data_count-1)));
 		kd_copy_parameters(&ss->data[r], m);
 		minimize_locally(m, 20);
 		kd_copy_parameters(m, &ss->data[r]);
