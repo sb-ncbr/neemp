@@ -14,7 +14,7 @@
 #include "limits.h"
 #include "neemp.h"
 #include "settings.h"
-#include "latin_random.h"
+#include "../externals/lhs/latin_random.h"
 
 extern struct settings s;
 

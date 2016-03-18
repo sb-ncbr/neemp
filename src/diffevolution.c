@@ -19,7 +19,7 @@
 #include "subset.h"
 #include "statistics.h"
 #include "structures.h"
-#include "latin_random.h"
+#include "../externals/lhs/latin_random.h"
 #include "diffevolution.h"
 
 extern const struct training_set ts;

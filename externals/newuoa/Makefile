@@ -1,10 +1,13 @@
 #  please change the variables FC and FFLAGS to match your fortran compiler
 
-FC = gfortran
+FC = ifort #gfortran
 FFLAGS = -g
 
-main: bigden.o biglag.o newuoa.o \
-      newuob.o trsapp.o update.o 
+objects = bigden.o biglag.o newuoa.o newuob.o trsapp.o update.o
+all: $(objects)
+gnu: FC = gfortran
+gnu: $(objects)
+
 bigden.o: bigden.f
 	$(FC) $(FFLAGS) -c bigden.f
 biglag.o: biglag.f
@@ -17,5 +20,6 @@ newuob.o: newuob.f
 	$(FC) $(FFLAGS) -c newuob.f
 update.o: update.f
 	$(FC) $(FFLAGS) -c update.f
+
 clean:
 	rm -f *.o main

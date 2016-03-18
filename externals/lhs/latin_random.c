@@ -183,16 +183,16 @@ int i4_uniform_ab ( int a, int b, int *seed )
     *seed = *seed + i4_huge;
   }
 
-  r = ( float ) ( *seed ) * 4.656612875E-10;
+  r = ( float ) (( *seed ) * 4.656612875E-10);
 /*
   Scale R to lie between A-0.5 and B+0.5.
 */
-  r = ( 1.0 - r ) * ( ( float ) ( a ) - 0.5 ) 
-    +         r   * ( ( float ) ( b ) + 0.5 );
+  r = ( float ) ( ( 1.0 - r ) * ( ( float ) ( a ) - 0.5 ) 
+    +         r   * ( ( float ) ( b ) + 0.5 ) );
 /*
   Round R to the nearest integer.
 */
-  value = round ( r );
+  value = ( int ) round ( r );
 /*
   Guarantee that A <= VALUE <= B.
 */
@@ -298,7 +298,7 @@ double *latin_random_new ( int dim_num, int point_num, int *seed )
   int i;
   int j;
   int *perm;
-  double r;
+  //double r;
   double *x;
 
   x = r8mat_uniform_01_new ( dim_num, point_num, seed );
@@ -710,7 +710,7 @@ void r8mat_write ( char *output_filename, int m, int n, double table[] )
   {
     for ( i = 0; i < m; i++ )
     {
-      fprintf ( output, "  g", table[i+j*m] );
+      fprintf ( output, "  %g", table[i+j*m] );
 /*
       fprintf ( output, "  %24.16g", table[i+j*m] );
 */
@@ -759,13 +759,13 @@ void timestamp ( )
 
   static char time_buffer[TIME_SIZE];
   const struct tm *tm;
-  size_t len;
+  //size_t len;
   time_t now;
 
   now = time ( NULL );
   tm = localtime ( &now );
 
-  len = strftime ( time_buffer, TIME_SIZE, "%d %B %Y %I:%M:%S %p", tm );
+  /*len = */strftime ( time_buffer, TIME_SIZE, "%d %B %Y %I:%M:%S %p", tm );
 
   fprintf ( stdout, "%s\n", time_buffer );
 
