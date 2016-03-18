@@ -144,6 +144,7 @@ void run_diff_evolution(struct subset * const ss) {
 							calculate_charges(ss, so_far_best);
 							calculate_statistics(ss, so_far_best);
 							if(s.verbosity >= VERBOSE_KAPPA) {
+								printf("\n");
 								kd_print_results(so_far_best);
 							}
 						}

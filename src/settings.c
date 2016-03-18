@@ -666,13 +666,14 @@ void print_settings(void) {
 			if (s.polish != 0) {
 				printf("\t - polishing ");
 				if (s.polish >= 1)
-					printf("the result\n");
+					printf("the result");
 				if (s.polish >= 2)
-					printf(" and during evolving\n");
+					printf(" and during evolving");
 				if (s.polish >= 3)
-					printf(" and some of the initial population\n");
+					printf(" and some of the initial population");
+				printf("\n");
 			}
-			printf("\t - number of threads used for DE population generation and evolving%d\n", s.de_threads);
+			printf("\t - number of threads used for DE population generation and evolving %d\n", s.de_threads);
 			printf("\t - mutation constant %5.3lf\n", s.mutation_constant);
 			printf("\t - recombination constant %5.3lf\n", s.recombination_constant);
 			if (s.dither != 0)
