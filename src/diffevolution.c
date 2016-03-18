@@ -46,7 +46,7 @@ void run_diff_evolution(struct subset * const ss) {
 	if (s.polish > 2) {
 		if (s.verbosity >= VERBOSE_KAPPA)
 			printf("DE minimizing part of population\n");
-		minimize_part_of_population(ss, (int)floor(s.population_size*0.75));
+		minimize_part_of_population(ss, (int)floor(s.population_size*0.25));
 	}
 	/* Evaluate the fitness function for all points and assign the best */
 	if (s.verbosity >= VERBOSE_KAPPA)
@@ -79,10 +79,13 @@ void run_diff_evolution(struct subset * const ss) {
 	calculate_statistics(ss, so_far_best);
 	float mutation_constant = s.mutation_constant;
 	int iters_with_evolution=0;
+	int condition=1;
 
 #pragma omp parallel num_threads(s.de_threads) default(shared)
 	{
-		while (iter < s.limit_de_iters || (!is_good_enough(so_far_best) && iter < 2*s.limit_de_iters))	{
+#pragma omp master
+		while (condition) {
+			condition = ((iter < s.limit_de_iters) || ((iter < 2*s.limit_de_iters) && (!is_good_enough(so_far_best))));
 			{
 #pragma omp master
 				{
