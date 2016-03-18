@@ -88,10 +88,10 @@ void run_diff_evolution(struct subset * const ss) {
 				{
 					iter++;
 					if (s.verbosity >= VERBOSE_KAPPA) {
-						//if (iter % 100 == 0)
-						printf("\nDE iter %d evolve thread %d\n", iter, omp_get_thread_num());
-						//else
-						//	printf(".");
+						if (iter % 100 == 0)
+							printf("\nDE iter %d evolve thread %d\n", iter, omp_get_thread_num());
+						else
+							printf(".");
 					}
 					/* Select randomly two points from population */
 					//TODO replace with some real random number generator
@@ -124,7 +124,8 @@ void run_diff_evolution(struct subset * const ss) {
 				/* All other threads do this */ 
 				if (s.polish > 1 && (is_quite_good(trial) || (s.de_threads == 0 || omp_get_thread_num() != 0)))
 				{
-					printf("\nDE min thread %d\n", omp_get_thread_num());
+					if (s.verbosity > VERBOSE_KAPPA)
+						printf("\nDE min thread %d\n", omp_get_thread_num());
 					struct kappa_data *min_trial = (struct kappa_data*)malloc(sizeof(struct kappa_data));
 					kd_init(min_trial);
 					min_trial->parent_subset = ss;
