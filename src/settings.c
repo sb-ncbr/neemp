@@ -57,7 +57,6 @@ static struct option long_options[] = {
 	{"de-cr", required_argument, 0, 182},
 	{"de-iters-max", required_argument, 0, 183},
 	{"de-time-max", required_argument, 0, 184},
-	{"de-take-only-best", no_argument, 0, 185},
 	{"de-dither", no_argument, 0, 186},
 	{"de-evolve-partially", no_argument, 0, 187},
 	{"de-fix-kappa",required_argument, 0, 188},
@@ -95,7 +94,6 @@ void s_init(void) {
 	s.evolve_by_element = 0;
 	s.fixed_kappa = -1;
 	s.de_threads = 1;
-	s.take_only_best = 0;
 	s.limit_de_iters = NO_LIMIT_ITERS;
 	s.limit_de_time = NO_LIMIT_TIME;
 	s.polish = 0; //0 off, 1 only result, 2 result + during evolve, 3 result, evolve and some structures in initial population
@@ -150,7 +148,6 @@ static void print_help(void) {
 	printf("      --de-cr VALUE              set crossover recombination constant for DE (optional).\n");
 	printf("      --de-iters-max COUNT       set the maximum number of iterations for DE (optional).\n");
 	printf("      --de-time-max HH:MM:SS     set the maximum time for DE in format hours:minutes:seconds (optional).\n");
-	printf("      --de-take-only-best        turn on using only the better half of population for evolution.\n");
 	printf("      --de-dither                set the mutation constant to random value from [0.5;1] for ech iteration, can improve convergence.\n");
 	printf("      --de-evolve-partially      turn on evolution driven by sort per atom type.\n");
 	printf("      --de-fix-kappa      		 set kappa to one fixed value.\n");
@@ -158,7 +155,7 @@ static void print_help(void) {
 	printf("      --de-polish VALUE    		 apply polishing on parameters. Valid choices: 0 (off), 1 (result), 2 (during evolving), 3 (at the beginning).\n");
 	printf("      --par-out-file FILE        output the parameters to the FILE\n");
 	printf("  -d, --discard METHOD           perform discarding with METHOD. Valid choices are: iterative, simple and off. Default is off.\n");
-	printf("  -s, --sort-by STAT             sort solutions by STAT. Valid choices are: R, R2, spearman, RMSD, D_max, D_avg.\n");
+	printf("  -s, --sort-by STAT             sort solutions by STAT. Valid choices are: R, R2, R_w, spearman, RMSD, D_max, D_avg. We strongly advise using R_w for method DE.\n");
 	printf("      --limit-iters COUNT        set the maximum number of iterations for discarding.\n");
 	printf("      --limit-time HH:MM:SS      set the maximum time for discarding in format hours:minutes:seconds.\n");
 	printf("      --check-charges      	 warn about molecules with abnormal differences between QM and EEM charges.\n");
@@ -387,9 +384,6 @@ void parse_options(int argc, char **argv) {
 						 s.limit_de_time = 3600 * hours + 60 * mins + secs;
 						 break;
 					 }
-			case 185:
-					 s.take_only_best = 1;
-					 break;
 			case 186:
 					 s.dither = 1;
 					 break;
@@ -465,9 +459,11 @@ void check_settings(void) {
 			if (s.recombination_constant < 0)
 				s.recombination_constant = 0.7;
 			if (s.population_size == 0)
-				s.population_size = 20; //1.2*(ts.atom_types_count*2+1);
+				s.population_size = 2000; //1.2*(ts.atom_types_count*2+1);
 			if (s.limit_de_iters == NO_LIMIT_ITERS && s.limit_de_time == NO_LIMIT_TIME)
-				s.limit_de_iters = 250;
+				s.limit_de_iters = 2500;
+			if (s.polish == 0)
+				s.polish = 3;
 
 		}
 
@@ -567,7 +563,7 @@ void print_settings(void) {
 			printf("%s (element + bond order)\n", atom_types_by_strings[AT_CUSTOM_ELEMENT_BOND]);
 			break;
 	}
-
+    printf("\nMaximum number of threads: %d\n", s.max_threads);
 	printf("\nVerbosity level: ");
 	switch(s.verbosity) {
 		case VERBOSE_MINIMAL:
@@ -610,7 +606,7 @@ void print_settings(void) {
 				break;
 		}
 
-		if(s.sort_by == SORT_R || s.sort_by == SORT_R2 || s.sort_by == SORT_SPEARMAN)
+		if(s.sort_by == SORT_R || s.sort_by == SORT_R2 || s.sort_by == SORT_RW || s.sort_by == SORT_SPEARMAN)
 			printf(" (higher is better)\n");
 		else
 			printf(" (lower is better)\n");
@@ -676,7 +672,7 @@ void print_settings(void) {
 				if (s.polish >= 3)
 					printf(" and some of the initial population\n");
 			}
-			printf("\t - number of threads used for DE %d\n", s.de_threads);
+			printf("\t - number of threads used for DE population generation and evolving%d\n", s.de_threads);
 			printf("\t - mutation constant %5.3lf\n", s.mutation_constant);
 			printf("\t - recombination constant %5.3lf\n", s.recombination_constant);
 			if (s.dither != 0)

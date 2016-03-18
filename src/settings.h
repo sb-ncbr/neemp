@@ -85,7 +85,6 @@ struct settings {
 
 	//settings regarding PARAMS_DE optimization method
 	int population_size;
-	int take_only_best; //generate population of double size and take only better half for further evolution
 	float mutation_constant;
 	int dither; //set mutation constant to random value from [0.5, 1] each iteration
 	float recombination_constant;
