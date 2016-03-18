@@ -89,11 +89,11 @@ void s_init(void) {
 	s.kappa_max = 0.0f;
 	s.full_scan_precision = 0.0f;
 	s.population_size = 0;
-	s.recombination_constant = 0.0f;
-	s.mutation_constant = 0.0f;
+	s.recombination_constant = -1;
+	s.mutation_constant = -1;
 	s.dither = 0;
 	s.evolve_by_element = 0;
-	s.fixed_kappa = 0;
+	s.fixed_kappa = -1;
 	s.de_threads = 1;
 	s.take_only_best = 0;
 	s.limit_de_iters = NO_LIMIT_ITERS;
@@ -397,7 +397,7 @@ void parse_options(int argc, char **argv) {
 					 s.evolve_by_element = 1;
 					 break;  
 			case 188:
-					 s.fixed_kappa = atof(optarg);
+					 s.fixed_kappa = (float)atof(optarg);
 					 break;
 			case 189:
 					 s.de_threads = atoi(optarg);
@@ -460,9 +460,9 @@ void check_settings(void) {
 		}
 		
 		if (s.params_method == PARAMS_DE) {
-			if (s.mutation_constant == 0)
+			if (s.mutation_constant < 0) // if not set
 				s.mutation_constant = 0.75;
-			if (s.recombination_constant == 0)
+			if (s.recombination_constant < 0)
 				s.recombination_constant = 0.7;
 			if (s.population_size == 0)
 				s.population_size = 20; //1.2*(ts.atom_types_count*2+1);
@@ -681,7 +681,7 @@ void print_settings(void) {
 			printf("\t - recombination constant %5.3lf\n", s.recombination_constant);
 			if (s.dither != 0)
 				printf("\t - dither on\n");
-			if (s.fixed_kappa != -1)
+			if (s.fixed_kappa < 0)
 				printf("\t - kappa fixed on value %5.3lf\n", s.fixed_kappa);
 
 

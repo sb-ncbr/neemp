@@ -41,6 +41,7 @@ struct kappa_data {
 void kd_init(struct kappa_data * const kd);
 void kd_destroy(struct kappa_data * const kd);
 void kd_print_stats(const struct kappa_data * const kd);
+void kd_print_results(const struct kappa_data * const kd);
 
 float kd_sort_by_return_value(const struct kappa_data * const kd);
 float kd_sort_by_return_value_per_atom(const struct kappa_data * const kd, int i);
