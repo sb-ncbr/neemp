@@ -77,6 +77,11 @@ void run_diff_evolution(struct subset * const ss) {
 	kd_copy_parameters(ss->best, so_far_best);
 	calculate_charges(ss, so_far_best);
 	calculate_statistics(ss, so_far_best);
+	kd_print_results(so_far_best);
+	minimize_locally(so_far_best, 500);
+	calculate_charges(ss, so_far_best);
+	calculate_statistics(ss, so_far_best);
+	kd_print_results(so_far_best);
 	float mutation_constant = s.mutation_constant;
 	int iters_with_evolution=0;
 	int condition=1;
@@ -135,7 +140,7 @@ void run_diff_evolution(struct subset * const ss) {
 					kd_init(min_trial);
 					min_trial->parent_subset = ss;
 					kd_copy_parameters(trial, min_trial);
-					minimize_locally(min_trial, 50);
+					minimize_locally(min_trial, 100);
 					calculate_charges(de_ss, min_trial);
 					calculate_statistics(de_ss, min_trial);
 #pragma omp critical
@@ -201,7 +206,7 @@ void minimize_part_of_population(struct subset* ss, int count) {
 	for (int i = 0; i < count; i++) {
 		int r = (int) (floor(get_random_float(0, (float)ss->kappa_data_count-1)));
 		kd_copy_parameters(&ss->data[r], m);
-		minimize_locally(m, 20);
+		minimize_locally(m, 500);
 		kd_copy_parameters(m, &ss->data[r]);
 
 	}
@@ -311,7 +316,7 @@ void minimize_locally(struct kappa_data* t, int max_calls) {
 	double* x = (double*) malloc(n*sizeof(double));
 	kappa_data_to_double_array(t, x);
 	double rhobeg = 0.2;
-	double rhoend = 0.000001;
+	double rhoend = 0.0001;
 	int iprint = 0;
 	int maxfun = max_calls;
 	double* w = (double*) malloc(((npt+13)*(npt+n) + 3*n*(n+3)/2)*sizeof(double));
