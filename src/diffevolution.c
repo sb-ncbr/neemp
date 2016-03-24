@@ -132,9 +132,9 @@ void run_diff_evolution(struct subset * const ss) {
 					}
 				}
 				/* All other threads do this */ 
-				if (s.polish > 1 && (is_quite_good(trial) || (s.de_threads == 0 || omp_get_thread_num() != 0)))
+				if ((s.polish > 1 && (is_quite_good(trial))) || (s.de_threads == 0 || omp_get_thread_num() != 0))
 				{
-					if (s.verbosity > VERBOSE_KAPPA)
+					if (s.verbosity >= VERBOSE_KAPPA)
 						printf("\nDE min thread %d\n", omp_get_thread_num());
 					struct kappa_data *min_trial = (struct kappa_data*)malloc(sizeof(struct kappa_data));
 					kd_init(min_trial);
@@ -364,12 +364,12 @@ int is_good_enough(struct kappa_data* t) {
 }
 
 int is_quite_good(struct kappa_data* t) {
-	if (t->full_stats.R2 < 0.6)
+	if (t->full_stats.R2 < 0.2)
 		return 0;
-	for (int i = 0; i < ts.atom_types_count; i++) {
-		if (t->per_at_stats[i].R2 < 0.5)
-			return 0; 
-	}
+	/*for (int i = 0; i < ts.atom_types_count; i++) {
+		if (t->per_at_stats[i].R2 < 0.1)
+			return 0;
+	}*/
 	return 1;
 }
 
