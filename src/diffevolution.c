@@ -395,10 +395,10 @@ void compute_parameters_bounds(struct subset *ss, float* bounds, int by_atom_typ
 			//bounds[2 + j*4 + 3] *= toEV;
 		}
 		else if (by_atom_type == 0) {
-			bounds[2 + j*4] = 2;
-			bounds[2 + j*4 + 1] = 3;
+			bounds[2 + j*4] = 1.8;
+			bounds[2 + j*4 + 1] = 3.2;
 			bounds[2 + j*4 + 2] = 0;//0;
-			bounds[2 + j*4 + 3] = 0.8;
+			bounds[2 + j*4 + 3] = 1.0;
 		}
 		else if (by_atom_type == 2) {
 			bounds[2 + j*4] = 0;
