@@ -166,7 +166,7 @@ void run_diff_evolution(struct subset * const ss) {
 	free(trial);
 	free(bounds);
 	kd_copy_parameters(so_far_best, ss->best);
-	calculate_charges(ss, ss->best);
+	kd_copy_statistics(so_far_best, ss->best);
 	calculate_statistics(ss, ss->best);
 }
 
@@ -487,4 +487,26 @@ void kd_copy_parameters(struct kappa_data* from, struct kappa_data* to) {
 		to->parameters_alpha[i] = from->parameters_alpha[i];
 		to->parameters_beta[i] = from->parameters_beta[i];
 	}
+}
+
+/* Copy statistics from one kappa_data to another */
+void kd_copy_statistics(struct kappa_data* from, struct kappa_data* to) {
+	to->full_stats.R = from->full_stats.R;
+	to->full_stats.R2 = from->full_stats.R2;
+	to->full_stats.R_w = from->full_stats.R_w;
+	to->full_stats.RMSD = from->full_stats.RMSD;
+	to->full_stats.spearman = from->full_stats.spearman;
+	to->full_stats.D_avg = from->full_stats.D_avg;
+	to->full_stats.D_max = from->full_stats.D_max;
+
+	for (int i = 0; i < ts.atom_types_count; i++) {
+		to->per_at_stats[i].R = from->per_at_stats[i].R;
+		to->per_at_stats[i].R2 = from->per_at_stats[i].R2;
+		to->per_at_stats[i].R_w = from->per_at_stats[i].R_w;
+		to->per_at_stats[i].RMSD = from->per_at_stats[i].RMSD;
+		to->per_at_stats[i].spearman = from->per_at_stats[i].spearman;
+		to->per_at_stats[i].D_avg = from->per_at_stats[i].D_avg;
+		to->per_at_stats[i].D_max = from->per_at_stats[i].D_max;
+	}
+
 }

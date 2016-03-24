@@ -21,6 +21,7 @@ float get_random_float(float low, float high);
 float interpolate_to_different_bounds(float x, float low, float high);
 int sum(int* vector, int size);
 void kd_copy_parameters(struct kappa_data* from, struct kappa_data* to);
+void kd_copy_statistics(struct kappa_data* from, struct kappa_data* to);
 void minimize_locally(struct kappa_data* trial, int max_calls);
 extern void newuoa_(int* n, int* npt, double* x, double* rhobeg, double* rhoend, int* iprint, int* maxfun, double* w);
 extern void calfun_(int n, double*x, double* f);
