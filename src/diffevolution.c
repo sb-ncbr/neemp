@@ -43,11 +43,6 @@ void run_diff_evolution(struct subset * const ss) {
 	fill_ss(ss, s.population_size); 
 	generate_random_population(ss, bounds, s.population_size);
 	de_ss = ss;
-	if (s.polish > 2) {
-		if (s.verbosity >= VERBOSE_KAPPA)
-			printf("DE minimizing part of population\n");
-		minimize_part_of_population(ss, (int)floor(s.population_size*0.25));
-	}
 	/* Evaluate the fitness function for all points and assign the best */
 	if (s.verbosity >= VERBOSE_KAPPA)
 		printf("DE Calculating charges and evaluating fitness function for whole population\n");
@@ -55,8 +50,19 @@ void run_diff_evolution(struct subset * const ss) {
 #pragma omp parallel for num_threads(s.de_threads) default(shared) private(i)
 	for (i = 0; i < ss->kappa_data_count; i++) {
 		calculate_charges(ss, &ss->data[i]);
-		calculate_statistics_by_sort_mode(&ss->data[i]);
+		calculate_statistics(ss, &ss->data[i]);
 	}
+
+	int minimized_initial = 0;
+	int* good_indices = (int*) malloc((int)floor(s.population_size*0.06)*sizeof(int));
+	for (i = 0; i < s.population_size*0.06; i++)
+		good_indices[i] = -1;
+	if (s.polish > 2) {
+		if (s.verbosity >= VERBOSE_KAPPA)
+			printf("DE minimizing part of population\n");
+		minimized_initial = minimize_part_of_population(ss, 0, good_indices);
+	}
+
 	//TODO extract to separate method, also used in kappa.c:find_the_best_parameters
 	ss->best = &ss->data[0];
 	for (i = 0; i < ss->kappa_data_count -1; i++)
@@ -85,12 +91,13 @@ void run_diff_evolution(struct subset * const ss) {
 	float mutation_constant = s.mutation_constant;
 	int iters_with_evolution=0;
 	int condition=1;
+	int minimized = 0;
 
 #pragma omp parallel num_threads(s.de_threads) default(shared)
 	{
 #pragma omp master
 		while (condition) {
-			condition = ((iter < s.limit_de_iters) || ((iter < 2*s.limit_de_iters) && (!is_good_enough(so_far_best))));
+			condition = ((iter < 0.5*s.limit_de_iters) || ((iter < s.limit_de_iters) && (!is_good_enough(so_far_best))));
 			{
 #pragma omp master
 				{
@@ -103,8 +110,8 @@ void run_diff_evolution(struct subset * const ss) {
 					}
 					/* Select randomly two points from population */
 					//TODO replace with some real random number generator
-					int rand1 = (int)(floor(get_random_float(0, (float)ss->kappa_data_count -1 )));
-					int rand2 = (int)(floor(get_random_float(0, (float)ss->kappa_data_count -1 )));
+					int rand1 = good_indices[(int)(floor(get_random_float(0, (float) minimized_initial -1 )))];
+					int rand2 = good_indices[(int)(floor(get_random_float(0, (float) minimized_initial -1 )))];
 
 					struct kappa_data* a = &(ss->data[rand1]);
 					struct kappa_data* b = &(ss->data[rand2]);
@@ -134,6 +141,7 @@ void run_diff_evolution(struct subset * const ss) {
 				/* All other threads do this */ 
 				if ((s.polish > 1 && (is_quite_good(trial))) || (s.de_threads == 0 || omp_get_thread_num() != 0))
 				{
+					minimized++;
 					if (s.verbosity >= VERBOSE_KAPPA)
 						printf("\nDE min thread %d\n", omp_get_thread_num());
 					struct kappa_data *min_trial = (struct kappa_data*)malloc(sizeof(struct kappa_data));
@@ -165,9 +173,13 @@ void run_diff_evolution(struct subset * const ss) {
 	kd_destroy(trial);
 	free(trial);
 	free(bounds);
+	free(good_indices);
 	kd_copy_parameters(so_far_best, ss->best);
-	kd_copy_statistics(so_far_best, ss->best);
+	calculate_charges(ss, ss->best);
 	calculate_statistics(ss, ss->best);
+	if (s.verbosity >= VERBOSE_KAPPA) {
+		printf("Out of %d iterations, we minimized %d trials.\n", s.limit_de_iters, minimized);
+	}
 }
 
 /* Generate random population by Latin HyperCube Sampling */
@@ -199,19 +211,48 @@ void generate_random_population(struct subset* ss, float *bounds, int size) {
 
 }
 
-void minimize_part_of_population(struct subset* ss, int count) {
-	struct kappa_data* m = (struct kappa_data*) malloc (sizeof(struct kappa_data));
-	kd_init(m);
-	m->parent_subset = ss;
-	for (int i = 0; i < count; i++) {
-		int r = (int) (floor(get_random_float(0, (float)ss->kappa_data_count-1)));
-		kd_copy_parameters(&ss->data[r], m);
-		minimize_locally(m, 500);
-		kd_copy_parameters(m, &ss->data[r]);
+int minimize_part_of_population(struct subset* ss, int count, int* good_indices) {
+	int quite_good = 0;
+	int i = 0;
+	if (count == 0) {//we minimize all with R2>0.3 && R>0
+#pragma omp parallel for num_threads(s.de_threads) shared(ss, quite_good, good_indices) private(i)
+		for (i = 0; i < ss->kappa_data_count; i++) {
+			if (ss->data[i].full_stats.R2 > 0.2 && ss->data[i].full_stats.R > 0) {
+#pragma omp critical
+				{
+					good_indices[quite_good] = i;
+					quite_good++;
+				}
+				struct kappa_data* m = (struct kappa_data*) malloc (sizeof(struct kappa_data));
+				kd_init(m);
+				m->parent_subset = ss;
+				kd_copy_parameters(&ss->data[i], m);
+				minimize_locally(m, 1000);
+				kd_copy_parameters(m, &ss->data[i]);
+				kd_destroy(m);
+				free(m);
 
+			}
+		}
+		if (s.verbosity >= VERBOSE_KAPPA) {
+			printf("Out of %d in population, we minimized %d\n", ss->kappa_data_count, quite_good);
+		}
+		return quite_good;
 	}
-	kd_destroy(m);
-	free(m);
+	else {
+		struct kappa_data* m = (struct kappa_data*) malloc (sizeof(struct kappa_data));
+		kd_init(m);
+		m->parent_subset = ss;
+		for (int i = 0; i < count; i++) {
+			int r = (int) (floor(get_random_float(0, (float)ss->kappa_data_count-1)));
+			kd_copy_parameters(&ss->data[r], m);
+			minimize_locally(m, 500);
+			kd_copy_parameters(m, &ss->data[r]);
+		}
+		kd_destroy(m);
+		free(m);
+		return count;
+	}
 }
 
 /* Evolve kappa_data, i.e. create a new trial structure */
@@ -364,13 +405,13 @@ int is_good_enough(struct kappa_data* t) {
 }
 
 int is_quite_good(struct kappa_data* t) {
-	if (t->full_stats.R2 < 0.2)
-		return 0;
+	if (t->full_stats.R2 > 0.3 && t->full_stats.R > 0)
+		return 1;
 	/*for (int i = 0; i < ts.atom_types_count; i++) {
-		if (t->per_at_stats[i].R2 < 0.1)
-			return 0;
-	}*/
-	return 1;
+	  if (t->per_at_stats[i].R2 < 0.1)
+	  return 0;
+	  }*/
+	return 0;
 }
 
 /* Compute bounds for each parameter of each atom type */
