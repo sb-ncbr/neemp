@@ -468,7 +468,7 @@ void check_settings(void) {
 		}
 
 		if (s.random_seed == -1)
-			s.random_seed = get_seed();
+			s.random_seed = 123;
 
 		if(s.tabu_size < 0.0f || s.tabu_size > 1.0f)
 			EXIT_ERROR(ARG_ERROR, "%s", "Tabu size has to be number in range [0.0; 1.0]\n");
