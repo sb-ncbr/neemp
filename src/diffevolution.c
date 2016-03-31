@@ -84,7 +84,7 @@ void run_diff_evolution(struct subset * const ss) {
 	calculate_charges(ss, so_far_best);
 	calculate_statistics(ss, so_far_best);
 	kd_print_results(so_far_best);
-	minimize_locally(so_far_best, 500);
+	minimize_locally(so_far_best, 1000);
 	calculate_charges(ss, so_far_best);
 	calculate_statistics(ss, so_far_best);
 	kd_print_results(so_far_best);
@@ -95,8 +95,8 @@ void run_diff_evolution(struct subset * const ss) {
 
 #pragma omp parallel num_threads(s.de_threads) default(shared)
 	{
-#pragma omp master
 		while (condition) {
+#pragma omp master
 			condition = ((iter < 0.5*s.limit_de_iters) || ((iter < s.limit_de_iters) && (!is_good_enough(so_far_best))));
 			{
 #pragma omp master
@@ -124,7 +124,9 @@ void run_diff_evolution(struct subset * const ss) {
 					iters_with_evolution++;
 					/* Evaluate the new trial structure */
 					calculate_charges(ss, trial);
-					calculate_statistics_by_sort_mode(trial);
+					calculate_statistics(ss, trial);
+					if (s.verbosity >= VERBOSE_KAPPA)
+						printf("Trial stats %f %f %d\n", trial->full_stats.R_w, trial->full_stats.R2, is_quite_good(trial));
 					/* If the new structure is better than what we have before, reassign */
 #pragma omp critical
 					{
@@ -139,7 +141,7 @@ void run_diff_evolution(struct subset * const ss) {
 					}
 				}
 				/* All other threads do this */ 
-				if ((s.polish > 1 && (is_quite_good(trial))) || (s.de_threads == 0 || omp_get_thread_num() != 0))
+				if (s.polish > 1 && is_quite_good(trial) && (s.de_threads == 0 || omp_get_thread_num() != 0))
 				{
 					minimized++;
 					if (s.verbosity >= VERBOSE_KAPPA)
@@ -147,8 +149,9 @@ void run_diff_evolution(struct subset * const ss) {
 					struct kappa_data *min_trial = (struct kappa_data*)malloc(sizeof(struct kappa_data));
 					kd_init(min_trial);
 					min_trial->parent_subset = ss;
+#pragma omp critical
 					kd_copy_parameters(trial, min_trial);
-					minimize_locally(min_trial, 100);
+					minimize_locally(min_trial, 500);
 					calculate_charges(de_ss, min_trial);
 					calculate_statistics(de_ss, min_trial);
 #pragma omp critical
@@ -169,7 +172,7 @@ void run_diff_evolution(struct subset * const ss) {
 		}
 	}
 	if (s.polish > 0)
-		minimize_locally(so_far_best, 1000);
+		minimize_locally(so_far_best, 2000);
 	kd_destroy(trial);
 	free(trial);
 	free(bounds);
@@ -405,7 +408,7 @@ int is_good_enough(struct kappa_data* t) {
 }
 
 int is_quite_good(struct kappa_data* t) {
-	if (t->full_stats.R2 > 0.3 && t->full_stats.R > 0)
+	if (t->full_stats.R2 > 0.6 && t->full_stats.R > 0)
 		return 1;
 	/*for (int i = 0; i < ts.atom_types_count; i++) {
 	  if (t->per_at_stats[i].R2 < 0.1)
