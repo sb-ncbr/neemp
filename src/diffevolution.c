@@ -246,7 +246,7 @@ int minimize_part_of_population(struct subset* ss, int count, int* good_indices)
 		struct kappa_data* m = (struct kappa_data*) malloc (sizeof(struct kappa_data));
 		kd_init(m);
 		m->parent_subset = ss;
-		for (int i = 0; i < count; i++) {
+		for (i = 0; i < count; i++) {
 			int r = (int) (floor(get_random_float(0, (float)ss->kappa_data_count-1)));
 			kd_copy_parameters(&ss->data[r], m);
 			minimize_locally(m, 500);
