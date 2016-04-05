@@ -478,7 +478,7 @@ void print_settings(void) {
 				break;
 		}
 
-		if(s.sort_by == SORT_R || s.sort_by == SORT_R2 || s.sort_by == SORT_SPEARMAN)
+		if(s.sort_by == SORT_R || s.sort_by == SORT_R2 || s.sort_by == SORT_RW || s.sort_by == SORT_SPEARMAN)
 			printf(" (higher is better)\n");
 		else
 			printf(" (lower is better)\n");
