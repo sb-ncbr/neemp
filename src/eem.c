@@ -243,6 +243,8 @@ void calculate_charges(struct subset * const ss, struct kappa_data * const kd) {
 
 		LAPACKE_sspsvx(LAPACK_COL_MAJOR, 'N', 'U', n + 1, 1, A, Ap, ipiv, b, n + 1, x, n + 1, &rcond, &ferr, &berr);
 
+		kd->per_molecule_stats[i].cond = 1 / rcond;
+
 		if(s.mode == MODE_CHARGES && rcond < WARN_MIN_RCOND)
 			fprintf(stderr, "Ill-conditioned EEM system for molecule %s. Charges might be inaccurate.\n", MOLECULE.name);
 

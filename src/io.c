@@ -686,10 +686,11 @@ void output_charges_stats(const struct subset * const ss) {
 		char formula[1000];
 		get_sum_formula(&ts.molecules[i], formula, 1000);
 		fprintf(f, "Name: %s  Formula: %s  ", ts.molecules[i].name, formula);
-		fprintf(f, "R: %6.4f  R2: %6.4f  Sp: %6.4f  RMSD: %6.4f  D_avg: %6.4f  D_max: %6.4f\n",
+		fprintf(f, "R: %6.4f  R2: %6.4f  Sp: %6.4f  RMSD: %6.4f  D_avg: %6.4f  D_max: %6.4f  Cond: %6.4f\n",
 			ss->best->per_molecule_stats[i].R, ss->best->per_molecule_stats[i].R2,
 			ss->best->per_molecule_stats[i].spearman, ss->best->per_molecule_stats[i].RMSD,
-			ss->best->per_molecule_stats[i].D_avg, ss->best->per_molecule_stats[i].D_max);
+			ss->best->per_molecule_stats[i].D_avg, ss->best->per_molecule_stats[i].D_max,
+			ss->best->per_molecule_stats[i].cond);
 		for(int j = 0; j < ts.molecules[i].atoms_count; j++) {
 			#define ATOM ts.molecules[i].atoms[j]
 			fprintf(f, "%4d\t%2s %1d\t%9.6f\t%9.6f\t%9.6f\n", j + 1, convert_Z_to_symbol(ATOM.Z), ATOM.bond_order,

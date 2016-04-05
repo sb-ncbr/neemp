@@ -20,6 +20,7 @@ struct stats {
 	float RMSD;
 	float D_avg;
 	float D_max;
+	float cond;
 };
 
 struct kappa_data {

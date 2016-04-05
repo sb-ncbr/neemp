@@ -587,11 +587,13 @@ void check_charges(const struct kappa_data * const kd) {
 		if(kd->per_molecule_stats[i].R < WARN_MIN_R ||
 		   kd->per_molecule_stats[i].RMSD > WARN_MAX_RMSD ||
 		   kd->per_molecule_stats[i].D_avg > WARN_MAX_D_AVG ||
-		   kd->per_molecule_stats[i].D_max > WARN_MAX_D_MAX) {
+		   kd->per_molecule_stats[i].D_max > WARN_MAX_D_MAX ||
+		   kd->per_molecule_stats[i].cond > WARN_MAX_COND) {
 			fprintf(stderr, "Warning: Abnormal values for molecule %s\n", ts.molecules[i].name);
-			fprintf(stderr, "R: %6.4f  RMSD: %4.2e  D_avg: %4.2e  D_max: %4.2e\n\n",
+			fprintf(stderr, "R: %6.4f  RMSD: %4.2e  D_avg: %4.2e  D_max: %4.2e  Cond: %6.4f\n\n",
 				kd->per_molecule_stats[i].R, kd->per_molecule_stats[i].RMSD,
-				kd->per_molecule_stats[i].D_avg, kd->per_molecule_stats[i].D_max);
+				kd->per_molecule_stats[i].D_avg, kd->per_molecule_stats[i].D_max,
+				kd->per_molecule_stats[i].cond);
 
 			bad_molecules++;
 		}
