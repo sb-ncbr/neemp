@@ -376,7 +376,16 @@ extern void calfun_(int n, double*x, double* f) {
 	calculate_charges(de_ss, t);
 	calculate_statistics_by_sort_mode(t);
 	float result = kd_sort_by_return_value(t);
-	*f = 1 - (double)(result) + n - n; //+n-n just to get rid of compilaiton warning
+	switch (s.sort_by) {
+		case SORT_R:
+		case SORT_R2:
+		case SORT_RW:
+		case SORT_SPEARMAN:
+			*f = 1 - (double)(result) + n - n; //+n-n just to get rid of compilaiton warning
+			break;
+		default:
+			*f = (double) (result) + n -n;
+	}
 	kd_destroy(t);
 	free(t);
 }
