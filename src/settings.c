@@ -155,7 +155,7 @@ static void print_help(void) {
 	printf("      --de-polish VALUE    		 apply polishing on parameters. Valid choices: 0 (off), 1 (result), 2 (during evolving), 3 (at the beginning).\n");
 	printf("      --par-out-file FILE        output the parameters to the FILE\n");
 	printf("  -d, --discard METHOD           perform discarding with METHOD. Valid choices are: iterative, simple and off. Default is off.\n");
-	printf("  -s, --sort-by STAT             sort solutions by STAT. Valid choices are: R, R2, R_w, spearman, RMSD, D_max, D_avg. We strongly advise using R_w for method DE.\n");
+	printf("  -s, --sort-by STAT             sort solutions by STAT. Valid choices are: R, R2, R_w, spearman, RMSD, RMSD_avg, D_max, D_avg. We strongly advise using R_w for method DE.\n");
 	printf("      --limit-iters COUNT        set the maximum number of iterations for discarding.\n");
 	printf("      --limit-time HH:MM:SS      set the maximum time for discarding in format hours:minutes:seconds.\n");
 	printf("      --check-charges      	 warn about molecules with abnormal differences between QM and EEM charges.\n");
@@ -241,6 +241,8 @@ void parse_options(int argc, char **argv) {
 					s.sort_by = SORT_SPEARMAN;
 				else if(!strcmp(optarg, "RMSD"))
 					s.sort_by = SORT_RMSD;
+				else if(!strcmp(optarg, "RMSD_avg"))
+					s.sort_by = SORT_RMSD_AVG;
 				else if(!strcmp(optarg, "D_avg"))
 					s.sort_by = SORT_D_AVG;
 				else if(!strcmp(optarg, "D_max"))
