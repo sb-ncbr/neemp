@@ -693,7 +693,9 @@ void output_charges_stats(const struct subset * const ss) {
 			ss->best->per_molecule_stats[i].cond);
 		for(int j = 0; j < ts.molecules[i].atoms_count; j++) {
 			#define ATOM ts.molecules[i].atoms[j]
-			fprintf(f, "%4d\t%2s %1d\t%9.6f\t%9.6f\t%9.6f\n", j + 1, convert_Z_to_symbol(ATOM.Z), ATOM.bond_order,
+			char buff[10];
+			at_format_text(&ts.atom_types[get_atom_type_idx(&ts.molecules[i].atoms[j])], buff);
+			fprintf(f, "%4d\t%s%9.6f\t%9.6f\t%9.6f\n", j + 1, buff,
 				ATOM.reference_charge, ss->best->charges[atoms_processed + j], ATOM.reference_charge - ss->best->charges[atoms_processed + j]);
 			#undef ATOM
 		}
