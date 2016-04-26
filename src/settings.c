@@ -37,8 +37,7 @@ static struct option long_options[] = {
 	{"chg-out-file", required_argument, 0, 13},
 	{"chg-stats-out-file", required_argument, 0, 14},
 	{"par-out-file", required_argument, 0, 15},
-	{"wgh-file", required_argument, 0, 16},
-	{"atb-file", required_argument, 0, 17},
+	{"atb-file", required_argument, 0, 16},
 	{"kappa-max", required_argument, 0, 20},
 	{"kappa", required_argument, 0, 21},
 	{"kappa-preset", required_argument, 0, 22},
@@ -236,10 +235,6 @@ void parse_options(int argc, char **argv) {
 				break;
 
 			case 16:
-				strncpy(s.wgh_file, optarg, MAX_PATH_LEN - 1);
-				break;
-
-			case 17:
 				strncpy(s.atb_file, optarg, MAX_PATH_LEN - 1);
 				break;
 
@@ -424,9 +419,6 @@ void print_settings(void) {
 
 	if(s.chg_file[0] != '\0')
 		printf(" Charges (.chg) file: %s\n", s.chg_file);
-
-	if(s.wgh_file[0] != '\0')
-		printf(" Weights (.wgh) file: %s\n", s.wgh_file);
 
 	if(s.atb_file[0] != '\0')
 		printf(" Atom types (.atb) file: %s\n", s.atb_file);

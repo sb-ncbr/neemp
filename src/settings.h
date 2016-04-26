@@ -60,7 +60,6 @@ struct settings {
 	char sdf_file[MAX_PATH_LEN];
 	char chg_file[MAX_PATH_LEN];
 	char par_file[MAX_PATH_LEN];
-	char wgh_file[MAX_PATH_LEN];
 	char atb_file[MAX_PATH_LEN];
 
 	char par_out_file[MAX_PATH_LEN];
