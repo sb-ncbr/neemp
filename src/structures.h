@@ -16,6 +16,8 @@ struct atom {
 	float position[3];		/* x, y, z position */
 	float reference_charge;
 
+	char type_string[10];
+
 	double *rdists;
 	double y;			/* sum of charges/distance over all atoms in the molecule */
 };
@@ -34,6 +36,7 @@ struct molecule {
 	int is_valid;
 	int has_charges;
 	int has_parameters;
+	int has_atom_types;
 	float electronegativity;
 	float average_charge;
 	float sum_of_charges;
@@ -49,6 +52,8 @@ struct atom_type {
 
 	int atoms_count;
 	int molecules_count;
+
+	char type_string[10];
 
 	/* the pair (atoms_molecule_idx[i], atoms_atom_idx[i]) uniquely
 	 * identifies particular atom i of this atom type */

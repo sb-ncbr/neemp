@@ -85,7 +85,7 @@ void print_parameters(const struct kappa_data * const kd) {
 	for(int i = 0; i < ts.atom_types_count; i++) {
 		char buff[10];
 		at_format_text(&ts.atom_types[i], buff);
-		printf(" %s   \t%7.4f\t%7.4f\n", buff, kd->parameters_alpha[i], kd->parameters_beta[i]);
+		printf(" %-10s   \t%7.4f\t%7.4f\n", buff, kd->parameters_alpha[i], kd->parameters_beta[i]);
 	}
 
 	printf("\n");
@@ -104,7 +104,7 @@ void print_results(const struct subset * const ss) {
 	for(int i = 0; i < ts.atom_types_count; i++) {
 		char buff[10];
 		at_format_text(&ts.atom_types[i], buff);
-		printf(" %s  \t%6.4f\t%6.4f      %6.4f  %6.4f  %6.4f    %6.4f   %6.4f  %6.4f\n",
+		printf(" %-10s  \t%6.4f\t%6.4f      %6.4f  %6.4f  %6.4f    %6.4f   %6.4f  %6.4f\n",
 			buff, ss->best->parameters_alpha[i], ss->best->parameters_beta[i],
 			ss->best->per_at_stats[i].R, ss->best->per_at_stats[i].R2,
 			ss->best->per_at_stats[i].spearman, ss->best->per_at_stats[i].RMSD,

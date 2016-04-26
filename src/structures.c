@@ -315,7 +315,7 @@ void ts_info(void) {
 		#define AT ts.atom_types[i]
 		char buff[10];
 		at_format_text(&AT, buff);
-		printf(" %s %8d        %6.3f     %8d\n", buff, AT.atoms_count, 100.0f * (float) AT.atoms_count / ts.atoms_count, AT.molecules_count);
+		printf(" %-10s %8d        %6.3f     %8d\n", buff, AT.atoms_count, 100.0f * (float) AT.atoms_count / ts.atoms_count, AT.molecules_count);
 		#undef AT
 	}
 
@@ -331,10 +331,13 @@ void at_format_text(const struct atom_type * const at, char * const buff) {
 	/* Note that buff should have size at least 9, this is not checked! */
 	switch(s.at_customization) {
 		case AT_CUSTOM_ELEMENT:
-			snprintf(buff, 10, "%2s       ", convert_Z_to_symbol(at->Z));
+			snprintf(buff, 10, "%s", convert_Z_to_symbol(at->Z));
 			break;
 		case AT_CUSTOM_ELEMENT_BOND:
-			snprintf(buff, 10, "%2s %1d     ", convert_Z_to_symbol(at->Z), at->bond_order);
+			snprintf(buff, 10, "%s %1d", convert_Z_to_symbol(at->Z), at->bond_order);
+			break;
+		case AT_CUSTOM_USER:
+			snprintf(buff, 10, "%s", at->type_string);
 			break;
 		default:
 			/* Something bad happened */
@@ -360,6 +363,9 @@ int get_atom_type_idx_from_text(const char * const str) {
 			sscanf(str, "%2s %d\n", symbol, &bonds);
 			a.Z = convert_symbol_to_Z(symbol);
 			a.bond_order = bonds;
+			break;
+		case AT_CUSTOM_USER:
+			strncpy(a.type_string, str, 10);
 			break;
 		default:
 			/* Something bad happened */
@@ -387,6 +393,10 @@ static void at_fill_from_atom(struct atom_type * const at, const struct atom * c
 				at->Z = a->Z;
 				at->bond_order = a->bond_order;
 				break;
+			case AT_CUSTOM_USER:
+				at->Z = a->Z;
+				strncpy(at->type_string, a->type_string, 10);
+				break;
 			default:
 				/* Something bad happened */
 				assert(0);
@@ -404,6 +414,8 @@ static int at_compare_against_atom(const struct atom_type * const at, const stru
 				return at->Z == a->Z;
 			case AT_CUSTOM_ELEMENT_BOND:
 				return at->Z ==  a->Z && at->bond_order == a->bond_order;
+			case AT_CUSTOM_USER:
+				return !strncmp(at->type_string, a->type_string, 10);
 			default:
 				/* Something bad happened */
 				assert(0);
@@ -493,10 +505,37 @@ static void list_invalid_molecules(void) {
 	printf("\n");
 }
 
+/* List molecules which don't have right charges */
+static void list_molecules_without_atom_types(void) {
+
+	/* Print some statistics */
+	int without_atom_types_count = 0;
+	for(int i = 0; i < ts.molecules_count; i++)
+		if(!ts.molecules[i].has_atom_types)
+			without_atom_types_count++;
+
+	printf("\nLoaded atom types for %d molecules out of total %d (%4.2f %%).\n",
+		ts.molecules_count - without_atom_types_count, ts.molecules_count,
+		100.0f * (ts.molecules_count - without_atom_types_count) / ts.molecules_count);
+
+	if(!without_atom_types_count || !s.list_omitted_molecules)
+		return;
+
+	/* And the affected molecules themselves */
+	printf("List of molecules without atom types:\n");
+	for(int i = 0; i < ts.molecules_count; i++)
+		if(!ts.molecules[i].has_atom_types)
+			printf("%s; ", ts.molecules[i].name);
+
+	printf("\n");
+}
+
 /* Remove molecules which can't be further used */
 void discard_invalid_molecules_or_without_charges_or_parameters(void) {
 
 	list_invalid_molecules();
+	if(s.at_customization == AT_CUSTOM_USER)
+		list_molecules_without_atom_types();
 
 	if(s.mode == MODE_CHARGES || s.mode == MODE_CROSS || s.mode == MODE_COVER)
 		list_molecules_without_parameters();
@@ -519,6 +558,9 @@ void discard_invalid_molecules_or_without_charges_or_parameters(void) {
 			cond = !ts.molecules[idx].has_charges || !ts.molecules[idx].is_valid;
 		else if (s.mode == MODE_CROSS)
 			cond = !ts.molecules[idx].has_parameters || !ts.molecules[idx].has_charges || !ts.molecules[idx].is_valid;
+
+		if(s.at_customization == AT_CUSTOM_USER)
+			cond |= !ts.molecules[idx].has_atom_types;
 
 		if(cond) {
 			number_of_discarded++;

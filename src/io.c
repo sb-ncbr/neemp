@@ -45,7 +45,7 @@ static char *mygets(char * const buff, unsigned int len, FILE * const f, gzFile 
 void load_molecules(void) {
 
 	/* Check if we load gzipped sdf file */
-	FILE * f_test = fopen(s.sdf_file, "r");
+	FILE *f_test = fopen(s.sdf_file, "r");
 	if(!f_test)
 		EXIT_ERROR(IO_ERROR, "Cannot open .sdf file \"%s\".\n", s.sdf_file);
 
@@ -59,7 +59,7 @@ void load_molecules(void) {
 
 	/* Read either regular or gzip compressed file */
 	gzFile gz_f = 0;
-	FILE * f = NULL;
+	FILE *f = NULL;
 
 	if(is_sdf_gzipped)
 		gz_f = gzopen(s.sdf_file, "r");
@@ -268,6 +268,15 @@ void load_parameters(struct kappa_data * const kd) {
 
 					snprintf(buff, 10, "%2s %1d", (char *) symbol, bond);
 					xmlFree(bond_order);
+					break;
+				}
+				case AT_CUSTOM_USER: {
+					xmlChar *type = xmlGetProp(ab_node, BAD_CAST "Type");
+					if(!type)
+						EXIT_ERROR(IO_ERROR, "Could not load parameters for element %s\n", (char *) symbol);
+
+					snprintf(buff, 10, "%s", (char *) type);
+					xmlFree(type);
 					break;
 				}
 				default:
@@ -621,6 +630,7 @@ static int load_molecule(FILE * const f, gzFile gz_f, struct molecule * const m)
 
 	m->sum_of_charges = (float) charges_sum;
 	m->has_charges = 0;
+	m->has_atom_types = 0;
 	/* Assume that we have parameters, change to zero if that's not the case
 	 * (it's easier than the other way around) */
 	m->has_parameters = 1;
@@ -695,7 +705,7 @@ void output_charges_stats(const struct subset * const ss) {
 			#define ATOM ts.molecules[i].atoms[j]
 			char buff[10];
 			at_format_text(&ts.atom_types[get_atom_type_idx(&ts.molecules[i].atoms[j])], buff);
-			fprintf(f, "%4d\t%s%9.6f\t%9.6f\t%9.6f\n", j + 1, buff,
+			fprintf(f, "%4d\t%-10s%9.6f\t%9.6f\t%9.6f\n", j + 1, buff,
 				ATOM.reference_charge, ss->best->charges[atoms_processed + j], ATOM.reference_charge - ss->best->charges[atoms_processed + j]);
 			#undef ATOM
 		}
@@ -732,7 +742,7 @@ void output_parameters(const struct subset * const ss) {
 
 	for(int i = 0; i < ts.atom_types_count; i++) {
 
-		snprintf(buff, 10, "%2s", convert_Z_to_symbol(ts.atom_types[i].Z));
+		snprintf(buff, 10, "%s", convert_Z_to_symbol(ts.atom_types[i].Z));
 
 		xmlNodePtr element_node = NULL;
 		xmlNodePtr curr_node = params_node->children;
@@ -754,6 +764,9 @@ void output_parameters(const struct subset * const ss) {
 		if(s.at_customization == AT_CUSTOM_ELEMENT_BOND) {
 			snprintf(buff, 10, "%d", ts.atom_types[i].bond_order);
 			xmlNewProp(bond_node, BAD_CAST "Type", BAD_CAST buff);
+		} else if (s.at_customization == AT_CUSTOM_USER) {
+			snprintf(buff, 10, "%s", ts.atom_types[i].type_string);
+			xmlNewProp(bond_node, BAD_CAST "Type", BAD_CAST buff);
 		}
 
 		snprintf(buff, 10, "%6.4f", ss->best->parameters_alpha[i]);
@@ -766,4 +779,70 @@ void output_parameters(const struct subset * const ss) {
 		EXIT_ERROR(IO_ERROR, "Cannot open file %s for writing the parameters.\n", s.par_out_file);
 
 	xmlFreeDoc(doc);
+}
+
+
+/* Load user-defined atom types from file */
+void load_user_atom_types(void) {
+
+	FILE *f = fopen(s.atb_file, "r");
+	if(!f)
+		EXIT_ERROR(IO_ERROR, "Cannot open .atb file \"%s\".\n", s.atb_file);
+
+	char line[MAX_LINE_LEN];
+	memset(line, 0x0, MAX_LINE_LEN * sizeof(char));
+
+	while(1) {
+		/* Break if no data is available */
+		if(!fgets(line, MAX_LINE_LEN, f))
+			break;
+
+		/* First line is the name; strip newline character */
+		int len = strlen(line);
+		line[len - 1] = '\0';
+
+		/* Find corresponding previously loaded molecule */
+		int idx = find_molecule_by_name(line);
+		if(idx == NOT_FOUND) {
+			/* Skip the whole record */
+			do {
+				if(!fgets(line, MAX_LINE_LEN, f)) {
+					if(feof(f))
+						break;
+					else
+						EXIT_ERROR(IO_ERROR, "Reading failed when skipping record (%s).\n", s.atb_file);
+				}
+			} while(strcmp(line, "\n"));
+
+			/* Go to the next record */
+			continue;
+		}
+
+		/* Check if numbers of atoms match*/
+		int atoms_count;
+		if(!fgets(line, MAX_LINE_LEN, f))
+			EXIT_ERROR(IO_ERROR, "Reading failed for the molecule \"%s\" (%s).\n", ts.molecules[idx].name, s.atb_file);
+
+		sscanf(line, "%d", &atoms_count);
+		if(atoms_count != ts.molecules[idx].atoms_count)
+			EXIT_ERROR(IO_ERROR, "Number of atoms in molecule \"%s\" don't match (%s).\n", ts.molecules[idx].name, s.atb_file);
+
+		/* Load actual charges */
+		for(int i = 0; i < atoms_count; i++) {
+			if(!fgets(line, MAX_LINE_LEN, f))
+				EXIT_ERROR(IO_ERROR, "Reading charges failed for the molecule \"%s\" (%s).\n", ts.molecules[idx].name, s.atb_file);
+
+			int tmp_int;
+			char tmp_str[2];
+			sscanf(line, "%d %s %9s\n", &tmp_int, tmp_str, ts.molecules[idx].atoms[i].type_string);
+		}
+
+		ts.molecules[idx].has_atom_types = 1;
+
+		/* Read empty line */
+		if(!fgets(line, MAX_LINE_LEN, f) && !feof(f))
+			EXIT_ERROR(IO_ERROR, "Reading empty separator line failed after the molecule \"%s\" (%s).\n", ts.molecules[idx].name, s.atb_file);
+	}
+
+	fclose(f);
 }

@@ -38,6 +38,7 @@ enum atom_type_customization {
 
 	AT_CUSTOM_ELEMENT = 0,
 	AT_CUSTOM_ELEMENT_BOND = 1,
+	AT_CUSTOM_USER = 2
 };
 
 enum discarding_mode {
@@ -60,6 +61,7 @@ struct settings {
 	char chg_file[MAX_PATH_LEN];
 	char par_file[MAX_PATH_LEN];
 	char wgh_file[MAX_PATH_LEN];
+	char atb_file[MAX_PATH_LEN];
 
 	char par_out_file[MAX_PATH_LEN];
 	char chg_out_file[MAX_PATH_LEN];

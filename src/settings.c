@@ -20,7 +20,7 @@ extern struct settings s;
 static void print_help(void);
 static void print_version(void);
 
-static char *atom_types_by_strings[] = {"Element", "ElemBond", "Partner", "Valence"};
+static char *atom_types_by_strings[] = {"Element", "ElemBond", "User"};
 
 static struct option long_options[] = {
 
@@ -38,6 +38,7 @@ static struct option long_options[] = {
 	{"chg-stats-out-file", required_argument, 0, 14},
 	{"par-out-file", required_argument, 0, 15},
 	{"wgh-file", required_argument, 0, 16},
+	{"atb-file", required_argument, 0, 17},
 	{"kappa-max", required_argument, 0, 20},
 	{"kappa", required_argument, 0, 21},
 	{"kappa-preset", required_argument, 0, 22},
@@ -65,6 +66,7 @@ void s_init(void) {
 	memset(s.sdf_file, 0x0, MAX_PATH_LEN * sizeof(char));
 	memset(s.chg_file, 0x0, MAX_PATH_LEN * sizeof(char));
 	memset(s.par_file, 0x0, MAX_PATH_LEN * sizeof(char));
+	memset(s.atb_file, 0x0, MAX_PATH_LEN * sizeof(char));
 	memset(s.par_out_file, 0x0, MAX_PATH_LEN * sizeof(char));
 	memset(s.chg_out_file, 0x0, MAX_PATH_LEN * sizeof(char));
 	memset(s.chg_stats_out_file, 0x0, MAX_PATH_LEN * sizeof(char));
@@ -108,7 +110,7 @@ static void print_help(void) {
 	printf("      --max-threads N		 use up to N threads to solve EEM system in parallel\n");
 	printf("  -m, --mode MODE		 set mode for the NEEMP. Valid choices are: info, params, charges, cross, cover (required)\n");
 	printf("      --sdf-file FILE		 SDF file (required)\n");
-	printf("      --atom-types-by METHOD	 classify atoms according to the METHOD. Valid choices are: Element, ElemBond.\n");
+	printf("      --atom-types-by METHOD	 classify atoms according to the METHOD. Valid choices are: Element, ElemBond or User.\n");
 	printf("      --list-omitted-molecules	 list names of molecules for which we don't have charges or parameters loaded (mode dependent).\n");
 	printf("Options specific to mode: params\n");
 	printf("      --chg-file FILE            FILE with ab-initio charges (required)\n");
@@ -237,6 +239,10 @@ void parse_options(int argc, char **argv) {
 				strncpy(s.wgh_file, optarg, MAX_PATH_LEN - 1);
 				break;
 
+			case 17:
+				strncpy(s.atb_file, optarg, MAX_PATH_LEN - 1);
+				break;
+
 			case 20:
 				s.kappa_max = (float) atof(optarg);
 				break;
@@ -264,6 +270,8 @@ void parse_options(int argc, char **argv) {
 					s.at_customization = AT_CUSTOM_ELEMENT;
 				else if(!strcmp(optarg, atom_types_by_strings[AT_CUSTOM_ELEMENT_BOND]))
 					s.at_customization = AT_CUSTOM_ELEMENT_BOND;
+				else if(!strcmp(optarg, atom_types_by_strings[AT_CUSTOM_USER]))
+					s.at_customization = AT_CUSTOM_USER;
 				else
 					EXIT_ERROR(ARG_ERROR, "Invalid atom-type-by value: %s\n", optarg);
 				break;
@@ -379,6 +387,9 @@ void check_settings(void) {
 
 	if(s.rw < 1.0f / 2.718281828f || s.rw >= 1.0f)
 		EXIT_ERROR(ARG_ERROR, "%s", "--rw argument has to be in range [1/e; 1)\n");
+
+	if(s.at_customization == AT_CUSTOM_USER && s.atb_file[0] == '\0')
+		EXIT_ERROR(ARG_ERROR, "%s", "File with user defined types must be provided when runned with --atom-types-by User\n");
 }
 
 void print_settings(void) {
@@ -417,6 +428,9 @@ void print_settings(void) {
 	if(s.wgh_file[0] != '\0')
 		printf(" Weights (.wgh) file: %s\n", s.wgh_file);
 
+	if(s.atb_file[0] != '\0')
+		printf(" Atom types (.atb) file: %s\n", s.atb_file);
+
 	if(s.par_out_file[0] != '\0')
 		printf(" Parameters (.par) output file: %s\n", s.par_out_file);
 
@@ -433,6 +447,9 @@ void print_settings(void) {
 			break;
 		case AT_CUSTOM_ELEMENT_BOND:
 			printf("%s (element + bond order)\n", atom_types_by_strings[AT_CUSTOM_ELEMENT_BOND]);
+			break;
+		case AT_CUSTOM_USER:
+			printf("%s (from external file)\n", atom_types_by_strings[AT_CUSTOM_USER]);
 			break;
 	}
 

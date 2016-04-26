@@ -57,6 +57,8 @@ int main(int argc, char **argv) {
 	l_init(&limits, s.limit_iters, s.limit_time);
 
 	load_molecules();
+	if(s.at_customization == AT_CUSTOM_USER)
+		load_user_atom_types();
 
 	/* Interrupt discarding if one of these signals is received */
 	signal(SIGINT, sig_handler);
