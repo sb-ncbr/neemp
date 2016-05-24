@@ -159,6 +159,8 @@ float kd_sort_by_return_value(const struct kappa_data * const kd) {
 			return kd->full_stats.spearman;
 		case SORT_RMSD:
 			return kd->full_stats.RMSD;
+		case SORT_RMSD_AVG:
+			return kd->full_stats.RMSD_avg;
 		case SORT_D_AVG:
 			return kd->full_stats.D_avg;
 		case SORT_D_MAX:

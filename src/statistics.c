@@ -30,6 +30,7 @@ static void set_total_Spearman(struct kappa_data * const kd);
 static void set_total_R(struct kappa_data * const kd);
 static void set_total_R_w(struct kappa_data *const kd);
 static void set_total_RMSD(struct kappa_data * const kd);
+static void set_total_RMSD_avg(struct kappa_data * const kd);
 static void set_total_D_avg(struct kappa_data * const kd);
 static void set_total_D_max(struct kappa_data * const kd);
 
@@ -265,6 +266,17 @@ static void set_total_RMSD(struct kappa_data * const kd) {
 	}
 
 	kd->full_stats.RMSD = (float) (RMSD_sum_molecules / ts.molecules_count);
+}
+
+/* Set RMSD_avg for the whole set */
+static void set_total_RMSD_avg(struct kappa_data * const kd) {
+    assert(kd!=NULL);
+
+    double RMSD_sum_atom_types = 0.0;
+    for (int i=0; i < ts.atom_types_count; i++) {
+        RMSD_sum_atom_types += kd->per_at_stats[i].RMSD;
+    }
+    kd->full_stats.RMSD_avg = (float) (RMSD_sum_atom_types / ts.atom_types_count);
 }
 
 
@@ -571,6 +583,7 @@ void calculate_statistics(struct subset * const ss, struct kappa_data * const kd
 
 	/* Computed from per atom type stats, needs to go last */
 	set_total_R_w(kd);
+	set_total_RMSD_avg(kd);
 }
 
 /* Calculate statistics according to set sort type */
@@ -584,8 +597,10 @@ void calculate_statistics_by_sort_mode(struct kappa_data* kd) {
 			set_per_at_R_R2(kd);
 			break;
 		case SORT_RMSD:
+		case SORT_RMSD_AVG:
 			set_total_RMSD(kd);
 			set_per_at_RMSD(kd);
+			set_total_RMSD_avg(kd);
 			break;
 		case SORT_SPEARMAN:
 			set_total_Spearman(kd);

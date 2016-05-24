@@ -37,6 +37,7 @@ enum sort_mode {
 	SORT_RW,
 	SORT_SPEARMAN,
 	SORT_RMSD,
+	SORT_RMSD_AVG,
 	SORT_D_AVG,
 	SORT_D_MAX
 };
