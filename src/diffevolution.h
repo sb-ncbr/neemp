@@ -27,7 +27,6 @@ extern void newuoa_(int* n, int* npt, double* x, double* rhobeg, double* rhoend,
 extern void calfun_(int n, double*x, double* f);
 void kappa_data_to_double_array(struct kappa_data* trial, double* x);
 void double_array_to_kappa_data(double* x, struct kappa_data* trial);
-int is_good_enough(struct kappa_data* t);
 int is_quite_good(struct kappa_data* t);
 
 struct subset * de_ss;

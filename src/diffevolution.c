@@ -107,7 +107,7 @@ void run_diff_evolution(struct subset * const ss) {
 	{
 		while (condition) {
 #pragma omp master
-			condition = ((iter < 0.5*s.limit_de_iters) || ((iter < s.limit_de_iters) && (!is_good_enough(so_far_best))));
+			condition = (iter < s.limit_de_iters);
 			{
 #pragma omp master
 				{
@@ -416,17 +416,6 @@ void double_array_to_kappa_data(double* x, struct kappa_data* t) {
 		t->parameters_alpha[i] = (float)x[i*2 + 1];
 		t->parameters_beta[i] = (float)x[i*2 + 2];
 	}
-}
-
-/* Returns true if kappa_data offers good enough parameters */
-int is_good_enough(struct kappa_data* t) {
-	if (t->full_stats.R2 < 0.85)
-		return 0;
-	for (int i = 0; i < ts.atom_types_count; i++) {
-		if (t->per_at_stats[i].R2 < 0.6)
-			return 0; 
-	}
-	return 1;
 }
 
 /* Returns true if R2 is above 0.6, used in decision whether to minimize kappa_data */
