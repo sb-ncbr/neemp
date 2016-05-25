@@ -71,13 +71,8 @@ void run_diff_evolution(struct subset * const ss) {
 		minimized_initial = s.population_size;
 	}
 
-
 	//find the best kappa_data
-	//TODO extract to separate method, also used in kappa.c:find_the_best_parameters
-	ss->best = &ss->data[0];
-	for (i = 0; i < ss->kappa_data_count -1; i++)
-		if (kd_sort_by_is_better(&ss->data[i], ss->best))
-			ss->best = &ss->data[i];
+	set_the_best(ss);
 
 	/* Run the optimization for max iterations */
 	//TODO include iters_max for DE in limits or use one already there (that is used for discard)
