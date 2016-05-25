@@ -39,11 +39,12 @@ void run_diff_evolution(struct subset * const ss) {
 	float *bounds = (float*) malloc((ts.atom_types_count*2+1)*2*sizeof(float));
 	//compute bounds, 0 means set them to fixed numbers taken from Tomas's full scan, 1 means try to find them with broad search
 	compute_parameters_bounds(ss,bounds, 0);
-	//we must create "regular" population only after computing bounds, as sometimes we can compute bounds with usage of preliminary population
+	//generate population
 	fill_ss(ss, s.population_size); 
 	generate_random_population(ss, bounds, s.population_size);
 	de_ss = ss;
-	/* Evaluate the fitness function for all points and assign the best */
+
+	//evaluate the fitness function for all points
 	if (s.verbosity >= VERBOSE_KAPPA)
 		printf("DE Calculating charges and evaluating fitness function for whole population\n");
 	int i = 0;
@@ -53,6 +54,7 @@ void run_diff_evolution(struct subset * const ss) {
 		calculate_statistics(ss, &ss->data[i]);
 	}
 
+	//minimize part of population
 	int minimized_initial = 0;
 	int* good_indices = (int*) malloc((int)floor(s.population_size*0.06)*sizeof(int));
 	for (i = 0; i < s.population_size*0.06; i++)
@@ -63,6 +65,8 @@ void run_diff_evolution(struct subset * const ss) {
 		minimized_initial = minimize_part_of_population(ss, 0, good_indices);
 	}
 
+
+	//find the best kappa_data
 	//TODO extract to separate method, also used in kappa.c:find_the_best_parameters
 	ss->best = &ss->data[0];
 	for (i = 0; i < ss->kappa_data_count -1; i++)
@@ -109,7 +113,6 @@ void run_diff_evolution(struct subset * const ss) {
 							printf(".");
 					}
 					/* Select randomly two points from population */
-					//TODO replace with some real random number generator
 					int rand1 = good_indices[(int)(floor(get_random_float(0, (float) minimized_initial -1 )))];
 					int rand2 = good_indices[(int)(floor(get_random_float(0, (float) minimized_initial -1 )))];
 
@@ -146,14 +149,17 @@ void run_diff_evolution(struct subset * const ss) {
 					minimized++;
 					if (s.verbosity >= VERBOSE_KAPPA)
 						printf("\nDE min thread %d\n", omp_get_thread_num());
+					/* Copy trial into private structure */
 					struct kappa_data *min_trial = (struct kappa_data*)malloc(sizeof(struct kappa_data));
 					kd_init(min_trial);
 					min_trial->parent_subset = ss;
 #pragma omp critical
 					kd_copy_parameters(trial, min_trial);
+					/* Run local minimization */
 					minimize_locally(min_trial, 500);
 					calculate_charges(de_ss, min_trial);
 					calculate_statistics(de_ss, min_trial);
+					/* If better, swap for so_far_best */
 #pragma omp critical
 					{
 						if (kd_sort_by_is_better(min_trial, trial) && compare_and_set(min_trial, so_far_best)) {
@@ -171,8 +177,12 @@ void run_diff_evolution(struct subset * const ss) {
 			}
 		}
 	}
+
+	/* Minimize the result */
 	if (s.polish > 0)
 		minimize_locally(so_far_best, 2000);
+
+	/* Tidying up and printing */
 	kd_destroy(trial);
 	free(trial);
 	free(bounds);
@@ -190,7 +200,7 @@ void generate_random_population(struct subset* ss, float *bounds, int size) {
 	/* Get random numbers by Latin Hypercube Sampling */
 	int dimensions_count = ts.atom_types_count*2+1;
 	int points_count = size;
-	int seed = rand(); //get_seed();
+	int seed = rand();
 	double* random_lhs = latin_random_new(dimensions_count, points_count, &seed);
 
 	/* Redistribute random_lhs[dim_num, point_num] to ss->data */
@@ -214,10 +224,11 @@ void generate_random_population(struct subset* ss, float *bounds, int size) {
 
 }
 
+/* Run local minimization on part of population */
 int minimize_part_of_population(struct subset* ss, int count, int* good_indices) {
 	int quite_good = 0;
 	int i = 0;
-	if (count == 0) {//we minimize all with R2>0.3 && R>0
+	if (count == 0) {//we minimize all with R2>0.2 && R>0
 #pragma omp parallel for num_threads(s.de_threads) shared(ss, quite_good, good_indices) private(i)
 		for (i = 0; i < ss->kappa_data_count; i++) {
 			if (ss->data[i].full_stats.R2 > 0.2 && ss->data[i].full_stats.R > 0) {
@@ -242,7 +253,7 @@ int minimize_part_of_population(struct subset* ss, int count, int* good_indices)
 		}
 		return quite_good;
 	}
-	else {
+	else { //we minimize first 'count' kappa_data
 		struct kappa_data* m = (struct kappa_data*) malloc (sizeof(struct kappa_data));
 		kd_init(m);
 		m->parent_subset = ss;
@@ -262,15 +273,21 @@ int minimize_part_of_population(struct subset* ss, int count, int* good_indices)
 int evolve_kappa(struct kappa_data* trial, struct kappa_data* x, struct kappa_data* a, struct kappa_data *b, float *bounds, float mutation_constant, float recombination_constant) {
 	int changed = 0;
 	kd_copy_parameters(x, trial);
+
+	//evolve alpha parameters
 	for (int i = 0; i < ts.atom_types_count; i++)
+		// if random number is higher than the recombination constant, we will combine i-th atom type
 		if (get_random_float(0,1) < recombination_constant)	{
 			changed++;
 			trial->parameters_alpha[i] += mutation_constant*(a->parameters_alpha[i] - b->parameters_alpha[i]);
+			// check bounds, if the evolved parameters are out of bounds, discard changes
 			if (bounds[2 + i*4] > trial->parameters_alpha[i] || bounds[2 + i*4 + 1] < trial->parameters_alpha[i]) {
 				trial->parameters_alpha[i] = x->parameters_alpha[i];
 				changed--;
 			}
 		}
+
+	//evolve beta parameters
 	for (int i = 0; i < ts.atom_types_count; i++)
 		if (get_random_float(0,1) < recombination_constant)	{
 			changed++;
@@ -354,6 +371,7 @@ int compare_and_set(struct kappa_data* trial, struct kappa_data* so_far_best) {
 	return 0;
 }
 
+/* Run local minimization with NEWUOA algorithm */
 void minimize_locally(struct kappa_data* t, int max_calls) {
 	int n = 2*ts.atom_types_count + 1; //number of variables
 	int npt = 2*n + 1; //number of interpolation conditions
@@ -369,6 +387,7 @@ void minimize_locally(struct kappa_data* t, int max_calls) {
 	double_array_to_kappa_data(x, t);
 }
 
+/* Used by NEWUOA algorithm. Evaluates the vector in the local minimization: converts it to kappa_data, computes charges, computes statistics and return the fitness score that should be minimized */
 extern void calfun_(int n, double*x, double* f) {
 	struct kappa_data* t = (struct kappa_data*) malloc (sizeof(struct kappa_data));
 	kd_init(t);
@@ -390,6 +409,7 @@ extern void calfun_(int n, double*x, double* f) {
 	free(t);
 }
 
+/* Convert kappa_data into an array of doubles, used in local minimization */
 void kappa_data_to_double_array(struct kappa_data* t, double* x) {
 	x[0] = t->kappa;
 	for (int i = 0; i < ts.atom_types_count; i++) {
@@ -398,6 +418,7 @@ void kappa_data_to_double_array(struct kappa_data* t, double* x) {
 	}
 }
 
+/* Convert array of doubles into kappa_data, used in local minimization */
 void double_array_to_kappa_data(double* x, struct kappa_data* t) {
 	t->kappa = (float)x[0];
 	for (int i = 0; i < ts.atom_types_count; i++) {
@@ -406,6 +427,7 @@ void double_array_to_kappa_data(double* x, struct kappa_data* t) {
 	}
 }
 
+/* Returns true if kappa_data offers good enough parameters */
 int is_good_enough(struct kappa_data* t) {
 	if (t->full_stats.R2 < 0.85)
 		return 0;
@@ -416,13 +438,10 @@ int is_good_enough(struct kappa_data* t) {
 	return 1;
 }
 
+/* Returns true if R2 is above 0.6, used in decision whether to minimize kappa_data */
 int is_quite_good(struct kappa_data* t) {
 	if (t->full_stats.R2 > 0.6 && t->full_stats.R > 0)
 		return 1;
-	/*for (int i = 0; i < ts.atom_types_count; i++) {
-	  if (t->per_at_stats[i].R2 < 0.1)
-	  return 0;
-	  }*/
 	return 0;
 }
 
@@ -433,6 +452,7 @@ void compute_parameters_bounds(struct subset *ss, float* bounds, int by_atom_typ
 	bounds[0] = 0.0005; //kappa_low
 	bounds[1] = 3.5; //kappa_high
 	for (int j = 0; j < ts.atom_types_count; j++) {	
+		//set bounds to values corresponding with their affinity and ionenergies
 		if (by_atom_type == 1) {
 			//set bounds for particular atom type
 			int atom_number = ts.atom_types[j].Z;
@@ -447,63 +467,14 @@ void compute_parameters_bounds(struct subset *ss, float* bounds, int by_atom_typ
 			//bounds[2 + j*4 + 2] *= toEV;
 			//bounds[2 + j*4 + 3] *= toEV;
 		}
+		//set bounds to constant values taken from previous experience
 		else if (by_atom_type == 0) {
 			bounds[2 + j*4] = 1.8;
 			bounds[2 + j*4 + 1] = 3.2;
-			bounds[2 + j*4 + 2] = 0;//0;
+			bounds[2 + j*4 + 2] = 0;
 			bounds[2 + j*4 + 3] = 1.0;
 		}
-		else if (by_atom_type == 2) {
-			bounds[2 + j*4] = 0;
-			bounds[2 + j*4 + 1] = 20;
-			bounds[2 + j*4 + 2] = 0;
-			bounds[2 + j*4 + 3] = 5;
-		}
 	}
-
-	/* Restrict bounds for each atom type to reasonable values by one iteration of DE to find out what values gives the best results */
-	if (by_atom_type == 2) {
-		int restrict_bounds_population_size = 40;
-		fill_ss(ss, restrict_bounds_population_size);
-		generate_random_population(ss, bounds, restrict_bounds_population_size);
-		struct kappa_data** best_per_atom = (struct kappa_data**) malloc((ts.atom_types_count)*(sizeof(struct kappa_data*)));
-		for (int i = 0; i < restrict_bounds_population_size; i++) {
-			calculate_charges(ss, &ss->data[i]);
-			calculate_statistics(ss, &ss->data[i]);
-		}
-
-		for (int i = 0; i < ts.atom_types_count; i++) 
-			best_per_atom[i] = &ss->data[0];
-
-		for (int i = 0; i < ts.atom_types_count; i++) {
-			for (int j = 0; j< restrict_bounds_population_size; j++) {
-				if (kd_sort_by_is_better_per_atom(&ss->data[j], best_per_atom[i], i))
-					best_per_atom[i] = &ss->data[j];
-			}
-		}
-
-		for (int i = 0; i < ts.atom_types_count; i++) {
-			char buff[10];
-			at_format_text(&ts.atom_types[i], buff);
-			printf("Best for atom %s with %f\n", buff, best_per_atom[i]->per_at_stats[i].R);
-			print_parameters(best_per_atom[i]);
-			if (best_per_atom[i]->per_at_stats[i].R > 0.2)
-			{
-				bounds[2 + i*4] = (float)0.8*(best_per_atom[i]->parameters_alpha[i]);
-				bounds[2 + i*4 + 1] = (float)1.2*(best_per_atom[i]->parameters_alpha[i]);
-				bounds[2 + i*4 + 2] = (float)0.8*(best_per_atom[i]->parameters_beta[i]);
-				bounds[2 + i*4 + 3] = (float)1.2*(best_per_atom[i]->parameters_beta[i]);
-			}
-		}
-
-		for (int i = 0; i < restrict_bounds_population_size; i++) {
-			kd_destroy(&ss->data[i]);
-		}
-		free(ss->data);
-
-
-	}
-
 	if (s.verbosity >= VERBOSE_KAPPA) {
 		printf("DE Bounds set to:\n");
 		for (int i = 0; i < ts.atom_types_count; i++) {
@@ -516,6 +487,7 @@ void compute_parameters_bounds(struct subset *ss, float* bounds, int by_atom_typ
 
 /* Get random float within the bounds */
 float get_random_float(float low, float high) {
+	//better random number generator would be nice, but this is sufficient
 	float n = low + (float)(rand())/((float)(RAND_MAX/(high-low)));
 	return n;
 }

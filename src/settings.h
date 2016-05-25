@@ -96,6 +96,7 @@ struct settings {
 	time_t limit_de_time;
 	int polish; //use NEWUOA minimization to polish trial or results
 
+	//other settings
 	int random_seed;
 	enum verbosity_levels verbosity;
 
