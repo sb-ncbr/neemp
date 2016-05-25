@@ -16,7 +16,7 @@ void generate_random_population(struct subset* ss, float *bounds, int size);
 int minimize_part_of_population(struct subset* ss, int count, int* good_indices);
 int evolve_kappa(struct kappa_data* trial, struct kappa_data* x, struct kappa_data* a, struct kappa_data *b, float *bounds, float mutation_constant, float recombination_constant);
 int compare_and_set(struct kappa_data* trial, struct kappa_data* so_far_best);
-void compute_parameters_bounds(struct subset* ss, float* bounds, int by_atom_type);
+void compute_parameters_bounds(float* bounds, int by_atom_type);
 float get_random_float(float low, float high);
 float interpolate_to_different_bounds(float x, float low, float high);
 int sum(int* vector, int size);

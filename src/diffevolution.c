@@ -38,7 +38,7 @@ void run_diff_evolution(struct subset * const ss) {
 	/* Set bounds for each parameters in kappa_data */
 	float *bounds = (float*) malloc((ts.atom_types_count*2+1)*2*sizeof(float));
 	//compute bounds, 0 means set them to fixed numbers taken from Tomas's full scan, 1 means try to find them with broad search
-	compute_parameters_bounds(ss,bounds, 0);
+	compute_parameters_bounds(bounds, 0);
 	//generate population
 	fill_ss(ss, s.population_size); 
 	generate_random_population(ss, bounds, s.population_size);
@@ -446,7 +446,7 @@ int is_quite_good(struct kappa_data* t) {
 }
 
 /* Compute bounds for each parameter of each atom type */
-void compute_parameters_bounds(struct subset *ss, float* bounds, int by_atom_type) {          
+void compute_parameters_bounds(float* bounds, int by_atom_type) {
 	//returns bounds[kappa_low, kappa_high, alpha_1_low, alpha_1_high, beta_1_low, beta_1_high, alpha_2_low, ...]
 	float toH = 0.036749309;
 	bounds[0] = 0.0005; //kappa_low
