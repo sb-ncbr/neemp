@@ -142,14 +142,15 @@ static void print_help(void) {
 	printf("      --kappa-preset PRESET      set kappa-max and fs-precision to safe values. Valid choices are: small, protein.\n");
 	printf("Options specific to mode: params using differential evolution as calculation method\n");
 	printf("      --de-pop-size VALUE        set population size for DE (optional).\n");
-	printf("      --de-f VALUE               set mutation constant for DE (optional).\n");
-	printf("      --de-cr VALUE              set crossover recombination constant for DE (optional).\n");
 	printf("      --de-iters-max COUNT       set the maximum number of iterations for DE (optional).\n");
 	printf("      --de-time-max HH:MM:SS     set the maximum time for DE in format hours:minutes:seconds (optional).\n");
-	printf("      --de-dither                set the mutation constant to random value from [0.5;1] for ech iteration, can improve convergence.\n");
-	printf("      --de-fix-kappa      		 set kappa to one fixed value.\n");
-	printf("      --de-threads      		 set number of threads for DE.\n");
-	printf("      --de-polish VALUE    		 apply polishing on parameters. Valid choices: 0 (off), 1 (result), 2 (during evolving), 3 (at the beginning).\n");
+	printf("      --de-threads      		 set number of threads for DE (optional).\n");
+	printf("      --de-f VALUE               set mutation constant for DE (optional).\n");
+	printf("      --de-cr VALUE              set crossover recombination constant for DE (optional).\n");
+	printf("      --de-dither                set the mutation constant to random value from [0.5;1] for ech iteration (optional).\n");
+	printf("      --de-polish VALUE    		 apply polishing on parameters. Valid choices: 0 (off), 1 (result), 2 (during evolving), 3 (at the beginning). Strongly recommend to keep the default value.\n");
+	printf("      --de-fix-kappa      		 set kappa to one fixed value (optional).\n");
+	printf("Other options:\n");
 	printf("      --par-out-file FILE        output the parameters to the FILE\n");
 	printf("  -d, --discard METHOD           perform discarding with METHOD. Valid choices are: iterative, simple and off. Default is off.\n");
 	printf("  -s, --sort-by STAT             sort solutions by STAT. Valid choices are: R, R2, R_w, spearman, RMSD, RMSD_avg, D_max, D_avg. We strongly advise using R_w for method DE.\n");
@@ -166,8 +167,8 @@ static void print_help(void) {
 
 	printf("neemp -m params --sdf-file molecules.sdf --chg-file charges.chg --kappa-max 1.0 --fs-precision 0.2 --sort-by RMSD --fs-only.\n\
 		Compute parameters for the given molecules in file molecules.sdf and ab-initio charges in charges.chg. Set maximum value for kappa to 1.0, step for the full scan to 0.2, no iterative refinement, sort results according to the relative mean square deviation.\n");
-	printf("neemp -m params -p de --sdf-file molecules.sdf --chg-file charges.chg --sort-by R --de-pop-size 20 --de-iters-max 500 -vv.\n\
-		Compute parameters for the given molecules in file molecules.sdf and ab-initio charges in charges.chg. The chosen optimization method: differential evolution will create population of 20 sets of parameters and evolve these in maximum of 500 iterations. The fitness function evaluating the set of parameters is Pearson coefficient. Partial great improvements in evolution are permitted at the cost of slight decrease in total R.\n");
+	printf("neemp -m params -p de --sdf-file molecules.sdf --chg-file charges.chg --sort-by RMSD_avg --de-pop-size 250 --de-iters-max 500 -vv.\n\
+		Compute parameters for the given molecules in file molecules.sdf and ab-initio charges in charges.chg. The chosen optimization method: differential evolution will create population of 250 sets of parameters and evolve these in maximum of 500 iterations. The fitness function evaluating the set of parameters is average per atom RMSD.\n");
 
 	printf("neemp -m charges --sdf-file molecules.sdf --par-file parameters --chg-out-file output.chg\n\
 		Calculate and store EEM charges to the file output.chg\n");
@@ -352,6 +353,7 @@ void parse_options(int argc, char **argv) {
 			case 173:
 					 s.rw = (float) atof(optarg);
 					 break;
+			//DE settings
 			case 180:
 					 s.population_size = atoi(optarg);
 					 break;
@@ -449,15 +451,15 @@ void check_settings(void) {
 			}
 		}
 		
-		if (s.params_method == PARAMS_DE) {
+		if (s.params_method == PARAMS_DE) {  //all settings are optional, so check for mistakes and set defaults
+			if (s.population_size == 0)
+				s.population_size = 500; //1.2*(ts.atom_types_count*2+1);
+			if (s.limit_de_iters == NO_LIMIT_ITERS && s.limit_de_time == NO_LIMIT_TIME)
+				s.limit_de_iters = 1000;
 			if (s.mutation_constant < 0) // if not set
 				s.mutation_constant = 0.75;
 			if (s.recombination_constant < 0)
 				s.recombination_constant = 0.7;
-			if (s.population_size == 0)
-				s.population_size = 2000; //1.2*(ts.atom_types_count*2+1);
-			if (s.limit_de_iters == NO_LIMIT_ITERS && s.limit_de_time == NO_LIMIT_TIME)
-				s.limit_de_iters = 2500;
 			if (s.polish == 0)
 				s.polish = 3;
 
@@ -560,6 +562,8 @@ void print_settings(void) {
 			break;
 	}
     printf("\nMaximum number of threads: %d\n", s.max_threads);
+	if (s.mode == MODE_PARAMS && s.params_method == PARAMS_DE)
+		printf("Maximum number of threads used for DE: %d\n", s.de_threads);
 	printf("\nVerbosity level: ");
 	switch(s.verbosity) {
 		case VERBOSE_MINIMAL:
@@ -672,12 +676,11 @@ void print_settings(void) {
 					printf(" and some of the initial population");
 				printf("\n");
 			}
-			printf("\t - number of threads used for DE population generation and evolving %d\n", s.de_threads);
 			printf("\t - mutation constant %5.3lf\n", s.mutation_constant);
 			printf("\t - recombination constant %5.3lf\n", s.recombination_constant);
 			if (s.dither != 0)
 				printf("\t - dither on\n");
-			if (s.fixed_kappa < 0)
+			if (s.fixed_kappa > 0)
 				printf("\t - kappa fixed on value %5.3lf\n", s.fixed_kappa);
 
 
