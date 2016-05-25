@@ -40,6 +40,8 @@ struct kappa_data {
 };
 
 void kd_init(struct kappa_data * const kd);
+void kd_copy_parameters(struct kappa_data* from, struct kappa_data* to);
+void kd_copy_statistics(struct kappa_data* from, struct kappa_data* to);
 void kd_destroy(struct kappa_data * const kd);
 void kd_print_stats(const struct kappa_data * const kd);
 void kd_print_results(const struct kappa_data * const kd);
