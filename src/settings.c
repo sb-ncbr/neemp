@@ -58,7 +58,6 @@ static struct option long_options[] = {
 	{"de-iters-max", required_argument, 0, 183},
 	{"de-time-max", required_argument, 0, 184},
 	{"de-dither", no_argument, 0, 186},
-	{"de-evolve-partially", no_argument, 0, 187},
 	{"de-fix-kappa",required_argument, 0, 188},
 	{"de-threads",required_argument, 0, 189},
 	{"de-polish", required_argument, 0, 190},
@@ -91,7 +90,6 @@ void s_init(void) {
 	s.recombination_constant = -1;
 	s.mutation_constant = -1;
 	s.dither = 0;
-	s.evolve_by_element = 0;
 	s.fixed_kappa = -1;
 	s.de_threads = 1;
 	s.limit_de_iters = NO_LIMIT_ITERS;
@@ -149,7 +147,6 @@ static void print_help(void) {
 	printf("      --de-iters-max COUNT       set the maximum number of iterations for DE (optional).\n");
 	printf("      --de-time-max HH:MM:SS     set the maximum time for DE in format hours:minutes:seconds (optional).\n");
 	printf("      --de-dither                set the mutation constant to random value from [0.5;1] for ech iteration, can improve convergence.\n");
-	printf("      --de-evolve-partially      turn on evolution driven by sort per atom type.\n");
 	printf("      --de-fix-kappa      		 set kappa to one fixed value.\n");
 	printf("      --de-threads      		 set number of threads for DE.\n");
 	printf("      --de-polish VALUE    		 apply polishing on parameters. Valid choices: 0 (off), 1 (result), 2 (during evolving), 3 (at the beginning).\n");
@@ -169,7 +166,7 @@ static void print_help(void) {
 
 	printf("neemp -m params --sdf-file molecules.sdf --chg-file charges.chg --kappa-max 1.0 --fs-precision 0.2 --sort-by RMSD --fs-only.\n\
 		Compute parameters for the given molecules in file molecules.sdf and ab-initio charges in charges.chg. Set maximum value for kappa to 1.0, step for the full scan to 0.2, no iterative refinement, sort results according to the relative mean square deviation.\n");
-	printf("neemp -m params -p de --sdf-file molecules.sdf --chg-file charges.chg --sort-by R --de-pop-size 20 --de-iters-max 500 --de-evolve-partially -vv.\n\
+	printf("neemp -m params -p de --sdf-file molecules.sdf --chg-file charges.chg --sort-by R --de-pop-size 20 --de-iters-max 500 -vv.\n\
 		Compute parameters for the given molecules in file molecules.sdf and ab-initio charges in charges.chg. The chosen optimization method: differential evolution will create population of 20 sets of parameters and evolve these in maximum of 500 iterations. The fitness function evaluating the set of parameters is Pearson coefficient. Partial great improvements in evolution are permitted at the cost of slight decrease in total R.\n");
 
 	printf("neemp -m charges --sdf-file molecules.sdf --par-file parameters --chg-out-file output.chg\n\
@@ -389,9 +386,6 @@ void parse_options(int argc, char **argv) {
 			case 186:
 					 s.dither = 1;
 					 break;
-			case 187:
-					 s.evolve_by_element = 1;
-					 break;  
 			case 188:
 					 s.fixed_kappa = (float)atof(optarg);
 					 break;

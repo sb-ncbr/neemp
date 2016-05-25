@@ -299,62 +299,12 @@ int evolve_kappa(struct kappa_data* trial, struct kappa_data* x, struct kappa_da
 
 /* Compare trial structure with so far best structure and save the better */
 int compare_and_set(struct kappa_data* trial, struct kappa_data* so_far_best) {
-	/* If we consider only total statistics */
-	if (s.evolve_by_element == 0) {
-		if (kd_sort_by_is_better(trial, so_far_best)) {
-			kd_copy_parameters(trial, so_far_best);
-			return 1;
-		}
-		else
-			return 0;
-	}
-
-	/* We consider also per atom statistics */
-	float compare_full_stats = kd_sort_by_return_value(trial) - kd_sort_by_return_value(so_far_best);
-	int trial_is_better = compare_full_stats > 0;
-	compare_full_stats = fabsf(compare_full_stats);
-	float compare_kappas = fabsf(trial->kappa - so_far_best->kappa);
-	float kappas_threshold = 0.05;
-	float full_stats_threshold = 0.01;
-	float per_atom_threshold = 0.1;
-	//if full_stats are much different, we change or not change according to them
-	if (compare_full_stats >= full_stats_threshold) {
-		if (trial_is_better) {
-			kd_copy_parameters(trial, so_far_best);
-			return 1;
-		}
-		else 
-			return 0;
-	}
-
-	//if kappas are too different, we behave according to full_stats
-	if (compare_kappas >= kappas_threshold) {
-		if (trial_is_better) {
-			kd_copy_parameters(trial, so_far_best);
-			return 1;
-		}
-		else
-			return 0;
-	}
-
-	//if we get here, we might consider change to a bit worse or keep a bit worse if per atom stats show great differences
-	int* better_per_atom = (int*) malloc(ts.atom_types_count*sizeof(int));
-	kd_sort_by_is_much_better_per_atom(better_per_atom, trial, so_far_best, per_atom_threshold);
-	//if kappa is close, trial is a bit worse in full stats, but much better in one (or more) of the elements, than allow a bit of worsening and set so_far_best to trial 
-	if (!trial_is_better && sum(better_per_atom, ts.atom_types_count)) {
-		if (s.verbosity >= VERBOSE_KAPPA)
-			printf("DE allowing a bit worse\n");
+	if (kd_sort_by_is_better(trial, so_far_best)) {
 		kd_copy_parameters(trial, so_far_best);
 		return 1;
 	}
-
-	//if trial is a bit better in full stats, but much worse in one of the elements, that prevent a bettering and keep so_far_best the same
-	if (trial_is_better && sum(better_per_atom, ts.atom_types_count) < 0) {
-		if (s.verbosity >= VERBOSE_KAPPA)
-			printf("DE preventing a bit better\n");
+	else
 		return 0;
-	}
-	return 0;
 }
 
 /* Run local minimization with NEWUOA algorithm */
