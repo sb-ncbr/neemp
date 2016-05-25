@@ -56,13 +56,19 @@ void run_diff_evolution(struct subset * const ss) {
 
 	//minimize part of population
 	int minimized_initial = 0;
-	int* good_indices = (int*) malloc((int)floor(s.population_size*0.06)*sizeof(int));
-	for (i = 0; i < s.population_size*0.06; i++)
+	int* good_indices = (int*) malloc(s.population_size*sizeof(int));
+	for (i = 0; i < s.population_size; i++)
 		good_indices[i] = -1;
 	if (s.polish > 2) {
 		if (s.verbosity >= VERBOSE_KAPPA)
 			printf("DE minimizing part of population\n");
-		minimized_initial = minimize_part_of_population(ss, 0, good_indices);
+		minimized_initial = minimize_part_of_population(ss, good_indices);
+	}
+	//if we minimized zero data or polish <= 2, use all kappa_data instead of minimized
+	if (minimized_initial == 0) {
+		for (i = 0; i < s.population_size; i++)
+			good_indices[i] = i;
+		minimized_initial = s.population_size;
 	}
 
 
@@ -113,8 +119,8 @@ void run_diff_evolution(struct subset * const ss) {
 							printf(".");
 					}
 					/* Select randomly two points from population */
-					int rand1 = good_indices[(int)(floor(get_random_float(0, (float) minimized_initial -1 )))];
-					int rand2 = good_indices[(int)(floor(get_random_float(0, (float) minimized_initial -1 )))];
+					int rand1 = good_indices[(int)(floor(get_random_float(0, (float) minimized_initial)))-1];
+					int rand2 = good_indices[(int)(floor(get_random_float(0, (float) minimized_initial)))-1];
 
 					struct kappa_data* a = &(ss->data[rand1]);
 					struct kappa_data* b = &(ss->data[rand2]);
@@ -225,48 +231,33 @@ void generate_random_population(struct subset* ss, float *bounds, int size) {
 }
 
 /* Run local minimization on part of population */
-int minimize_part_of_population(struct subset* ss, int count, int* good_indices) {
+int minimize_part_of_population(struct subset* ss, int* good_indices) {
 	int quite_good = 0;
 	int i = 0;
-	if (count == 0) {//we minimize all with R2>0.2 && R>0
+	//we minimize all with R2>0.2 && R>0
 #pragma omp parallel for num_threads(s.de_threads) shared(ss, quite_good, good_indices) private(i)
-		for (i = 0; i < ss->kappa_data_count; i++) {
-			if (ss->data[i].full_stats.R2 > 0.2 && ss->data[i].full_stats.R > 0) {
+	for (i = 0; i < ss->kappa_data_count; i++) {
+		if (ss->data[i].full_stats.R2 > 0.2 && ss->data[i].full_stats.R > 0) {
 #pragma omp critical
-				{
-					good_indices[quite_good] = i;
-					quite_good++;
-				}
-				struct kappa_data* m = (struct kappa_data*) malloc (sizeof(struct kappa_data));
-				kd_init(m);
-				m->parent_subset = ss;
-				kd_copy_parameters(&ss->data[i], m);
-				minimize_locally(m, 1000);
-				kd_copy_parameters(m, &ss->data[i]);
-				kd_destroy(m);
-				free(m);
-
+			{
+				good_indices[quite_good] = i;
+				quite_good++;
 			}
+			struct kappa_data* m = (struct kappa_data*) malloc (sizeof(struct kappa_data));
+			kd_init(m);
+			m->parent_subset = ss;
+			kd_copy_parameters(&ss->data[i], m);
+			minimize_locally(m, 1000);
+			kd_copy_parameters(m, &ss->data[i]);
+			kd_destroy(m);
+			free(m);
+
 		}
-		if (s.verbosity >= VERBOSE_KAPPA) {
-			printf("Out of %d in population, we minimized %d\n", ss->kappa_data_count, quite_good);
-		}
-		return quite_good;
 	}
-	else { //we minimize first 'count' kappa_data
-		struct kappa_data* m = (struct kappa_data*) malloc (sizeof(struct kappa_data));
-		kd_init(m);
-		m->parent_subset = ss;
-		for (i = 0; i < count; i++) {
-			int r = (int) (floor(get_random_float(0, (float)ss->kappa_data_count-1)));
-			kd_copy_parameters(&ss->data[r], m);
-			minimize_locally(m, 500);
-			kd_copy_parameters(m, &ss->data[r]);
-		}
-		kd_destroy(m);
-		free(m);
-		return count;
+	if (s.verbosity >= VERBOSE_KAPPA) {
+		printf("Out of %d in population, we minimized %d\n", ss->kappa_data_count, quite_good);
 	}
+	return quite_good;
 }
 
 /* Evolve kappa_data, i.e. create a new trial structure */
