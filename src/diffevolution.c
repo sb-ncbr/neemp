@@ -56,7 +56,7 @@ void run_diff_evolution(struct subset * const ss) {
 
 	//minimize part of population
 	int minimized_initial = 0;
-	int* good_indices = (int*) malloc(s.population_size*sizeof(int));
+	int* good_indices = (int*) calloc(s.population_size, sizeof(int));
 	for (i = 0; i < s.population_size; i++)
 		good_indices[i] = -1;
 	if (s.polish > 2) {
@@ -114,8 +114,8 @@ void run_diff_evolution(struct subset * const ss) {
 							printf(".");
 					}
 					/* Select randomly two points from population */
-					int rand1 = good_indices[(int)(floor(get_random_float(0, (float) minimized_initial)))-1];
-					int rand2 = good_indices[(int)(floor(get_random_float(0, (float) minimized_initial)))-1];
+					int rand1 = good_indices[(int)(floor(get_random_float(0, (float) minimized_initial)))];
+					int rand2 = good_indices[(int)(floor(get_random_float(0, (float) minimized_initial)))];
 
 					struct kappa_data* a = &(ss->data[rand1]);
 					struct kappa_data* b = &(ss->data[rand2]);
@@ -160,10 +160,11 @@ void run_diff_evolution(struct subset * const ss) {
 					minimize_locally(min_trial, 500);
 					calculate_charges(de_ss, min_trial);
 					calculate_statistics(de_ss, min_trial);
+					int cond = 0;
 					/* If better, swap for so_far_best */
 #pragma omp critical
-					{
-						if (kd_sort_by_is_better(min_trial, trial) && compare_and_set(min_trial, so_far_best)) {
+					cond = (kd_sort_by_is_better(min_trial, trial) && compare_and_set(min_trial, so_far_best));
+					if (cond) {
 							calculate_charges(ss, so_far_best);
 							calculate_statistics(ss, so_far_best);
 							if(s.verbosity >= VERBOSE_KAPPA) {
@@ -171,7 +172,6 @@ void run_diff_evolution(struct subset * const ss) {
 								kd_print_results(so_far_best);
 							}
 						}
-					}
 					kd_destroy(min_trial);
 					free(min_trial);
 				}
@@ -194,6 +194,8 @@ void run_diff_evolution(struct subset * const ss) {
 	if (s.verbosity >= VERBOSE_KAPPA) {
 		printf("Out of %d iterations, we minimized %d trials.\n", s.limit_de_iters, minimized);
 	}
+	kd_destroy(so_far_best);
+	free(so_far_best);
 }
 
 /* Generate random population by Latin HyperCube Sampling */
@@ -222,6 +224,7 @@ void generate_random_population(struct subset* ss, float *bounds, int size) {
 		else
 			ss->data[i].kappa = s.fixed_kappa;
 	}
+	free(random_lhs);
 
 }
 
@@ -321,6 +324,8 @@ void minimize_locally(struct kappa_data* t, int max_calls) {
 	//call fortran code NEWUOA for local minimization
 	newuoa_(&n, &npt, x, &rhobeg, &rhoend, &iprint, &maxfun, w);
 	double_array_to_kappa_data(x, t);
+	free(w);
+	free(x);
 }
 
 /* Used by NEWUOA algorithm. Evaluates the vector in the local minimization: converts it to kappa_data, computes charges, computes statistics and return the fitness score that should be minimized */
