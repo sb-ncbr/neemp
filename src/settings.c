@@ -61,6 +61,10 @@ static struct option long_options[] = {
 	{"de-fix-kappa",required_argument, 0, 188},
 	{"de-threads",required_argument, 0, 189},
 	{"de-polish", required_argument, 0, 190},
+	{"gm-size", required_argument, 0, 191},
+	{"gm-iterations-beg", required_argument, 0, 192},
+	{"gm-iterations-end", required_argument, 0, 193},
+	{"gm-threads", required_argument, 0, 194},
 	{NULL, 0, 0, 0}
 };
 
@@ -95,6 +99,10 @@ void s_init(void) {
 	s.limit_de_iters = NO_LIMIT_ITERS;
 	s.limit_de_time = NO_LIMIT_TIME;
 	s.polish = 0; //0 off, 1 only result, 2 result + during evolve, 3 result, evolve and some structures in initial population
+	s.gm_size = 100;
+	s.gm_iterations_beg = 1000;
+	s.gm_iterations_end = 2000;
+	s.gm_threads = 1;
 	s.sort_by = SORT_R2;
 	s.at_customization = AT_CUSTOM_ELEMENT_BOND;
 	s.discard = DISCARD_OFF;
@@ -128,7 +136,7 @@ static void print_help(void) {
 	printf("      --version			 display version information and exit\n");
 	printf("      --max-threads N		 use up to N threads to solve EEM system in parallel\n");
 	printf("  -m, --mode MODE		 set mode for the NEEMP. Valid choices are: info, params, charges, cross, cover (required)\n");
-	printf("  -p, --params-method METHOD set optimization method used for calculation of parameters. Valid choices are: lr-full, lr-full-brent, de (optional)\n");
+	printf("  -p, --params-method METHOD set optimization method used for calculation of parameters. Valid choices are: lr-full, lr-full-brent, de, gm (optional)\n");
 	printf("      --sdf-file FILE		 SDF file (required)\n");
 	printf("      --atom-types-by METHOD	 classify atoms according to the METHOD. Valid choices are: Element, ElemBond.\n");
 	printf("      --list-omitted-molecules	 list names of molecules for which we don't have charges or parameters loaded (mode dependent).\n");
@@ -150,6 +158,10 @@ static void print_help(void) {
 	printf("      --de-dither                set the mutation constant to random value from [0.5;1] for ech iteration (optional).\n");
 	printf("      --de-polish VALUE    		 apply polishing on parameters. Valid choices: 0 (off), 1 (result), 2 (during evolving), 3 (at the beginning). Strongly recommend to keep the default value.\n");
 	printf("      --de-fix-kappa      		 set kappa to one fixed value (optional).\n");
+	printf("      --gm-size		      		 set number of randomly generated vectors of parameters, those with reasonable stats will be minimized (optional).\n");
+	printf("      --gm-iterations-beg  		 set number of minimization iterations for each reasonable vector of parameters (optional).\n");
+	printf("      --gm-iterations-end  		 set number of minimization itertions for the best to polish the final result (optional).\n");
+	printf("      --gm-threads  			 set number of threads used for parallel minimization (optional).\n");
 	printf("Other options:\n");
 	printf("      --par-out-file FILE        output the parameters to the FILE\n");
 	printf("  -d, --discard METHOD           perform discarding with METHOD. Valid choices are: iterative, simple and off. Default is off.\n");
@@ -167,8 +179,8 @@ static void print_help(void) {
 
 	printf("neemp -m params --sdf-file molecules.sdf --chg-file charges.chg --kappa-max 1.0 --fs-precision 0.2 --sort-by RMSD --fs-only.\n\
 		Compute parameters for the given molecules in file molecules.sdf and ab-initio charges in charges.chg. Set maximum value for kappa to 1.0, step for the full scan to 0.2, no iterative refinement, sort results according to the relative mean square deviation.\n");
-	printf("neemp -m params -p de --sdf-file molecules.sdf --chg-file charges.chg --sort-by RMSD_avg --de-pop-size 250 --de-iters-max 500 -vv.\n\
-		Compute parameters for the given molecules in file molecules.sdf and ab-initio charges in charges.chg. The chosen optimization method: differential evolution will create population of 250 sets of parameters and evolve these in maximum of 500 iterations. The fitness function evaluating the set of parameters is average per atom RMSD.\n");
+	printf("neemp -m params -p gm --sdf-file molecules.sdf --chg-file charges.chg --sort-by RMSD_avg --gm-size 250 -gm-iterations-beg 1000 -gm-iterations-end 500 --random-seed 1234 -vv.\n\
+		Compute parameters for the given molecules in file molecules.sdf and ab-initio charges in charges.chg. The chosen optimization method: guided minimization will create 250 vectors (each vector consists of all parameters) and minimized reasonably good ones for 1000 iterations. The best of them will be minimized again, for 500 iterations.\n");
 
 	printf("neemp -m charges --sdf-file molecules.sdf --par-file parameters --chg-out-file output.chg\n\
 		Calculate and store EEM charges to the file output.chg\n");
@@ -209,6 +221,8 @@ void parse_options(int argc, char **argv) {
 					s.params_method = PARAMS_LR_FULL_BRENT;
 				else if (!strcmp(optarg, "de"))
 					s.params_method = PARAMS_DE;
+				else if (!strcmp(optarg, "gm"))
+					s.params_method = PARAMS_GM;
 				else 
 					EXIT_ERROR(ARG_ERROR, "Invalid params-method: %s\n", optarg);
 				break;
@@ -397,6 +411,19 @@ void parse_options(int argc, char **argv) {
 			case 190:
 					  s.polish = atoi(optarg);
 					  break;
+			//GM settings
+			case 191:
+					  s.gm_size = atoi(optarg);
+					  break;
+			case 192:
+					  s.gm_iterations_beg = atoi(optarg);
+					  break;
+			case 193:
+					  s.gm_iterations_end = atoi(optarg);
+					  break;
+			case 194:
+					  s.gm_threads = atoi(optarg);
+					  break;
 			case '?':
 				EXIT_ERROR(ARG_ERROR, "%s", "Try -h/--help.\n");
 			default:
@@ -463,6 +490,15 @@ void check_settings(void) {
 			if (s.polish == 0)
 				s.polish = 3;
 
+		}
+
+		if (s.params_method == PARAMS_GM) { //all settings are optional, so check for mistakes
+			if (s.gm_size < 1)
+				EXIT_ERROR(ARG_ERROR, "%s", "Size of GM set has to be positive.\n");
+			if (s.gm_iterations_beg < 1 || s.gm_iterations_end < 1)
+				EXIT_ERROR(ARG_ERROR, "%s", "Number of minimization iterations for GM has to be positive.\n");
+			if (s.gm_threads < 1 || s.gm_threads > s.max_threads)
+				EXIT_ERROR(ARG_ERROR, "%s", "Number of threads for minimization must be between 1 and maximum number of threads.\n");
 		}
 
 		if (s.random_seed == -1)
@@ -683,6 +719,15 @@ void print_settings(void) {
 			if (s.fixed_kappa > 0)
 				printf("\t - kappa fixed on value %5.3lf\n", s.fixed_kappa);
 
+
+		}
+
+		if (s.params_method == PARAMS_GM) {
+			printf("\nGuided minimization settings:\n");
+			printf("\t - set size %d\n", s.gm_size);
+			printf("\t - iterations for set at the beginning %d\n", s.gm_iterations_beg);
+			printf("\t - iterations for the result at the end %d\n", s.gm_iterations_end);
+			printf("\t - threads used for minimization %d\n", s.gm_threads);
 
 		}
 	}

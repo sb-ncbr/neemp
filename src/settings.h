@@ -27,6 +27,7 @@ enum params_calc_method {
 	PARAMS_LR_FULL,
 	PARAMS_LR_FULL_BRENT,
 	PARAMS_DE,
+	PARAMS_GM, //guided minimization
 	PARAMS_NOT_SET
 };
 
@@ -94,6 +95,12 @@ struct settings {
 	int limit_de_iters;
 	time_t limit_de_time;
 	int polish; //use NEWUOA minimization to polish trial or results
+
+	//settings regarding PARAMS_GM optimization method
+	int gm_size;
+	int gm_iterations_beg;
+	int gm_iterations_end;
+	int gm_threads;
 
 	//other settings
 	int random_seed;

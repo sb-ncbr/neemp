@@ -20,6 +20,7 @@
 #include "statistics.h"
 #include "structures.h"
 #include "diffevolution.h"
+#include "guidedmin.h"
 
 extern const struct training_set ts;
 extern const struct settings s;
@@ -229,6 +230,11 @@ void find_the_best_parameters_for_subset(struct subset * const ss) {
 			//runs a differential evolution algorithm to find the best parameters, ss->best is set after the call
 			run_diff_evolution(ss);
 		}
+		if (s.params_method == PARAMS_GM) {
+			//runs a guided minimization algorithm, ss->best is set after the call
+			run_guided_min(ss);
+		}
+
 		/* Determine the best parameters for computed data */
 
 		if(s.params_method == PARAMS_LR_FULL) {
@@ -238,7 +244,7 @@ void find_the_best_parameters_for_subset(struct subset * const ss) {
 			/* If Brent is used, the maximum is stored in the last item */
 			ss->best = &ss->data[ss->kappa_data_count - 1];
 		}
-		else if (s.params_method == PARAMS_DE) {
+		else if (s.params_method == PARAMS_DE || s.params_method == PARAMS_GM) {
 			//well, nothing, the best structure has been already set
 		}
 
