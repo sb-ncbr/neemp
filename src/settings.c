@@ -98,7 +98,7 @@ void s_init(void) {
 	s.de_threads = 1;
 	s.limit_de_iters = NO_LIMIT_ITERS;
 	s.limit_de_time = NO_LIMIT_TIME;
-	s.polish = 0; //0 off, 1 only result, 2 result + during evolve, 3 result, evolve and some structures in initial population
+	s.polish = -1; //0 off, 1 only result, 2 result + during evolve, 3 result, evolve and some structures in initial population
 	s.gm_size = 100;
 	s.gm_iterations_beg = 1000;
 	s.gm_iterations_end = 2000;
@@ -487,7 +487,7 @@ void check_settings(void) {
 				s.mutation_constant = 0.75;
 			if (s.recombination_constant < 0)
 				s.recombination_constant = 0.7;
-			if (s.polish == 0)
+			if (s.polish == -1)
 				s.polish = 3;
 
 		}
