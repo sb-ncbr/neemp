@@ -27,7 +27,7 @@ enum params_calc_method {
 	PARAMS_LR_FULL,
 	PARAMS_LR_FULL_BRENT,
 	PARAMS_DE,
-	PARAMS_GM, //guided minimization
+	PARAMS_GM,
 	PARAMS_NOT_SET
 };
 
@@ -80,29 +80,29 @@ struct settings {
 	enum atom_type_customization at_customization;
 	enum discarding_mode discard;
 
-	//settings regarding PARAMS_LR_FULL* parameters' calculation method
+	/* Settings regarding PARAMS_LR_FULL* parameters' calculation method */
 	float kappa_max;
 	float kappa_set;
 	float full_scan_precision;
 
-	//settings regarding PARAMS_DE optimization method
+	/* Settings regarding PARAMS_DE optimization method */
 	int population_size;
 	float mutation_constant;
-	int dither; //set mutation constant to random value from [0.5, 1] each iteration
+	int dither; /* Set mutation constant to random value from [0.5, 1] each iteration */
 	float recombination_constant;
-	float fixed_kappa; //fix kappa to given value
-	int de_threads; //number of threads used to paralellize DE
+	float fixed_kappa; /* Fix kappa to given value */
+	int de_threads; /* Number of threads used to paralellize DE */
 	int limit_de_iters;
 	time_t limit_de_time;
-	int polish; //use NEWUOA minimization to polish trial or results
+	int polish; /* Use NEWUOA minimization to polish trial or results */
 
-	//settings regarding PARAMS_GM optimization method
+	/* Settings regarding PARAMS_GM optimization method */
 	int gm_size;
 	int gm_iterations_beg;
 	int gm_iterations_end;
 	int gm_threads;
 
-	//other settings
+	/* Other settings */
 	int random_seed;
 	enum verbosity_levels verbosity;
 

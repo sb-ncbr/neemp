@@ -98,7 +98,7 @@ void s_init(void) {
 	s.de_threads = 1;
 	s.limit_de_iters = NO_LIMIT_ITERS;
 	s.limit_de_time = NO_LIMIT_TIME;
-	s.polish = -1; //0 off, 1 only result, 2 result + during evolve, 3 result, evolve and some structures in initial population
+	s.polish = -1; /* 0 off, 1 only result, 2 result + during evolve, 3 result, evolve and some structures in initial population */
 	s.gm_size = 100;
 	s.gm_iterations_beg = 1000;
 	s.gm_iterations_end = 2000;
@@ -367,7 +367,7 @@ void parse_options(int argc, char **argv) {
 			case 173:
 					 s.rw = (float) atof(optarg);
 					 break;
-			//DE settings
+			/* DE settings */
 			case 180:
 					 s.population_size = atoi(optarg);
 					 break;
@@ -411,7 +411,7 @@ void parse_options(int argc, char **argv) {
 			case 190:
 					  s.polish = atoi(optarg);
 					  break;
-			//GM settings
+			/* GM settings */
 			case 191:
 					  s.gm_size = atoi(optarg);
 					  break;
@@ -454,7 +454,7 @@ void check_settings(void) {
 	if(s.mode == MODE_PARAMS) {
 		if(s.chg_file[0] == '\0')
 			EXIT_ERROR(ARG_ERROR, "%s", "No .chg file provided.\n");
-		//if user did not specify the optimization method for parameters calculation, set linear regression 
+		/* If user did not specify the optimization method for parameters calculation, set linear regression */
 		if (s.params_method == PARAMS_NOT_SET)
 			s.params_method = PARAMS_LR_FULL;
 
@@ -478,12 +478,13 @@ void check_settings(void) {
 			}
 		}
 		
-		if (s.params_method == PARAMS_DE) {  //all settings are optional, so check for mistakes and set defaults
+		if (s.params_method == PARAMS_DE) {
+			/* All settings are optional, so check for mistakes and set defaults */
 			if (s.population_size == 0)
-				s.population_size = 500; //1.2*(ts.atom_types_count*2+1);
+				s.population_size = 500; /* 1.2 * (ts.atom_types_count * 2 + 1); */
 			if (s.limit_de_iters == NO_LIMIT_ITERS && s.limit_de_time == NO_LIMIT_TIME)
 				s.limit_de_iters = 1000;
-			if (s.mutation_constant < 0) // if not set
+			if (s.mutation_constant < 0) /* If not set */
 				s.mutation_constant = 0.75;
 			if (s.recombination_constant < 0)
 				s.recombination_constant = 0.7;
@@ -492,7 +493,8 @@ void check_settings(void) {
 
 		}
 
-		if (s.params_method == PARAMS_GM) { //all settings are optional, so check for mistakes
+		if (s.params_method == PARAMS_GM) {
+			/* All settings are optional, so check for mistakes */
 			if (s.gm_size < 1)
 				EXIT_ERROR(ARG_ERROR, "%s", "Size of GM set has to be positive.\n");
 			if (s.gm_iterations_beg < 1 || s.gm_iterations_end < 1)
@@ -512,7 +514,8 @@ void check_settings(void) {
 
 		if(s.limit_time != NO_LIMIT_TIME && s.limit_time > 36000 * 1000)
 			EXIT_ERROR(ARG_ERROR, "%s", "Maximum time should not be higher than 1000 hours.\n");
-		//TODO verify with Tomas if this is the intended behavior
+
+		/* TODO verify with Tomas if this is the intended behavior */
 		if(s.params_method == PARAMS_LR_FULL_BRENT /*!s.full_scan_only*/ && (s.sort_by != SORT_R && s.sort_by != SORT_R2 && s.sort_by != SORT_SPEARMAN && s.sort_by != SORT_RW))
 			EXIT_ERROR(ARG_ERROR, "%s", "Full scan must be used for sort-by other than R, R2 or Spearman.\n");
 
@@ -728,7 +731,6 @@ void print_settings(void) {
 			printf("\t - iterations for set at the beginning %d\n", s.gm_iterations_beg);
 			printf("\t - iterations for the result at the end %d\n", s.gm_iterations_end);
 			printf("\t - threads used for minimization %d\n", s.gm_threads);
-
 		}
 	}
 

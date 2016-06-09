@@ -227,11 +227,11 @@ void find_the_best_parameters_for_subset(struct subset * const ss) {
 		}
 
 		if (s.params_method == PARAMS_DE) {
-			//runs a differential evolution algorithm to find the best parameters, ss->best is set after the call
+			/* Runs a differential evolution algorithm to find the best parameters, ss->best is set after the call */
 			run_diff_evolution(ss);
 		}
 		if (s.params_method == PARAMS_GM) {
-			//runs a guided minimization algorithm, ss->best is set after the call
+			/* Runs a guided minimization algorithm, ss->best is set after the call */
 			run_guided_min(ss);
 		}
 
@@ -245,7 +245,7 @@ void find_the_best_parameters_for_subset(struct subset * const ss) {
 			ss->best = &ss->data[ss->kappa_data_count - 1];
 		}
 		else if (s.params_method == PARAMS_DE || s.params_method == PARAMS_GM) {
-			//well, nothing, the best structure has been already set
+			/* well, nothing, the best structure has been already set */
 		}
 
 	}
