@@ -3,8 +3,7 @@
 # 2013, 2014
 
 CC=icc
-#CFLAGS=-Wall -Wextra -std=c99 -pedantic -O3 -march=native -g -gdwarf-3 -fopenmp
-CFLAGS=-Wall -Wcheck -Wremarks -std=c99 -g -Ofast -ipo -Xhost -wd981 -openmp
+CFLAGS=-Wall -Wcheck -Wremarks -std=c99 -g -Ofast -ipo -Xhost -wd981 -qopenmp
 # -wd981 disables warning about operands evaluated in an unspecified order
 EXTRA_DEFINE=-DUSE_MKL
 
@@ -13,8 +12,7 @@ ICC_DISABLE_WARNS=-wd11021
 sources=$(wildcard *.c)
 headers=$(wildcard *.h)
 objects=$(sources:.c=.o) ../externals/newuoa/*.o ../externals/lhs/*.o
-#libraries=-mkl -lz
-libraries=-mkl -lm -lz -openmp -lifcore
+libraries=-mkl -lm -lz -qopenmp -lifcore
 binaries=neemp
 manpage=neemp.1
 

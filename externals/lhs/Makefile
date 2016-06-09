@@ -1,11 +1,11 @@
 #  please change the variables FC and FFLAGS to match your fortran compiler
 
 CC = icc
-CFLAGS=-Wall -Wcheck -Wremarks -std=c99 -g -Ofast -ipo -Xhost -wd981 -openmp
+CFLAGS=-Wall -Wcheck -Wremarks -std=c99 -g -Ofast -ipo -Xhost -wd981 -qopenmp
 ICC_DISABLE_WARNS=-wd11021
 sources=$(wildcard *.c)
 headers=$(wildcard *.h)
-objects=$(sources:.c=.o) 
+objects=$(sources:.c=.o)
 libraries=-mkl -lm -lz
 
 all: $(objects)
@@ -22,4 +22,4 @@ gnu: $(objects)
 	$(CC) $(CFLAGS) $(EXTRA_DEFINE) -c $<
 
 clean:
-	rm -f *.o 
+	rm -f *.o
