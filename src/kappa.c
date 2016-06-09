@@ -19,6 +19,8 @@
 #include "subset.h"
 #include "statistics.h"
 #include "structures.h"
+#include "diffevolution.h"
+#include "guidedmin.h"
 
 extern const struct training_set ts;
 extern const struct settings s;
@@ -208,9 +210,7 @@ void find_the_best_parameters_for_subset(struct subset * const ss) {
 	assert(ss != NULL);
 
 	if(s.kappa_set > 1e-10) {
-		ss->kappa_data_count = 1;
-		ss->data = (struct kappa_data *) malloc(1 * sizeof(struct kappa_data));
-		kd_init(&ss->data[0]);
+		fill_ss(ss, 1);
 		ss->data[0].kappa = s.kappa_set;
 
 		perform_calculations(ss, &ss->data[0]);
@@ -218,31 +218,47 @@ void find_the_best_parameters_for_subset(struct subset * const ss) {
 	}
 	else {
 		/* The last item in ss->data array is reserved for Brent whether it's used or not */
-		ss->kappa_data_count = 1 + (int) (s.kappa_max / s.full_scan_precision);
-		ss->data = (struct kappa_data *) calloc(ss->kappa_data_count, sizeof(struct kappa_data));
-		if(!ss->data)
-			EXIT_ERROR(MEM_ERROR, "%s", "Cannot allocate memory for kappa data array.\n");
+		if (s.params_method == PARAMS_LR_FULL || s.params_method == PARAMS_LR_FULL_BRENT) {
+			fill_ss(ss, 1 + (int) (s.kappa_max / s.full_scan_precision));
 
-		for(int i = 0; i < ss->kappa_data_count; i++)
-			kd_init(&ss->data[i]);
+			if(s.params_method == PARAMS_LR_FULL)
+				full_scan(ss);
+			else
+				brent(ss);
+		}
 
-		if(s.full_scan_only)
-			full_scan(ss);
-		else
-			brent(ss);
+		if (s.params_method == PARAMS_DE) {
+			/* Runs a differential evolution algorithm to find the best parameters, ss->best is set after the call */
+			run_diff_evolution(ss);
+		}
+		if (s.params_method == PARAMS_GM) {
+			/* Runs a guided minimization algorithm, ss->best is set after the call */
+			run_guided_min(ss);
+		}
 
 		/* Determine the best parameters for computed data */
-		ss->best = &ss->data[0];
 
-		if(s.full_scan_only) {
-			for(int i = 0; i < ss->kappa_data_count - 1; i++)
-				if(kd_sort_by_is_better(&ss->data[i], ss->best))
-					ss->best = &ss->data[i];
+		if(s.params_method == PARAMS_LR_FULL) {
+			set_the_best(ss);
 		}
-		else {
+		else if (s.params_method == PARAMS_LR_FULL_BRENT){
 			/* If Brent is used, the maximum is stored in the last item */
 			ss->best = &ss->data[ss->kappa_data_count - 1];
 		}
+		else if (s.params_method == PARAMS_DE || s.params_method == PARAMS_GM) {
+			/* well, nothing, the best structure has been already set */
+		}
 
 	}
+}
+
+/* Set the best parameters from subset */
+void set_the_best(struct subset * const ss) {
+
+	assert(ss != NULL);
+
+	ss->best = &ss->data[0];
+	for(int i = 0; i < ss->kappa_data_count - 1; i++)
+		if(kd_sort_by_is_better(&ss->data[i], ss->best))
+			ss->best = &ss->data[i];
 }

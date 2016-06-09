@@ -12,5 +12,6 @@
 #include "subset.h"
 
 void find_the_best_parameters_for_subset(struct subset * const ss);
+void set_the_best(struct subset * const ss);
 
 #endif /* __KAPPA_H__ */

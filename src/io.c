@@ -35,6 +35,8 @@ static char *mygets(char * const buff, unsigned int len, FILE * const f, gzFile 
 /* Use either fgets or gzgets to read line from file */
 static char *mygets(char * const buff, unsigned int len, FILE * const f, gzFile gz_f) {
 
+	assert(buff != NULL);
+
 	if(is_sdf_gzipped)
 		return gzgets(gz_f, buff, len);
 	else
@@ -324,6 +326,8 @@ void load_parameters(struct kappa_data * const kd) {
 
 /* Convert n characters of a string to int */
 static int strn2int(const char * const str, int n) {
+
+	assert(str != NULL);
 
 	char buff[n + 1];
 	memset(buff, 0x0, n + 1);

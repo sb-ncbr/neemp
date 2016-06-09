@@ -38,6 +38,8 @@ static void print_matrix_full(const float * const A, long int n);
 /* Print matrix in packed storage format */
 static void print_matrix_packed(const float * const A, long int n) {
 
+	assert(A != NULL);
+
 	#define U_IDX(x, y) (x + (y * (y + 1))/2)
 	for(long int i = 0; i < n; i++) {
 		for(long int j = 0; j < i; j++)
@@ -52,6 +54,8 @@ static void print_matrix_packed(const float * const A, long int n) {
 
 /* Print matrix in packed storage format */
 static void print_matrix_full(const float * const A, int n) {
+
+	assert(A != NULL);
 
 	#define IDX(x, y) (x * n + y)
 	for(long int i = 0; i < n; i++) {
@@ -199,8 +203,13 @@ void calculate_charges(struct subset * const ss, struct kappa_data * const kd) {
 	starts[0] = 0;
 	for(int i = 1; i < ts.molecules_count; i++)
 		starts[i] = starts[i - 1] + ts.molecules[i - 1].atoms_count;
-
-	#pragma omp parallel for num_threads(ts.molecules_count < s.max_threads ? ts.molecules_count : s.max_threads)
+	int nt = s.max_threads;
+	if (s.params_method == PARAMS_DE)
+		nt /= s.de_threads;
+	if (s.params_method == PARAMS_GM)
+		nt /= s.gm_threads;
+    int nthreads = ts.molecules_count < nt ? ts.molecules_count : nt;
+	#pragma omp parallel for num_threads(nthreads)
 	for(int i = 0; i < ts.molecules_count; i++) {
 		#define MOLECULE ts.molecules[i]
 		const long int n = MOLECULE.atoms_count;

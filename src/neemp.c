@@ -49,6 +49,7 @@ int main(int argc, char **argv) {
 	s_init();
 	parse_options(argc, argv);
 	check_settings();
+	srand(s.random_seed);
 
 	printf("%s (%s) started\n", APP_NAME, APP_VERSION);
 

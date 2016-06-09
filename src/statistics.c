@@ -30,6 +30,7 @@ static void set_total_Spearman(struct kappa_data * const kd);
 static void set_total_R(struct kappa_data * const kd);
 static void set_total_R_w(struct kappa_data *const kd);
 static void set_total_RMSD(struct kappa_data * const kd);
+static void set_total_RMSD_avg(struct kappa_data * const kd);
 static void set_total_D_avg(struct kappa_data * const kd);
 static void set_total_D_max(struct kappa_data * const kd);
 
@@ -41,6 +42,9 @@ static void set_per_at_D_max(struct kappa_data * const kd);
 
 /* Compare two floats via pointers */
 static int compare(const void *p1, const void *p2) {
+
+	assert(p1 != NULL);
+	assert(p2 != NULL);
 
 	float a = **(float **) p1;
 	float b = **(float **) p2;
@@ -56,6 +60,8 @@ static int compare(const void *p1, const void *p2) {
 
 /* Set ranks for Spearman correlation coeff */
 static void adjust_ranks_via_pointers(float **array, int n) {
+
+	assert(array != NULL);
 
 	int latest_rank = 1;
 	int i = 0;
@@ -87,11 +93,11 @@ static void set_total_R_w(struct kappa_data * const kd) {
 			weighted_corr_sum -= kd->per_at_stats[i].RMSD;
 	}
 
-	/* Consider also total R and RMSD */
-	weighted_corr_sum += 2 * (pow(s.rw, kd->full_stats.R2)) * kd->full_stats.R2 - 2 * kd->full_stats.RMSD;
+	/* Consider total R */
+	weighted_corr_sum += 3 * (pow(s.rw, kd->full_stats.R2)) * kd->full_stats.R2 - kd->full_stats.RMSD / 3;
 
 	/* Normalize the results */
-	kd->full_stats.R_w = (float) (weighted_corr_sum / (ts.atom_types_count * s.rw + 2 * s.rw));
+	kd->full_stats.R_w = (float) (weighted_corr_sum / (ts.atom_types_count * s.rw + 3 * s.rw));
 }
 
 
@@ -272,6 +278,17 @@ static void set_total_RMSD(struct kappa_data * const kd) {
 	}
 
 	kd->full_stats.RMSD = (float) (RMSD_sum_molecules / ts.molecules_count);
+}
+
+/* Set RMSD_avg for the whole set */
+static void set_total_RMSD_avg(struct kappa_data * const kd) {
+    assert(kd!=NULL);
+
+    double RMSD_sum_atom_types = 0.0;
+    for (int i=0; i < ts.atom_types_count; i++) {
+        RMSD_sum_atom_types += kd->per_at_stats[i].RMSD;
+    }
+    kd->full_stats.RMSD_avg = (float) (RMSD_sum_atom_types / ts.atom_types_count);
 }
 
 
@@ -578,6 +595,50 @@ void calculate_statistics(struct subset * const ss, struct kappa_data * const kd
 
 	/* Computed from per atom type stats, needs to go last */
 	set_total_R_w(kd);
+	set_total_RMSD_avg(kd);
+}
+
+/* Calculate statistics according to set sort type */
+void calculate_statistics_by_sort_mode(struct kappa_data* kd) {
+
+	assert(kd != NULL);
+
+	switch (s.sort_by) {
+		case SORT_R:
+		case SORT_R2:
+			set_total_R(kd);
+			set_total_R2(kd);
+			set_per_at_R_R2(kd);
+			break;
+		case SORT_RMSD:
+		case SORT_RMSD_AVG:
+			set_total_RMSD(kd);
+			set_per_at_RMSD(kd);
+			set_total_RMSD_avg(kd);
+			break;
+		case SORT_SPEARMAN:
+			set_total_Spearman(kd);
+			set_per_at_Spearman(kd);
+			break;
+		case SORT_D_AVG:
+			set_total_D_avg(kd);
+			set_per_at_D_avg(kd);
+			break;
+		case SORT_D_MAX:
+			set_total_D_max(kd);
+			set_per_at_D_max(kd);
+			break;
+		case SORT_RW:
+			set_total_R(kd);
+			set_per_at_R_R2(kd);
+			set_total_RMSD(kd);
+			set_per_at_RMSD(kd);
+			set_total_R_w(kd);
+			break;
+		default:
+			break;
+
+	}
 }
 
 /* Check for abnormal charge differences */

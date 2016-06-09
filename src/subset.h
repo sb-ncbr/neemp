@@ -18,6 +18,7 @@ struct stats {
 	float R_w;
 	float spearman;
 	float RMSD;
+	float RMSD_avg;
 	float D_avg;
 	float D_max;
 	float cond;
@@ -40,11 +41,17 @@ struct kappa_data {
 };
 
 void kd_init(struct kappa_data * const kd);
+void kd_copy_parameters(struct kappa_data* from, struct kappa_data* to);
+void kd_copy_statistics(struct kappa_data* from, struct kappa_data* to);
 void kd_destroy(struct kappa_data * const kd);
 void kd_print_stats(const struct kappa_data * const kd);
+void kd_print_results(const struct kappa_data * const kd);
 
 float kd_sort_by_return_value(const struct kappa_data * const kd);
+float kd_sort_by_return_value_per_atom(const struct kappa_data * const kd, int i);
 int kd_sort_by_is_better(const struct kappa_data * const kd1, const struct kappa_data * const kd2);
+void kd_sort_by_is_much_better_per_atom(int* results_per_atom, const struct kappa_data * const kd1, const struct kappa_data * const kd2, float threshold);
+int kd_sort_by_is_better_per_atom(const struct kappa_data * const kd1, const struct kappa_data * const kd2, int idx);
 
 struct subset {
 
@@ -60,6 +67,7 @@ struct subset {
 };
 
 void ss_init(struct subset * const ss, const struct subset * const parent);
+void fill_ss(struct subset * const ss, int size);
 void ss_destroy(struct subset * const ss);
 void print_results(const struct subset * const ss);
 void print_parameters(const struct kappa_data * const kd);

@@ -12,6 +12,7 @@
 #include "subset.h"
 
 void calculate_statistics(struct subset * const ss, struct kappa_data * const kd);
+void calculate_statistics_by_sort_mode(struct kappa_data* kd);
 void check_charges(const struct kappa_data * const kd);
 
 #endif /* __STATISTICS_H__ */

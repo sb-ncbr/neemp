@@ -23,6 +23,14 @@ enum app_mode {
 	MODE_NOT_SET
 };
 
+enum params_calc_method {
+	PARAMS_LR_FULL,
+	PARAMS_LR_FULL_BRENT,
+	PARAMS_DE,
+	PARAMS_GM,
+	PARAMS_NOT_SET
+};
+
 enum sort_mode {
 
 	SORT_R,
@@ -30,6 +38,7 @@ enum sort_mode {
 	SORT_RW,
 	SORT_SPEARMAN,
 	SORT_RMSD,
+	SORT_RMSD_AVG,
 	SORT_D_AVG,
 	SORT_D_MAX
 };
@@ -67,15 +76,35 @@ struct settings {
 	char chg_stats_out_file[MAX_PATH_LEN];
 
 	enum app_mode mode;
+	enum params_calc_method params_method;
 	enum sort_mode sort_by;
 	enum atom_type_customization at_customization;
 	enum discarding_mode discard;
-	int full_scan_only;
 
+	/* Settings regarding PARAMS_LR_FULL* parameters' calculation method */
 	float kappa_max;
 	float kappa_set;
 	float full_scan_precision;
 
+	/* Settings regarding PARAMS_DE optimization method */
+	int population_size;
+	float mutation_constant;
+	int dither; /* Set mutation constant to random value from [0.5, 1] each iteration */
+	float recombination_constant;
+	float fixed_kappa; /* Fix kappa to given value */
+	int de_threads; /* Number of threads used to paralellize DE */
+	int limit_de_iters;
+	time_t limit_de_time;
+	int polish; /* Use NEWUOA minimization to polish trial or results */
+
+	/* Settings regarding PARAMS_GM optimization method */
+	int gm_size;
+	int gm_iterations_beg;
+	int gm_iterations_end;
+	int gm_threads;
+
+	/* Other settings */
+	int random_seed;
 	enum verbosity_levels verbosity;
 
 	float tabu_size;
