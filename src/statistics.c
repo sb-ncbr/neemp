@@ -43,6 +43,9 @@ static void set_per_at_D_max(struct kappa_data * const kd);
 /* Compare two floats via pointers */
 static int compare(const void *p1, const void *p2) {
 
+	assert(p1 != NULL);
+	assert(p2 != NULL);
+
 	float a = **(float **) p1;
 	float b = **(float **) p2;
 
@@ -57,6 +60,8 @@ static int compare(const void *p1, const void *p2) {
 
 /* Set ranks for Spearman correlation coeff */
 static void adjust_ranks_via_pointers(float **array, int n) {
+
+	assert(array != NULL);
 
 	int latest_rank = 1;
 	int i = 0;
@@ -588,7 +593,9 @@ void calculate_statistics(struct subset * const ss, struct kappa_data * const kd
 
 /* Calculate statistics according to set sort type */
 void calculate_statistics_by_sort_mode(struct kappa_data* kd) {
+
 	assert(kd != NULL);
+
 	switch (s.sort_by) {
 		case SORT_R:
 		case SORT_R2:

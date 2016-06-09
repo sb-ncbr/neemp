@@ -23,6 +23,8 @@ static inline int is_molecule_enabled(const struct subset * const ss, int mol_id
 
 static inline int is_molecule_enabled(const struct subset * const ss, int mol_idx) {
 
+	assert(ss != NULL);
+
 	return b_get(&ss->molecules, mol_idx);
 }
 

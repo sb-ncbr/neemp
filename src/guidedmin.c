@@ -31,6 +31,8 @@ extern const float affinities[];
 /* Run guided minimization algorithm to find the best set of parameters for calculation of partial charges. */ 
 void run_guided_min(struct subset * const ss) {
 
+	assert(ss != NULL);
+
 	/* Create a set of random points in vector space of kappa_data */            
 	if (s.verbosity >= VERBOSE_KAPPA)
 		printf("GM Generating %d vectors\n", s.gm_size);
@@ -89,6 +91,9 @@ void run_guided_min(struct subset * const ss) {
 
 /* Run local minimization on part of population */
 int minimize_part_of_gm_set(struct subset* ss, int min_iterations) {
+
+	assert(ss != NULL);
+
 	int quite_good = 0;
 	int i = 0;
 	//we minimize all with R2>0.2 && R>0

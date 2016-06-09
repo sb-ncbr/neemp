@@ -38,6 +38,8 @@ static void print_matrix_full(const float * const A, long int n);
 /* Print matrix in packed storage format */
 static void print_matrix_packed(const float * const A, long int n) {
 
+	assert(A != NULL);
+
 	#define U_IDX(x, y) (x + (y * (y + 1))/2)
 	for(long int i = 0; i < n; i++) {
 		for(long int j = 0; j < i; j++)
@@ -52,6 +54,8 @@ static void print_matrix_packed(const float * const A, long int n) {
 
 /* Print matrix in packed storage format */
 static void print_matrix_full(const float * const A, int n) {
+
+	assert(A != NULL);
 
 	#define IDX(x, y) (x * n + y)
 	for(long int i = 0; i < n; i++) {

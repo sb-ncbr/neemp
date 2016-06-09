@@ -558,6 +558,9 @@ void discard_invalid_molecules_or_without_charges_or_parameters(void) {
 /* Print molecular formula to the string */
 void get_sum_formula(const struct molecule * const m, char * buff, int n) {
 
+	assert(m != NULL);
+	assert(buff != NULL);
+
 	int *atoms = (int *) calloc(103, sizeof(int));
 
 	for(int i = 0; i < m->atoms_count; i++)

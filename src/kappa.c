@@ -253,9 +253,11 @@ void find_the_best_parameters_for_subset(struct subset * const ss) {
 
 /* Set the best parameters from subset */
 void set_the_best(struct subset * const ss) {
+
+	assert(ss != NULL);
+
 	ss->best = &ss->data[0];
 	for(int i = 0; i < ss->kappa_data_count - 1; i++)
 		if(kd_sort_by_is_better(&ss->data[i], ss->best))
 			ss->best = &ss->data[i];
-
 }

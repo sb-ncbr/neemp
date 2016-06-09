@@ -31,6 +31,8 @@ extern const float affinities[];
 /* Run differential evolution algorithm to find the best set of parameters for calculation of partial charges. */ 
 void run_diff_evolution(struct subset * const ss) {
 
+	assert(ss != NULL);
+
 	/* Create a set of random points in vector space of kappa_data */            
 	if (s.verbosity >= VERBOSE_KAPPA)
 		printf("DE Generating population of size %d\n", s.population_size);
@@ -200,6 +202,10 @@ void run_diff_evolution(struct subset * const ss) {
 
 /* Generate random population by Latin HyperCube Sampling */
 void generate_random_population(struct subset* ss, float *bounds, int size) {
+
+	assert(ss != NULL);
+	assert(bounds != NULL);
+
 	/* Get random numbers by Latin Hypercube Sampling */
 	int dimensions_count = ts.atom_types_count*2+1;
 	int points_count = size;
@@ -230,6 +236,10 @@ void generate_random_population(struct subset* ss, float *bounds, int size) {
 
 /* Run local minimization on part of population */
 int minimize_part_of_population(struct subset* ss, int* good_indices) {
+
+	assert(ss != NULL);
+	assert(good_indices != NULL);
+
 	int quite_good = 0;
 	int i = 0;
 	//we minimize all with R2>0.2 && R>0
@@ -260,6 +270,13 @@ int minimize_part_of_population(struct subset* ss, int* good_indices) {
 
 /* Evolve kappa_data, i.e. create a new trial structure */
 int evolve_kappa(struct kappa_data* trial, struct kappa_data* x, struct kappa_data* a, struct kappa_data *b, float *bounds, float mutation_constant, float recombination_constant) {
+
+	assert(trial != NULL);
+	assert(x != NULL);
+	assert(a != NULL);
+	assert(b != NULL);
+	assert(bounds != NULL);
+
 	int changed = 0;
 	kd_copy_parameters(x, trial);
 
@@ -302,6 +319,10 @@ int evolve_kappa(struct kappa_data* trial, struct kappa_data* x, struct kappa_da
 
 /* Compare trial structure with so far best structure and save the better */
 int compare_and_set(struct kappa_data* trial, struct kappa_data* so_far_best) {
+
+	assert(trial != NULL);
+	assert(so_far_best != NULL);
+
 	if (kd_sort_by_is_better(trial, so_far_best)) {
 		kd_copy_parameters(trial, so_far_best);
 		return 1;
@@ -312,6 +333,9 @@ int compare_and_set(struct kappa_data* trial, struct kappa_data* so_far_best) {
 
 /* Run local minimization with NEWUOA algorithm */
 void minimize_locally(struct kappa_data* t, int max_calls) {
+
+	assert(t != NULL);
+
 	int n = 2*ts.atom_types_count + 1; //number of variables
 	int npt = 2*n + 1; //number of interpolation conditions
 	double* x = (double*) malloc(n*sizeof(double));
@@ -330,6 +354,10 @@ void minimize_locally(struct kappa_data* t, int max_calls) {
 
 /* Used by NEWUOA algorithm. Evaluates the vector in the local minimization: converts it to kappa_data, computes charges, computes statistics and return the fitness score that should be minimized */
 extern void calfun_(int n, double*x, double* f) {
+
+	assert(x != NULL);
+	assert(f != NULL);
+
 	struct kappa_data* t = (struct kappa_data*) malloc (sizeof(struct kappa_data));
 	kd_init(t);
 	double_array_to_kappa_data(x, t);
@@ -352,6 +380,10 @@ extern void calfun_(int n, double*x, double* f) {
 
 /* Convert kappa_data into an array of doubles, used in local minimization */
 void kappa_data_to_double_array(struct kappa_data* t, double* x) {
+
+	assert(t != NULL);
+	assert(x != NULL);
+
 	x[0] = t->kappa;
 	for (int i = 0; i < ts.atom_types_count; i++) {
 		x[i*2 + 1] = t->parameters_alpha[i];
@@ -361,6 +393,10 @@ void kappa_data_to_double_array(struct kappa_data* t, double* x) {
 
 /* Convert array of doubles into kappa_data, used in local minimization */
 void double_array_to_kappa_data(double* x, struct kappa_data* t) {
+
+	assert(x != NULL);
+	assert(t != NULL);
+
 	t->kappa = (float)x[0];
 	for (int i = 0; i < ts.atom_types_count; i++) {
 		t->parameters_alpha[i] = (float)x[i*2 + 1];
@@ -370,6 +406,9 @@ void double_array_to_kappa_data(double* x, struct kappa_data* t) {
 
 /* Returns true if R2 is above 0.6, used in decision whether to minimize kappa_data */
 int is_quite_good(struct kappa_data* t) {
+
+	assert(t != NULL);
+
 	if (t->full_stats.R2 > 0.6 && t->full_stats.R > 0)
 		return 1;
 	return 0;
@@ -377,6 +416,9 @@ int is_quite_good(struct kappa_data* t) {
 
 /* Compute bounds for each parameter of each atom type */
 void compute_parameters_bounds(float* bounds, int by_atom_type) {
+
+	assert(bounds != NULL);
+
 	//returns bounds[kappa_low, kappa_high, alpha_1_low, alpha_1_high, beta_1_low, beta_1_high, alpha_2_low, ...]
 	float toH = 0.036749309;
 	bounds[0] = 0.0005; //kappa_low
@@ -417,6 +459,7 @@ void compute_parameters_bounds(float* bounds, int by_atom_type) {
 
 /* Get random float within the bounds */
 float get_random_float(float low, float high) {
+
 	//better random number generator would be nice, but this is sufficient
 	float n = low + (float)(rand())/((float)(RAND_MAX/(high-low)));
 	return n;
@@ -424,11 +467,13 @@ float get_random_float(float low, float high) {
 
 /* Interpolate the number from [0,1] to [low, high] */ 
 float interpolate_to_different_bounds(float x, float low, float high) {
+
 	return low + x*(high-low);
 }
 
 /* Compute the sum of the vector */
 int sum(int* vector, int size) {
+
 	int sum = 0;
 	for (int i = 0; i < size; i++)
 		sum+=vector[i];

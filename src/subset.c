@@ -22,6 +22,8 @@ extern const struct training_set ts;
 /* Initialize new subset structure from parent */
 void ss_init(struct subset * const ss, const struct subset * const parent) {
 
+	assert(ss != NULL);
+
 	b_init(&ss->molecules, ts.molecules_count);
 	ss->parent = parent;
 	if(parent) {
@@ -33,6 +35,9 @@ void ss_init(struct subset * const ss, const struct subset * const parent) {
 
 /* Initialize empty subset with kappa_data */
 void fill_ss(struct subset * const ss, int size) {
+
+	assert(ss != NULL);
+
 	ss->kappa_data_count = size;
 	ss->data = (struct kappa_data*) calloc(ss->kappa_data_count, sizeof(struct kappa_data));
 	if(!ss->data)
@@ -62,6 +67,10 @@ void kd_init(struct kappa_data * const kd) {
 
 /* Copy data from one kappa_data to another */
 void kd_copy_parameters(struct kappa_data* from, struct kappa_data* to) {
+
+	assert(from != NULL);
+	assert(to != NULL);
+
 	to->kappa = from->kappa;
 	for (int i = 0; i < ts.atom_types_count; i++) {
 		to->parameters_alpha[i] = from->parameters_alpha[i];
@@ -71,6 +80,10 @@ void kd_copy_parameters(struct kappa_data* from, struct kappa_data* to) {
 
 /* Copy statistics from one kappa_data to another */
 void kd_copy_statistics(struct kappa_data* from, struct kappa_data* to) {
+
+	assert(from != NULL);
+	assert(to != NULL);
+
 	to->full_stats.R = from->full_stats.R;
 	to->full_stats.R2 = from->full_stats.R2;
 	to->full_stats.R_w = from->full_stats.R_w;
@@ -179,6 +192,8 @@ void kd_print_results(const struct kappa_data * const kd) {
 /* Return the value which we selected for sorting */
 float kd_sort_by_return_value(const struct kappa_data * const kd) {
 
+	assert(kd != NULL);
+
 	switch(s.sort_by) {
 		case SORT_R:
 			return kd->full_stats.R;
@@ -204,6 +219,9 @@ float kd_sort_by_return_value(const struct kappa_data * const kd) {
 
 /* Return the value which we selected for sorting from per atom type stats*/
 float kd_sort_by_return_value_per_atom(const struct kappa_data * const kd, int i) {
+
+	assert(kd != NULL);
+
 	switch (s.sort_by) {
 		case SORT_R:
 			return kd->per_at_stats[i].R;
@@ -227,6 +245,9 @@ float kd_sort_by_return_value_per_atom(const struct kappa_data * const kd, int i
 /* Determine if kd1 is better than kd2 in terms of the sort-by value */
 int kd_sort_by_is_better(const struct kappa_data * const kd1, const struct kappa_data * const kd2) {
 
+	assert(kd1 != NULL);
+	assert(kd2 != NULL);
+
 	/* Higher correlation is better, otherwise prefer lower value */
 	if(s.sort_by == SORT_R || s.sort_by == SORT_R2 || s.sort_by == SORT_RW || s.sort_by == SORT_SPEARMAN)
 		return kd_sort_by_return_value(kd1) > kd_sort_by_return_value(kd2);
@@ -236,6 +257,10 @@ int kd_sort_by_is_better(const struct kappa_data * const kd1, const struct kappa
 
 /* Determine if kd1 is much better or much worse in some element than kd2 in terms of the sort-by value per atom */
 void kd_sort_by_is_much_better_per_atom(int* results_per_atom, const struct kappa_data * const kd1, const struct kappa_data * const kd2, float threshold) {
+
+	assert(kd1 != NULL);
+	assert(kd2 != NULL);
+
 	for (int i = 0; i < ts.atom_types_count; i++) {
 		if (kd_sort_by_return_value_per_atom(kd1, i)-kd_sort_by_return_value_per_atom(kd2, i) >= threshold)
 			results_per_atom[i] = 1;
@@ -249,6 +274,9 @@ void kd_sort_by_is_much_better_per_atom(int* results_per_atom, const struct kapp
 /* Determine if kd1 is better in some element than kd2 in terms of the sort-by value per atom */
 int kd_sort_by_is_better_per_atom(const struct kappa_data * const kd1, const struct kappa_data * const kd2, int idx) {
 
+	assert(kd1 != NULL);
+	assert(kd2 != NULL);
+
 	/* Higher correlation is better, otherwise prefer lower value */
 	if(s.sort_by == SORT_R || s.sort_by == SORT_R2 || s.sort_by == SORT_RW || s.sort_by == SORT_SPEARMAN)
 		return kd_sort_by_return_value_per_atom(kd1, idx) > kd_sort_by_return_value_per_atom(kd2, idx);
@@ -259,6 +287,8 @@ int kd_sort_by_is_better_per_atom(const struct kappa_data * const kd1, const str
 
 /* Print all the statistics for the particular kappa data */
 void kd_print_stats(const struct kappa_data * const kd) {
+
+	assert(kd != NULL);
 
 	/* Allocate buffer large enough to hold the entire message */
 	char message[200];

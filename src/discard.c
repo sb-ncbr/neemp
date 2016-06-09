@@ -6,6 +6,7 @@
  *
  * */
 
+#include <assert.h>
 #include <stdio.h>
 #include <stdlib.h>
 
@@ -24,6 +25,8 @@ extern int termination_flag;
 
 /* Perform iterative discarding by traversing the state space */
 struct subset *discard_iterative(const struct subset * const initial) {
+
+	assert(initial != NULL);
 
 	struct subset *current, *old;
 
@@ -93,6 +96,8 @@ struct subset *discard_iterative(const struct subset * const initial) {
 
 /* Perform simple discard in the way that EMP does */
 struct subset *discard_simple(const struct subset * const initial) {
+
+	assert(initial != NULL);
 
 	struct subset *best = (struct subset *) initial;
 	struct subset *current;
