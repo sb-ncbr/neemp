@@ -493,7 +493,7 @@ void check_settings(void) {
 			if (s.recombination_constant < 0)
 				s.recombination_constant = 0.7;
 			if (s.polish == -1)
-				s.polish = 3;
+				s.polish = 1;
 
 		}
 

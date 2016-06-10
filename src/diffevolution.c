@@ -195,7 +195,7 @@ void run_diff_evolution(struct subset * const ss) {
 
 	/* Minimize the result */
 	if (s.polish > 0)
-		minimize_locally(so_far_best, 2000);
+		minimize_locally(so_far_best, 500);
 
 	/* Tidying up and printing */
 	kd_destroy(trial);
