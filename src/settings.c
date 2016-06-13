@@ -51,7 +51,6 @@ static struct option long_options[] = {
 	{"check-charges", no_argument, 0, 170},
 	{"max-threads", required_argument, 0, 171},
 	{"list-omitted-molecules", no_argument, 0, 172},
-	{"rw", required_argument, 0, 173},
 	{"de-pop-size", required_argument, 0, 180},
 	{"de-f", required_argument, 0, 181},
 	{"de-cr", required_argument, 0, 182},
@@ -113,7 +112,6 @@ void s_init(void) {
 	s.check_charges = 0;
 	s.max_threads = 1;
 	s.list_omitted_molecules = 0;
-	s.rw = 0.5f;
 }
 
 /* Prints help if --version is issued */
@@ -368,9 +366,6 @@ void parse_options(int argc, char **argv) {
 			case 172:
 					 s.list_omitted_molecules = 1;
 					 break;
-			case 173:
-					 s.rw = (float) atof(optarg);
-					 break;
 			/* DE settings */
 			case 180:
 					 s.population_size = atoi(optarg);
@@ -530,9 +525,6 @@ void check_settings(void) {
 		if(s.par_file[0] == '\0')
 			EXIT_ERROR(ARG_ERROR, "%s", "No .par file provided. Use option '--par-file'.\n");
 	}
-
-	if(s.rw < 1.0f / 2.718281828f || s.rw >= 1.0f)
-		EXIT_ERROR(ARG_ERROR, "%s", "--rw argument has to be in range [1/e; 1)\n");
 
 	if(s.at_customization == AT_CUSTOM_USER && s.atb_file[0] == '\0')
 		EXIT_ERROR(ARG_ERROR, "%s", "File with user defined types (option '--atb-file') must be provided when runned with '--atom-types-by User'\n");

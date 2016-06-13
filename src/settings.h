@@ -116,8 +116,6 @@ struct settings {
 	int list_omitted_molecules;
 
 	int max_threads;
-
-	float rw;
 };
 
 void s_init(void);

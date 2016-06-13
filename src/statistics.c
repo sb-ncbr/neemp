@@ -88,16 +88,16 @@ static void set_total_R_w(struct kappa_data * const kd) {
 	double weighted_corr_sum = 0.0;
 
 	for(int i = 0; i < ts.atom_types_count; i++) {
-			double weight = pow(s.rw, kd->per_at_stats[i].R);
+			double weight = pow(0.5, kd->per_at_stats[i].R);
 			weighted_corr_sum += weight * kd->per_at_stats[i].R;
 			weighted_corr_sum -= kd->per_at_stats[i].RMSD;
 	}
 
 	/* Consider total R */
-	weighted_corr_sum += 3 * (pow(s.rw, kd->full_stats.R2)) * kd->full_stats.R2 - kd->full_stats.RMSD / 3;
+	weighted_corr_sum += 3 * (pow(0.5, kd->full_stats.R2)) * kd->full_stats.R2 - kd->full_stats.RMSD / 3;
 
 	/* Normalize the results */
-	kd->full_stats.R_w = (float) (weighted_corr_sum / (ts.atom_types_count * s.rw + 3 * s.rw));
+	kd->full_stats.R_w = (float) (weighted_corr_sum / (ts.atom_types_count * 0.5 + 3 * 0.5));
 }
 
 
