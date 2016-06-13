@@ -27,6 +27,8 @@
 
 #define EXIT_ERROR(ERROR_CODE, fmt, ...) do { \
 fprintf(stderr, "Error: " fmt, __VA_ARGS__);  \
+if(ERROR_CODE == ARG_ERROR)\
+fprintf(stderr, "Run 'neemp --help' to get a list of options.\n");\
 exit(ERROR_CODE);                             \
 } while(0)
 

@@ -89,8 +89,8 @@ void s_init(void) {
 	s.mode = MODE_NOT_SET;
 	s.params_method = PARAMS_NOT_SET;
 	s.full_scan_precision = 0.0f;
-	s.kappa_max = 0.0f;
-	s.full_scan_precision = 0.0f;
+	s.kappa_max = 1.0f;
+	s.full_scan_precision = 0.05f;
 	s.population_size = 0;
 	s.recombination_constant = -1;
 	s.mutation_constant = -1;
@@ -178,7 +178,7 @@ static void print_help(void) {
 	printf("neemp -m info --sdf-file molecules.sdf --atom-types-by Element\n\
 		Display information about the training set in the file molecules.sdf. Group atoms according to the elements only.\n");
 
-	printf("neemp -m params --sdf-file molecules.sdf --chg-file charges.chg --kappa-max 1.0 --fs-precision 0.2 --sort-by RMSD --fs-only.\n\
+	printf("neemp -m params --sdf-file molecules.sdf --chg-file charges.chg --kappa-max 1.0 --fs-precision 0.2 --sort-by RMSD.\n\
 		Compute parameters for the given molecules in file molecules.sdf and ab-initio charges in charges.chg. Set maximum value for kappa to 1.0, step for the full scan to 0.2, no iterative refinement, sort results according to the relative mean square deviation.\n");
 	printf("neemp -m params -p gm --sdf-file molecules.sdf --chg-file charges.chg --sort-by RMSD_avg --gm-size 250 -gm-iterations-beg 1000 -gm-iterations-end 500 --random-seed 1234 -vv.\n\
 		Compute parameters for the given molecules in file molecules.sdf and ab-initio charges in charges.chg. The chosen optimization method: guided minimization will create 250 vectors (each vector consists of all parameters) and minimized reasonably good ones for 1000 iterations. The best of them will be minimized again, for 500 iterations.\n");
@@ -441,10 +441,10 @@ void parse_options(int argc, char **argv) {
 void check_settings(void) {
 
 	if(s.mode == MODE_NOT_SET)
-		EXIT_ERROR(ARG_ERROR, "%s", "No mode set.\n");
+		EXIT_ERROR(ARG_ERROR, "%s", "No mode set. Use '-m MODE', where MODE = info, params, cross, charges, cover.\n");
 
 	if(s.sdf_file[0] == '\0')
-		EXIT_ERROR(ARG_ERROR, "%s", "No .sdf file provided.\n");
+		EXIT_ERROR(ARG_ERROR, "%s", "No .sdf file provided. Use '--sdf-file FILE'.\n");
 
 	if(s.max_threads < 1)
 		EXIT_ERROR(ARG_ERROR, "%s", "Maximum number of threads has to be at least 1 (default).\n");
@@ -457,29 +457,20 @@ void check_settings(void) {
 
 	if(s.mode == MODE_PARAMS) {
 		if(s.chg_file[0] == '\0')
-			EXIT_ERROR(ARG_ERROR, "%s", "No .chg file provided.\n");
+			EXIT_ERROR(ARG_ERROR, "%s", "No .chg file provided. Use '--chg-file FILE'.\n");
 		/* If user did not specify the optimization method for parameters calculation, set linear regression */
 		if (s.params_method == PARAMS_NOT_SET)
 			s.params_method = PARAMS_LR_FULL;
 
 		if (s.params_method == PARAMS_LR_FULL || s.params_method == PARAMS_LR_FULL_BRENT) {
-			if(s.kappa_set < 1e-10) {
-				if(s.full_scan_precision < 1e-10)
-					EXIT_ERROR(ARG_ERROR, "%s", "Full scan precision must be set correctly in params mode.\n");
+			if(s.full_scan_precision < 0)
+				EXIT_ERROR(ARG_ERROR, "%s", "Full scan precision must greater than zero.\n");
 
-				if(s.kappa_max < 1e-10)
-					EXIT_ERROR(ARG_ERROR, "%s", "Maximum for kappa must be set correctly in params mode.\n");
+			if(s.kappa_max < 0)
+				EXIT_ERROR(ARG_ERROR, "%s", "Maximum for kappa must be greater than zero.\n");
 
-				if(s.full_scan_precision > s.kappa_max)
-					EXIT_ERROR(ARG_ERROR, "%s", "Full scan precision must be less than kappa max.\n");
-			}
-			else {
-				if(s.full_scan_precision > 1e-10 || s.kappa_max > 1e-10)
-					EXIT_ERROR(ARG_ERROR, "%s", "Cannot set full scan precision and/or kappa max if --kappa is used.\n");
-
-				if(s.params_method == PARAMS_LR_FULL)
-					EXIT_ERROR(ARG_ERROR, "%s", "Cannot use full scan if single kappa is selected.\n");
-			}
+			if(s.full_scan_precision > s.kappa_max)
+				EXIT_ERROR(ARG_ERROR, "%s", "Full scan precision must be less than kappa max.\n");
 		}
 		
 		if (s.params_method == PARAMS_DE) {
@@ -525,26 +516,26 @@ void check_settings(void) {
 
 	} else if(s.mode == MODE_CHARGES) {
 		if(s.par_file[0] == '\0')
-			EXIT_ERROR(ARG_ERROR, "%s", "No .par file provided.\n");
+			EXIT_ERROR(ARG_ERROR, "%s", "No .par file provided. Use option '--par-file'.\n");
 
 		if(s.chg_out_file[0] == '\0')
-			EXIT_ERROR(ARG_ERROR, "%s", "No .chg output file provided.\n");
+			EXIT_ERROR(ARG_ERROR, "%s", "No .chg output file provided. Use option '--chg-out-file'.\n");
 	} else if(s.mode == MODE_CROSS) {
 		if(s.chg_file[0] == '\0')
-			EXIT_ERROR(ARG_ERROR, "%s", "No .chg file provided.\n");
+			EXIT_ERROR(ARG_ERROR, "%s", "No .chg file provided. Use option '--chg-file'.\n");
 
 		if(s.par_file[0] == '\0')
-			EXIT_ERROR(ARG_ERROR, "%s", "No .par file provided.\n");
+			EXIT_ERROR(ARG_ERROR, "%s", "No .par file provided. Use option '--par-file'.\n");
 	} else if(s.mode == MODE_COVER) {
 		if(s.par_file[0] == '\0')
-			EXIT_ERROR(ARG_ERROR, "%s", "No .par file provided.\n");
+			EXIT_ERROR(ARG_ERROR, "%s", "No .par file provided. Use option '--par-file'.\n");
 	}
 
 	if(s.rw < 1.0f / 2.718281828f || s.rw >= 1.0f)
 		EXIT_ERROR(ARG_ERROR, "%s", "--rw argument has to be in range [1/e; 1)\n");
 
 	if(s.at_customization == AT_CUSTOM_USER && s.atb_file[0] == '\0')
-		EXIT_ERROR(ARG_ERROR, "%s", "File with user defined types must be provided when runned with --atom-types-by User\n");
+		EXIT_ERROR(ARG_ERROR, "%s", "File with user defined types (option '--atb-file') must be provided when runned with '--atom-types-by User'\n");
 }
 
 void print_settings(void) {
