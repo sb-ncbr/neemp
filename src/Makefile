@@ -30,7 +30,7 @@ neemp-gnu: EXTRA_DEFINE=
 neemp-gnu: CC=gcc
 neemp-gnu: ICC_DISABLE_WARNS=
 neemp-gnu: CFLAGS=-Wall -Wextra -std=c99 -pedantic -O3 -march=native -g -gdwarf-3 -fopenmp
-neemp-gnu: libraries=-lm -lz -fopenmp -lgfortran
+neemp-gnu: libraries=-lm -lz -fopenmp -lgfortran -llapack
 neemp-gnu: $(objects) neemp
 
 neemp: $(objects)
