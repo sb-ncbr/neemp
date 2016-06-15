@@ -51,6 +51,7 @@ static struct option long_options[] = {
 	{"check-charges", no_argument, 0, 170},
 	{"max-threads", required_argument, 0, 171},
 	{"list-omitted-molecules", no_argument, 0, 172},
+	{"extra-precise", no_argument, 0, 173},
 	{"de-pop-size", required_argument, 0, 180},
 	{"de-f", required_argument, 0, 181},
 	{"de-cr", required_argument, 0, 182},
@@ -112,6 +113,7 @@ void s_init(void) {
 	s.check_charges = 0;
 	s.max_threads = 1;
 	s.list_omitted_molecules = 0;
+	s.extra_precise = 0;
 }
 
 /* Prints help if --version is issued */
@@ -365,6 +367,9 @@ void parse_options(int argc, char **argv) {
 					 break;
 			case 172:
 					 s.list_omitted_molecules = 1;
+					 break;
+			case 173:
+					 s.extra_precise = 1;
 					 break;
 			/* DE settings */
 			case 180:

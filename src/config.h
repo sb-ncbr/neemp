@@ -25,7 +25,7 @@
 #define WARN_MAX_MSE 1.0F
 #define WARN_MAX_D_AVG 0.2F
 #define WARN_MAX_D_MAX 1.0F
-#define WARN_MAX_COND 100000
+#define WARN_MAX_COND 50000
 
 #define WARN_MIN_RCOND 0.000005F
 
