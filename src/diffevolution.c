@@ -95,10 +95,15 @@ void run_diff_evolution(struct subset * const ss) {
 	calculate_charges(ss, so_far_best);
 	calculate_statistics(ss, so_far_best);
 	kd_print_results(so_far_best);
-	minimize_locally(so_far_best, 1000);
-	calculate_charges(ss, so_far_best);
-	calculate_statistics(ss, so_far_best);
-	kd_print_results(so_far_best);
+	
+	/* Minimize the best of the population once more */
+	if (s.polish > 2) {
+			minimize_locally(so_far_best, 500);
+			calculate_charges(ss, so_far_best);
+			calculate_statistics(ss, so_far_best);
+			kd_print_results(so_far_best);
+	}
+
 	float mutation_constant = s.mutation_constant;
 	int iters_with_evolution = 0;
 	int condition = 1;
