@@ -418,7 +418,10 @@ void double_array_to_kappa_data(double *x, struct kappa_data *t) {
 	assert(x != NULL);
 	assert(t != NULL);
 
-	t->kappa = (float)x[0];
+	if (s.fixed_kappa == -1)
+		t->kappa = (float)x[0];
+	else
+		t->kappa = s.fixed_kappa;
 	for (int i = 0; i < ts.atom_types_count; i++) {
 		t->parameters_alpha[i] = (float) x[i * 2 + 1];
 		t->parameters_beta[i] = (float) x[i * 2 + 2];
