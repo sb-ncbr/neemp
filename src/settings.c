@@ -52,19 +52,16 @@ static struct option long_options[] = {
 	{"max-threads", required_argument, 0, 171},
 	{"list-omitted-molecules", no_argument, 0, 172},
 	{"extra-precise", no_argument, 0, 173},
-	{"de-pop-size", required_argument, 0, 180},
+	{"om-pop-size", required_argument, 0, 180},
 	{"de-f", required_argument, 0, 181},
 	{"de-cr", required_argument, 0, 182},
-	{"de-iters-max", required_argument, 0, 183},
-	{"de-time-max", required_argument, 0, 184},
+	{"om-iters-max", required_argument, 0, 183},
 	{"de-dither", no_argument, 0, 186},
-	{"de-fix-kappa",required_argument, 0, 188},
-	{"de-threads",required_argument, 0, 189},
-	{"de-polish", required_argument, 0, 190},
-	{"gm-size", required_argument, 0, 191},
+	{"om-fix-kappa",required_argument, 0, 188},
+	{"om-threads",required_argument, 0, 189},
+	{"om-polish", required_argument, 0, 190},
 	{"gm-iterations-beg", required_argument, 0, 192},
 	{"gm-iterations-end", required_argument, 0, 193},
-	{"gm-threads", required_argument, 0, 194},
 	{NULL, 0, 0, 0}
 };
 
@@ -96,15 +93,13 @@ void s_init(void) {
 	s.mutation_constant = -1;
 	s.dither = 0;
 	s.fixed_kappa = -1;
-	s.de_threads = 1;
-	s.limit_de_iters = NO_LIMIT_ITERS;
-	s.limit_de_time = NO_LIMIT_TIME;
+	s.om_threads = 1;
+	s.om_iters = NO_LIMIT_ITERS;
+	s.om_time = NO_LIMIT_TIME;
 	s.polish = -1; /* 0 off, 1 only result, 2 result + during evolve, 3 result, evolve and some structures in initial population */
-	s.gm_size = 100;
-	s.gm_iterations_beg = 1000;
-	s.gm_iterations_end = 2000;
-	s.gm_threads = 1;
-	s.sort_by = SORT_R2;
+	s.gm_iterations_beg = 500;
+	s.gm_iterations_end = 500;
+	s.sort_by = SORT_NOT_SET;
 	s.at_customization = AT_CUSTOM_ELEMENT_BOND;
 	s.discard = DISCARD_OFF;
 	s.tabu_size = 0.0f;
@@ -149,20 +144,19 @@ static void print_help(void) {
 	printf("      --kappa VALUE              use only one kappa VALUE for parameterization\n");
 	printf("      --fs-precision VALUE       resolution for the full scan (required)\n");
 	printf("      --kappa-preset PRESET      set kappa-max and fs-precision to safe values. Valid choices are: small, protein.\n");
-	printf("Options specific to mode: params using differential evolution as calculation method\n");
-	printf("      --de-pop-size VALUE        set population size for DE (optional).\n");
-	printf("      --de-iters-max COUNT       set the maximum number of iterations for DE (optional).\n");
-	printf("      --de-time-max HH:MM:SS     set the maximum time for DE in format hours:minutes:seconds (optional).\n");
-	printf("      --de-threads      		 set number of threads for DE (optional).\n");
+	printf("Options specific to mode: params using optimization method (differential evolution, guided minimization)\n");
+	printf("      --om-pop-size VALUE        set population size for optimization method (optional).\n");
+	printf("      --om-iters COUNT  	     set the maximum number of iterations for optimization method (optional).\n");
+	printf("      --om-threads      		 set number of threads for optimization method (optional).\n");
+	printf("      --om-polish VALUE    		 apply local minimzation on parameters. Valid choices: 0 (off), 1 (result), 2 (during evolving), 3 (at the initial population). \n");
+	printf("Options specific to mode: params using differential evolution\n");
 	printf("      --de-f VALUE               set mutation constant for DE (optional).\n");
 	printf("      --de-cr VALUE              set crossover recombination constant for DE (optional).\n");
 	printf("      --de-dither                set the mutation constant to random value from [0.5;1] for ech iteration (optional).\n");
-	printf("      --de-polish VALUE    		 apply polishing on parameters. Valid choices: 0 (off), 1 (result), 2 (during evolving), 3 (at the beginning). Strongly recommend to keep the default value.\n");
 	printf("      --de-fix-kappa      		 set kappa to one fixed value (optional).\n");
-	printf("      --gm-size		      		 set number of randomly generated vectors of parameters, those with reasonable stats will be minimized (optional).\n");
+	printf("Options specific to mode: params using guided minimization\n");
 	printf("      --gm-iterations-beg  		 set number of minimization iterations for each reasonable vector of parameters (optional).\n");
 	printf("      --gm-iterations-end  		 set number of minimization itertions for the best to polish the final result (optional).\n");
-	printf("      --gm-threads  			 set number of threads used for parallel minimization (optional).\n");
 	printf("Other options:\n");
 	printf("      --par-out-file FILE        output the parameters to the FILE\n");
 	printf("  -d, --discard METHOD           perform discarding with METHOD. Valid choices are: iterative, simple and off. Default is off.\n");
@@ -180,7 +174,7 @@ static void print_help(void) {
 
 	printf("neemp -m params --sdf-file molecules.sdf --chg-file charges.chg --kappa-max 1.0 --fs-precision 0.2 --sort-by RMSD.\n\
 		Compute parameters for the given molecules in file molecules.sdf and ab-initio charges in charges.chg. Set maximum value for kappa to 1.0, step for the full scan to 0.2, no iterative refinement, sort results according to the relative mean square deviation.\n");
-	printf("neemp -m params -p gm --sdf-file molecules.sdf --chg-file charges.chg --sort-by RMSD_avg --gm-size 250 -gm-iterations-beg 1000 -gm-iterations-end 500 --random-seed 1234 -vv.\n\
+	printf("neemp -m params -p gm --sdf-file molecules.sdf --chg-file charges.chg --om-pop-size 50 -gm-iterations-beg 1000 -gm-iterations-end 500 --random-seed 1234 -vv.\n\
 		Compute parameters for the given molecules in file molecules.sdf and ab-initio charges in charges.chg. The chosen optimization method: guided minimization will create 250 vectors (each vector consists of all parameters) and minimized reasonably good ones for 1000 iterations. The best of them will be minimized again, for 500 iterations.\n");
 
 	printf("neemp -m charges --sdf-file molecules.sdf --par-file parameters --chg-out-file output.chg\n\
@@ -382,7 +376,7 @@ void parse_options(int argc, char **argv) {
 					 s.recombination_constant = (float) atof(optarg);
 					 break;
 			case 183:
-					 s.limit_de_iters = atoi(optarg);
+					 s.om_iters = atoi(optarg);
 					 break;
 			case 184: {
 						 char *part;
@@ -400,7 +394,7 @@ void parse_options(int argc, char **argv) {
 						 if(part != NULL)
 							 secs = atoi(part);
 
-						 s.limit_de_time = 3600 * hours + 60 * mins + secs;
+						 s.om_time = 3600 * hours + 60 * mins + secs;
 						 break;
 					 }
 			case 186:
@@ -410,23 +404,17 @@ void parse_options(int argc, char **argv) {
 					 s.fixed_kappa = (float)atof(optarg);
 					 break;
 			case 189:
-					 s.de_threads = atoi(optarg);
+					 s.om_threads = atoi(optarg);
 					 break;
 			case 190:
 					  s.polish = atoi(optarg);
 					  break;
 			/* GM settings */
-			case 191:
-					  s.gm_size = atoi(optarg);
-					  break;
 			case 192:
 					  s.gm_iterations_beg = atoi(optarg);
 					  break;
 			case 193:
 					  s.gm_iterations_end = atoi(optarg);
-					  break;
-			case 194:
-					  s.gm_threads = atoi(optarg);
 					  break;
 			case '?':
 				EXIT_ERROR(ARG_ERROR, "%s", "Try -h/--help.\n");
@@ -449,11 +437,11 @@ void check_settings(void) {
 	if(s.max_threads < 1)
 		EXIT_ERROR(ARG_ERROR, "%s", "Maximum number of threads has to be at least 1 (default).\n");
 
-	if(s.de_threads < 1)
-		EXIT_ERROR(ARG_ERROR, "%s", "Maximum number of DE threads has to be at least 1 (default).\n");
+	if(s.om_threads < 1)
+		EXIT_ERROR(ARG_ERROR, "%s", "Maximum number of OM threads has to be at least 1 (default).\n");
 
-	if(s.max_threads < s.de_threads)
-		EXIT_ERROR(ARG_ERROR, "%s", "Maximum number of DE threads has to be smaller than maximum number of threads.\n");
+	if(s.max_threads < s.om_threads)
+		EXIT_ERROR(ARG_ERROR, "%s", "Maximum number of OM threads has to be smaller than maximum number of threads.\n");
 
 	if(s.mode == MODE_PARAMS) {
 		if(s.chg_file[0] == '\0')
@@ -475,27 +463,28 @@ void check_settings(void) {
 		
 		if (s.params_method == PARAMS_DE) {
 			/* All settings are optional, so check for mistakes and set defaults */
-			if (s.population_size == 0)
-				s.population_size = 500; /* 1.2 * (ts.atom_types_count * 2 + 1); */
-			if (s.limit_de_iters == NO_LIMIT_ITERS && s.limit_de_time == NO_LIMIT_TIME)
-				s.limit_de_iters = 1000;
+			if (s.population_size <1)
+				s.population_size = 100; /* 1.2 * (ts.atom_types_count * 2 + 1); */
+			if (s.om_iters == NO_LIMIT_ITERS && s.om_time == NO_LIMIT_TIME)
+				s.om_iters = 500;
 			if (s.mutation_constant < 0) /* If not set */
 				s.mutation_constant = 0.75;
 			if (s.recombination_constant < 0)
 				s.recombination_constant = 0.7;
 			if (s.polish == -1)
 				s.polish = 1;
-
+			if (s.sort_by == SORT_NOT_SET)
+				s.sort_by = SORT_RMSD_AVG;
 		}
 
 		if (s.params_method == PARAMS_GM) {
 			/* All settings are optional, so check for mistakes */
-			if (s.gm_size < 1)
-				EXIT_ERROR(ARG_ERROR, "%s", "Size of GM set has to be positive.\n");
+			if (s.population_size < 1)
+				s.population_size = 100; /* 1.2 * (ts.atom_types_count * 2 + 1); */
 			if (s.gm_iterations_beg < 1 || s.gm_iterations_end < 1)
 				EXIT_ERROR(ARG_ERROR, "%s", "Number of minimization iterations for GM has to be positive.\n");
-			if (s.gm_threads < 1 || s.gm_threads > s.max_threads)
-				EXIT_ERROR(ARG_ERROR, "%s", "Number of threads for minimization must be between 1 and maximum number of threads.\n");
+			if (s.sort_by == SORT_NOT_SET)
+				s.sort_by = SORT_RMSD_AVG;
 		}
 
 		if (s.random_seed == -1)
@@ -509,6 +498,9 @@ void check_settings(void) {
 
 		if(s.limit_time != NO_LIMIT_TIME && s.limit_time > 36000 * 1000)
 			EXIT_ERROR(ARG_ERROR, "%s", "Maximum time should not be higher than 1000 hours.\n");
+
+		if ((s.params_method == PARAMS_LR_FULL || s.params_method == PARAMS_LR_FULL_BRENT) && s.sort_by == SORT_NOT_SET)
+			s.sort_by = SORT_R2;
 
 		/* TODO verify with Tomas if this is the intended behavior */
 		if(s.params_method == PARAMS_LR_FULL_BRENT /*!s.full_scan_only*/ && (s.sort_by != SORT_R && s.sort_by != SORT_R2 && s.sort_by != SORT_SPEARMAN && s.sort_by != SORT_RW))
@@ -600,7 +592,7 @@ void print_settings(void) {
 	}
     printf("\nMaximum number of threads: %d\n", s.max_threads);
 	if (s.mode == MODE_PARAMS && s.params_method == PARAMS_DE)
-		printf("Maximum number of threads used for DE: %d\n", s.de_threads);
+		printf("Maximum number of threads used for DE: %d\n", s.om_threads);
 	printf("\nVerbosity level: ");
 	switch(s.verbosity) {
 		case VERBOSE_MINIMAL:
@@ -643,6 +635,9 @@ void print_settings(void) {
 				break;
 			case SORT_D_MAX:
 				printf("Max D");
+				break;
+			case SORT_NOT_SET:
+				printf("not set");
 				break;
 		}
 
@@ -702,7 +697,7 @@ void print_settings(void) {
 		if (s.params_method == PARAMS_DE) {
 			printf("\n Differential evolution settings:\n");
 			printf("\t - population size %d\n", s.population_size);
-			printf("\t - max iterations  %d\n", s.limit_de_iters);
+			printf("\t - max iterations  %d\n", s.om_iters);
 			if (s.polish != 0) {
 				printf("\t - polishing ");
 				if (s.polish >= 1)
@@ -725,10 +720,10 @@ void print_settings(void) {
 
 		if (s.params_method == PARAMS_GM) {
 			printf("\nGuided minimization settings:\n");
-			printf("\t - set size %d\n", s.gm_size);
+			printf("\t - set size %d\n", s.population_size);
 			printf("\t - iterations for set at the beginning %d\n", s.gm_iterations_beg);
 			printf("\t - iterations for the result at the end %d\n", s.gm_iterations_end);
-			printf("\t - threads used for minimization %d\n", s.gm_threads);
+			printf("\t - threads used for minimization %d\n", s.om_threads);
 		}
 	}
 

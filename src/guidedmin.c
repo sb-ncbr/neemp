@@ -35,7 +35,7 @@ void run_guided_min(struct subset * const ss) {
 
 	/* Create a set of random points in vector space of kappa_data */            
 	if (s.verbosity >= VERBOSE_KAPPA)
-		printf("GM Generating %d vectors\n", s.gm_size);
+		printf("GM Generating %d vectors\n", s.population_size);
 
 	/* Set bounds for each parameters in kappa_data */
 	float *bounds = (float *) malloc((ts.atom_types_count * 2 + 1) * 2 * sizeof (float));
@@ -44,8 +44,8 @@ void run_guided_min(struct subset * const ss) {
 	compute_parameters_bounds(bounds, 0);
 
 	/* Generate population */
-	fill_ss(ss, s.gm_size); 
-	generate_random_population(ss, bounds, s.gm_size);
+	fill_ss(ss, s.population_size); 
+	generate_random_population(ss, bounds, s.population_size);
 	de_ss = ss;
 
 	/* Evaluate the fitness function for all points */
@@ -53,7 +53,7 @@ void run_guided_min(struct subset * const ss) {
 		printf("GM Calculating charges and evaluating fitness function for whole set\n");
 
 	int i = 0;
-	#pragma omp parallel for num_threads(s.gm_threads) default(shared) private(i)
+	#pragma omp parallel for num_threads(s.om_threads) default(shared) private(i)
 	for (i = 0; i < ss->kappa_data_count; i++) {
 		calculate_charges(ss, &ss->data[i]);
 		calculate_statistics(ss, &ss->data[i]);
@@ -67,7 +67,7 @@ void run_guided_min(struct subset * const ss) {
 	
 	/* If we minimized zero data, inform user and suggest larger set */
 	if (minimized_initial == 0) {
-		EXIT_ERROR(RUN_ERROR, "No vector in set was worth minimizing. Please choose larger set than %d (option --gm-size)\n.", s.gm_size);
+		EXIT_ERROR(RUN_ERROR, "No vector in set was worth minimizing. Please choose larger set than %d (option --om-pop-size)\n.", s.population_size);
 	}
 
 	/* Find the best kappa_data */
@@ -101,7 +101,7 @@ int minimize_part_of_gm_set(struct subset* ss, int min_iterations) {
 	int quite_good = 0;
 	int i = 0;
 	/* We minimize all with R2 > 0.2 && R > 0 */
-	#pragma omp parallel for num_threads(s.gm_threads) shared(ss, quite_good) private(i)
+	#pragma omp parallel for num_threads(s.om_threads) shared(ss, quite_good) private(i)
 	for (i = 0; i < ss->kappa_data_count; i++) {
 		if (ss->data[i].full_stats.R2 > 0.2 && ss->data[i].full_stats.R > 0) {
 			#pragma omp critical

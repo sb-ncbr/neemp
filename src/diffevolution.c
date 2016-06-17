@@ -51,7 +51,7 @@ void run_diff_evolution(struct subset * const ss) {
 	if (s.verbosity >= VERBOSE_KAPPA)
 		printf("DE Calculating charges and evaluating fitness function for whole population\n");
 	int i = 0;
-	#pragma omp parallel for num_threads(s.de_threads) default(shared) private(i)
+	#pragma omp parallel for num_threads(s.om_threads) default(shared) private(i)
 	for (i = 0; i < ss->kappa_data_count; i++) {
 		calculate_charges(ss, &ss->data[i]);
 		calculate_statistics(ss, &ss->data[i]);
@@ -109,11 +109,11 @@ void run_diff_evolution(struct subset * const ss) {
 	int condition = 1;
 	int minimized = 0;
 
-	#pragma omp parallel num_threads(s.de_threads) default(shared)
+	#pragma omp parallel num_threads(s.om_threads) default(shared)
 	{
 		while (condition) {
 			#pragma omp master
-			condition = (iter < s.limit_de_iters);
+			condition = (iter < s.om_iters);
 			{
 				#pragma omp master
 				{
@@ -160,7 +160,7 @@ void run_diff_evolution(struct subset * const ss) {
 				}
 
 				/* All other threads do this */ 
-				if (s.polish > 1 && is_quite_good(trial) && (s.de_threads == 0 || omp_get_thread_num() != 0))
+				if (s.polish > 1 && is_quite_good(trial) && (s.om_threads == 0 || omp_get_thread_num() != 0))
 				{
 					minimized++;
 					if (s.verbosity >= VERBOSE_KAPPA)
@@ -211,7 +211,7 @@ void run_diff_evolution(struct subset * const ss) {
 	calculate_charges(ss, ss->best);
 	calculate_statistics(ss, ss->best);
 	if (s.verbosity >= VERBOSE_KAPPA) {
-		printf("Out of %d iterations, we minimized %d trials.\n", s.limit_de_iters, minimized);
+		printf("Out of %d iterations, we minimized %d trials.\n", s.om_iters, minimized);
 	}
 	kd_destroy(so_far_best);
 	free(so_far_best);
@@ -261,7 +261,7 @@ int minimize_part_of_population(struct subset * ss, int *good_indices) {
 	int i = 0;
 
 	/* We minimize all with R2>0.2 && R>0 */
-	#pragma omp parallel for num_threads(s.de_threads) shared(ss, quite_good, good_indices) private(i)
+	#pragma omp parallel for num_threads(s.om_threads) shared(ss, quite_good, good_indices) private(i)
 	for (i = 0; i < ss->kappa_data_count; i++) {
 		if (ss->data[i].full_stats.R2 > 0.2 && ss->data[i].full_stats.R > 0) {
 			#pragma omp critical

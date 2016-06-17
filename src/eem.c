@@ -116,10 +116,8 @@ void calculate_charges(struct subset * const ss, struct kappa_data * const kd) {
 	for(int i = 1; i < ts.molecules_count; i++)
 		starts[i] = starts[i - 1] + ts.molecules[i - 1].atoms_count;
 	int nt = s.max_threads;
-	if (s.params_method == PARAMS_DE)
-		nt /= s.de_threads;
-	if (s.params_method == PARAMS_GM)
-		nt /= s.gm_threads;
+	if (s.params_method == PARAMS_DE || s.params_method == PARAMS_GM)
+		nt /= s.om_threads;
 
 	int nthreads = ts.molecules_count < nt ? ts.molecules_count : nt;
 	#pragma omp parallel for num_threads(nthreads)

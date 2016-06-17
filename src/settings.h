@@ -40,7 +40,8 @@ enum sort_mode {
 	SORT_RMSD,
 	SORT_RMSD_AVG,
 	SORT_D_AVG,
-	SORT_D_MAX
+	SORT_D_MAX,
+	SORT_NOT_SET
 };
 
 enum atom_type_customization {
@@ -86,22 +87,22 @@ struct settings {
 	float kappa_set;
 	float full_scan_precision;
 
-	/* Settings regarding PARAMS_DE optimization method */
+	/* Settings regarding optimization methods as GM, DE, GA */
 	int population_size;
+	float fixed_kappa; /* Fix kappa to given value */
+	int om_threads; /* Number of threads used to paralellize DE */
+	int om_iters;
+	time_t om_time;
+	int polish; /* Use NEWUOA minimization to polish trial or results */
+
+	/* Settings regarding PARAMS_DE method */
 	float mutation_constant;
 	int dither; /* Set mutation constant to random value from [0.5, 1] each iteration */
 	float recombination_constant;
-	float fixed_kappa; /* Fix kappa to given value */
-	int de_threads; /* Number of threads used to paralellize DE */
-	int limit_de_iters;
-	time_t limit_de_time;
-	int polish; /* Use NEWUOA minimization to polish trial or results */
 
 	/* Settings regarding PARAMS_GM optimization method */
-	int gm_size;
 	int gm_iterations_beg;
 	int gm_iterations_end;
-	int gm_threads;
 
 	/* Other settings */
 	int random_seed;
