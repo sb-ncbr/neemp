@@ -13,7 +13,7 @@
 #include <stdlib.h>
 
 #define APP_NAME "NEEMP"
-#define APP_VERSION "1.1-git"
+#define APP_VERSION "2.0"
 
 #define RETURN_OK 0
 #define ARG_ERROR 1

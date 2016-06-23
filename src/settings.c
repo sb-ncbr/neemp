@@ -115,10 +115,8 @@ void s_init(void) {
 static void print_version(void) {
 
 	printf("%s %s\n", APP_NAME, APP_VERSION);
-	printf("Copyright (C) 2013, 2014 Tomas Racek (tom@krab1k.net)\n");
-	printf("Licence MIT: http://opensource.org/licenses/MIT\n");
-	printf("This is free software: you are free to change and redistribute it.\n");
-	printf("There is NO WARRANTY, to the extent permitted by law.\n");
+	printf("Copyright (C) 2013-2016 Tomas Racek (tom@krab1k.net)\n");
+	printf("Licence conditions in accordance with § 11 of Act No. 130/2002 Coll. The owner of the software is Masaryk University, a public university, ID: 00216224. Masaryk University allows other companies and individuals to use this software free of charge and without territorial restrictions in usual way, that does not depreciate its value. This permission is granted for the duration of property rights. This software is not subject to special information treatment according to Act No. 412/2005 Coll., as amended. In case that a person who will use the software under this licence offer violates the licence terms, the permission to use the software terminates.\n");
 }
 
 /* Prints help if -h/--help is issued */
