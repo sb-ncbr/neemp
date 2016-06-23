@@ -45,7 +45,7 @@ static void full_scan(struct subset * const ss) {
 
 	assert(ss != NULL);
 
-	#pragma omp parallel for
+	#pragma omp parallel for num_threads(s.max_threads)
 	for(int i = 0; i < ss->kappa_data_count - 1; i++) {
 		ss->data[i].kappa = i * s.full_scan_precision;
 		perform_calculations(ss, &ss->data[i]);
