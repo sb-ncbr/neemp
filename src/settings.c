@@ -472,15 +472,15 @@ void check_settings(void) {
 		if (s.params_method == PARAMS_DE) {
 			/* All settings are optional, so check for mistakes and set defaults */
 			if (s.population_size <1)
-				s.population_size = 100; /* 1.2 * (ts.atom_types_count * 2 + 1); */
+				s.population_size = 1000; /* 1.2 * (ts.atom_types_count * 2 + 1); */
 			if (s.om_iters == NO_LIMIT_ITERS && s.om_time == NO_LIMIT_TIME)
-				s.om_iters = 500;
+				s.om_iters = 2000;
 			if (s.mutation_constant < 0) /* If not set */
 				s.mutation_constant = 0.75;
 			if (s.recombination_constant < 0)
 				s.recombination_constant = 0.7;
 			if (s.polish == -1)
-				s.polish = 1;
+				s.polish = 3;
 			if (s.sort_by == SORT_NOT_SET)
 				s.sort_by = SORT_RMSD_AVG;
 		}
