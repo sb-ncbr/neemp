@@ -139,7 +139,7 @@ static void print_help(void) {
 	printf("  -h, --help			 display this help and exit\n");
 	printf("      --version			 display version information and exit\n");
 	printf("      --max-threads N		 use up to N threads to solve EEM system in parallel\n");
-	printf("  -m, --mode MODE		 set mode for the NEEMP. Valid choices are: info, params, charges, cross, cover (required)\n");
+	printf("  -m, --mode MODE		 set mode for the NEEMP. Valid choices are: info, params, charges, quality, cover (required)\n");
 	printf("  -p, --params-method METHOD set optimization method used for calculation of parameters. Valid choices are: lr-full, lr-full-brent, de, gm (optional)\n");
 	printf("      --sdf-file FILE		 SDF file (required)\n");
 	printf("      --atom-types-by METHOD	 classify atoms according to the METHOD. Valid choices are: Element, ElemBond or User.\n");
@@ -210,8 +210,8 @@ void parse_options(int argc, char **argv) {
 					s.mode = MODE_CHARGES;
 				else if (!strcmp(optarg, "params"))
 					s.mode = MODE_PARAMS;
-				else if (!strcmp(optarg, "cross"))
-					s.mode = MODE_CROSS;
+				else if (!strcmp(optarg, "quality"))
+					s.mode = MODE_QUALITY;
 				else if (!strcmp(optarg, "cover"))
 					s.mode = MODE_COVER;
 				else
@@ -437,7 +437,7 @@ void parse_options(int argc, char **argv) {
 void check_settings(void) {
 
 	if(s.mode == MODE_NOT_SET)
-		EXIT_ERROR(ARG_ERROR, "%s", "No mode set. Use '-m MODE', where MODE = info, params, cross, charges, cover.\n");
+		EXIT_ERROR(ARG_ERROR, "%s", "No mode set. Use '-m MODE', where MODE = info, params, quality, charges, cover.\n");
 
 	if(s.sdf_file[0] == '\0')
 		EXIT_ERROR(ARG_ERROR, "%s", "No .sdf file provided. Use '--sdf-file FILE'.\n");
@@ -520,7 +520,7 @@ void check_settings(void) {
 
 		if(s.chg_out_file[0] == '\0')
 			EXIT_ERROR(ARG_ERROR, "%s", "No .chg output file provided. Use option '--chg-out-file'.\n");
-	} else if(s.mode == MODE_CROSS) {
+	} else if(s.mode == MODE_QUALITY) {
 		if(s.chg_file[0] == '\0')
 			EXIT_ERROR(ARG_ERROR, "%s", "No .chg file provided. Use option '--chg-file'.\n");
 
@@ -556,11 +556,11 @@ void print_settings(void) {
 		case MODE_CHARGES:
 			printf("charges (calculate EEM charges)\n");
 			break;
-		case MODE_CROSS:
-			printf("cross (perform cross-validation of the EEM parameters)\n");
+		case MODE_QUALITY:
+			printf("quality (perform quality validation of EEM parameters)\n");
 			break;
 		case MODE_COVER:
-			printf("cover (calculate parameters coverage)\n");
+			printf("cover (perform coverage validation of EEM parameters)\n");
 			break;
 		case MODE_NOT_SET:
 			assert(0);

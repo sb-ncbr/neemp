@@ -297,7 +297,7 @@ int get_atom_type_idx(const struct atom * const a) {
 /* Do some preprocessing to simplify things later on */
 void preprocess_molecules(void) {
 
-	if(s.mode == MODE_PARAMS || s.mode == MODE_CROSS) {
+	if(s.mode == MODE_PARAMS || s.mode == MODE_QUALITY) {
 		/* Calculate sum and average of the charges in the molecule */
 		for(int i = 0; i < ts.molecules_count; i++)
 			m_calculate_charge_stats(&ts.molecules[i]);
@@ -554,10 +554,10 @@ void discard_invalid_molecules_or_without_charges_or_parameters(void) {
 	if(s.at_customization == AT_CUSTOM_USER)
 		list_molecules_without_atom_types();
 
-	if(s.mode == MODE_CHARGES || s.mode == MODE_CROSS || s.mode == MODE_COVER)
+	if(s.mode == MODE_CHARGES || s.mode == MODE_QUALITY || s.mode == MODE_COVER)
 		list_molecules_without_parameters();
 
-	if(s.mode == MODE_PARAMS || s.mode == MODE_CROSS)
+	if(s.mode == MODE_PARAMS || s.mode == MODE_QUALITY)
 		list_molecules_without_charges();
 
 	/* Discard those molecules */
@@ -573,7 +573,7 @@ void discard_invalid_molecules_or_without_charges_or_parameters(void) {
 			cond = !ts.molecules[idx].has_parameters;
 		else if (s.mode == MODE_PARAMS)
 			cond = !ts.molecules[idx].has_charges || !ts.molecules[idx].is_valid;
-		else if (s.mode == MODE_CROSS)
+		else if (s.mode == MODE_QUALITY)
 			cond = !ts.molecules[idx].has_parameters || !ts.molecules[idx].has_charges || !ts.molecules[idx].is_valid;
 
 		if(s.at_customization == AT_CUSTOM_USER)

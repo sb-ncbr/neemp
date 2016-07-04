@@ -159,7 +159,7 @@ int main(int argc, char **argv) {
 			ss_destroy(&full);
 			break;
 		}
-		case MODE_CROSS: {
+		case MODE_QUALITY: {
 			load_charges();
 			struct subset full;
 			preprocess_molecules();
