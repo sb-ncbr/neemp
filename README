@@ -1,26 +1,35 @@
 NEEMP - EEM parameterization tool
 
-by Tomas Racek "tom (at) krab1k (dot) net", 2013, 2014
-website: http://fi.muni.cz/~xracek/neemp
+Copyright 2013-2016 Tomas Racek (tom@krab1k.net)
 
-*Requirements*
-- NEEMP may be compiled either with ICC (+ MKL) or with GCC (fallback option,
-	not recommended for performance reasons)
-- Tested with Intel C/C++ Compiler 14, Intel Math Kernel Library 11.1 or GCC 4.7.3
+website: http://ncbr.muni.cz/neemp
+manual: http://webchem.ncbr.muni.cz/Wiki/NEEMP:UserManual
 
-*Compilation*
-- Simply run 'make' for ICC/MKL version (recommended)
-	or 'make neemp-gnu' for GCC version
 
-*Running*
-- Run ./neemp --help to get the list of all options available.
-- Feel free to modify examples to suit your needs.
+*Binaries*
+- binaries for Linux, Windows and Mac are provided on the NEEMP website
 
-*Input files*
-- NEEMP reads SDF files containing records in MOL V2000 or V3000.
-- V3000 is required for molecules with more than 999 atoms (babel
-	should convert these molecules automatically)
+
+*Compilation (linux)*
+- dependencies - required: lapack, libxml2, zlib, gfortran, openmp
+- dependencies - optional: help2man (for generating man page)
+- simply run 'make'
+
+
+*Compilation (Mac OS X)*
+- install Homebrew (http://brew.sh/)
+- install gcc using Homebrew
+  $ brew install gcc
+- change 'export CC=gcc' in main Makefile to 'export CC=gcc-6'
+- run 'make'
+
+
+*Compilation (Windows)*
+- install Cygwin (https://www.cygwin.com/)
+- install libraries needed as dependencies into Cygwin (see above)
+- compile by running 'make' as usual
+
 
 *Bugs*
-- If you found a bug, or have a feature request, please send me an email to
-  "neemp (at) krab1k (dot) net". Thank you!
+- If you found a bug, or have a feature request, please send an email to
+  "tom@krab1k.net". Thank you!
