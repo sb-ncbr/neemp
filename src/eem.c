@@ -39,7 +39,7 @@ extern void dspsv_(char *uplo, int *n, int *nrhs, double *ap, int *ipiv, double 
 extern const struct training_set ts;
 extern const struct settings s;
 
-
+static int check_matrix_packed(const double * const A, const int n);
 static void fill_EEM_matrix_packed(double * const A, const struct molecule * const m, const struct kappa_data * const kd);
 
 #ifdef NOT_USED
@@ -64,7 +64,7 @@ static void print_matrix_packed(const double * const A, long int n) {
 }
 
 /* Print matrix in packed storage format */
-static void print_matrix_full(const double * const A, int n) {
+static void print_matrix_full(const double * const A, long int n) {
 
 	assert(A != NULL);
 
@@ -112,6 +112,17 @@ static void fill_EEM_matrix_packed(double * const A, const struct molecule * con
 	#undef U_IDX
 }
 
+/* Check if matrix contains some NaN or Inf values */
+static int check_matrix_packed(const double * const A, const int n) {
+
+	long int elements_count = (n + 1) * (n + 2) / 2;
+
+	for(long int i = 0; i < elements_count; i++)
+		if(!isfinite(A[i]))
+			return 1;
+
+	return 0;
+}
 
 /* Calculate charges for a particular kappa_data structure */
 void calculate_charges(struct subset * const ss, struct kappa_data * const kd) {
@@ -164,6 +175,14 @@ void calculate_charges(struct subset * const ss, struct kappa_data * const kd) {
 		double *Afp = NULL;
 		double *x = NULL;
 
+		if(check_matrix_packed(Ap, n) && s.mode == MODE_CHARGES) {
+			fprintf(stderr, "Invalid EEM system for molecule %s. Setting charges to NaN.\n", MOLECULE.name);
+			for(int j = 0; j < n; j++)
+				kd->charges[starts[i] + j] = (float) 0.0 / 0.0;
+
+			goto out;
+		}
+
 		if(s.extra_precise) {
 			char fact = 'N';
 			double ferr, berr;
@@ -179,10 +198,10 @@ void calculate_charges(struct subset * const ss, struct kappa_data * const kd) {
 			if(!Afp || !x)
 				EXIT_ERROR(MEM_ERROR, "%s", "Cannot allocate memory for EEM system.\n");
 
-			#ifdef USE_MKL
-			LAPACKE_dspsvx(LAPACK_COL_MAJOR, fact, uplo, nn, nrhs, Ap, Afp, ipiv, b, ldb, x, ldx, &rcond, &ferr, &berr);
-			#else
 			int info;
+			#ifdef USE_MKL
+			info = LAPACKE_dspsvx(LAPACK_COL_MAJOR, fact, uplo, nn, nrhs, Ap, Afp, ipiv, b, ldb, x, ldx, &rcond, &ferr, &berr);
+			#else
 			int iwork[n + 1];
 			double work[3 * (n + 1)];
 
@@ -194,30 +213,43 @@ void calculate_charges(struct subset * const ss, struct kappa_data * const kd) {
 			if(s.mode == MODE_CHARGES && (1 / rcond) > WARN_MAX_COND)
 				fprintf(stderr, "Ill-conditioned EEM system for molecule %s. Charges might be inaccurate.\n", MOLECULE.name);
 
-			/* Store computed charges */
-			for(int j = 0; j < n; j++)
-				kd->charges[starts[i] + j] = (float) x[j];
+
+			if(info) {
+				fprintf(stderr, "Cannot solve EEM system for molecule %s. Setting charges to NaN.\n", MOLECULE.name);
+				for(int j = 0; j < n; j++)
+					kd->charges[starts[i] + j] = (float) 0.0 / 0.0;
+			} else {
+				/* Store computed charges */
+				for(int j = 0; j < n; j++)
+					kd->charges[starts[i] + j] = (float) x[j];
+			}
 
 			free(Afp);
 			free(x);
 		} else {
-			#ifdef USE_MKL
-			LAPACKE_dspsv(LAPACK_COL_MAJOR, uplo, nn, nrhs, Ap, ipiv, b, nn);
-			#else
 			int info;
-
+			#ifdef USE_MKL
+			info = LAPACKE_dspsv(LAPACK_COL_MAJOR, uplo, nn, nrhs, Ap, ipiv, b, nn);
+			#else
 			dspsv_(&uplo, &nn, &nrhs, Ap, ipiv, b, &nn, &info);
 			#endif /* USE_MKL */
 
-			kd->per_molecule_stats[i].cond = 0.0f;
+			if(info) {
+				fprintf(stderr, "Cannot solve EEM system for molecule %s. Setting charges to NaN.\n", MOLECULE.name);
+				for(int j = 0; j < n; j++)
+					kd->charges[starts[i] + j] = (float) 0.0 / 0.0;
+			} else {
+				/* Store computed charges */
+				for(int j = 0; j < n; j++)
+					kd->charges[starts[i] + j] = (float) b[j];
+			}
 
-			/* Store computed charges */
-			for(int j = 0; j < n; j++)
-				kd->charges[starts[i] + j] = (float) b[j];
+			kd->per_molecule_stats[i].cond = 0.0f;
 		}
 
 		#undef MOLECULE
 
+		out:
 		/* Clean remaining things up */
 		free(Ap);
 		free(b);
