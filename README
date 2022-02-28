@@ -2,12 +2,7 @@ NEEMP - EEM parameterization tool
 
 Copyright 2013-2016 Tomas Racek (tom@krab1k.net)
 
-website: http://ncbr.muni.cz/neemp
 manual: http://webchem.ncbr.muni.cz/Wiki/NEEMP:UserManual
-
-
-*Binaries*
-- binaries for Linux, Windows and Mac are provided on the NEEMP website
 
 
 *Compilation (linux)*
