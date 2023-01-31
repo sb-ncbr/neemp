@@ -1,0 +1,79 @@
+# This CITATION.cff file was generated with cffinit.
+# Visit https://bit.ly/cffinit to generate yours today!
+
+cff-version: 1.2.0
+title: >-
+  NEEMP: software for validation, accurate calculation and
+  fast parameterization of EEM charges
+message: >-
+  Please cite this software using the metadata from
+  'preferred-citation'.
+type: software
+authors:
+  - given-names: Tomáš
+    family-names: Raček
+    orcid: 'https://orcid.org/0000-0002-0296-2452'
+  - given-names: Jana
+    family-names: Pazúriková
+    orcid: 'https://orcid.org/0000-0001-6124-7080'
+  - given-names: Radka
+    family-names: Svobodová Vařeková
+    orcid: 'https://orcid.org/0000-0002-3840-8760'
+  - given-names: Stanislav
+    family-names: Geidl
+  - given-names: Aleš
+    family-names: Křenek
+    orcid: 'https://orcid.org/0000-0002-3395-3196'
+  - given-names: Francesco Luca
+    family-names: Falginella
+  - given-names: Vladimír
+    family-names: Horský
+    orcid: 'https://orcid.org/0000-0002-9252-5386'
+  - given-names: Václav
+    family-names: Hejret
+  - given-names: Jaroslav
+    family-names: Koča
+    orcid: 'https://orcid.org/0000-0002-2780-4901'
+keywords:
+  - partial atomic charges
+  - EEM
+  - EEM parameterization
+  - wwPDB CCD database
+  - Electronegativity Equalization Method
+license: CC-BY-4.0
+preferred-citation:
+  authors:
+    - given-names: Tomáš
+      family-names: Raček
+      orcid: 'https://orcid.org/0000-0002-0296-2452'
+    - given-names: Jana
+      family-names: Pazúriková
+      orcid: 'https://orcid.org/0000-0001-6124-7080'
+    - given-names: Radka
+      family-names: Svobodová Vařeková
+      orcid: 'https://orcid.org/0000-0002-3840-8760'
+    - given-names: Stanislav
+      family-names: Geidl
+    - given-names: Aleš
+      family-names: Křenek
+      orcid: 'https://orcid.org/0000-0002-3395-3196'
+    - given-names: Francesco Luca
+      family-names: Falginella
+    - given-names: Vladimír
+      family-names: Horský
+      orcid: 'https://orcid.org/0000-0002-9252-5386'
+    - given-names: Václav
+      family-names: Hejret
+    - given-names: Jaroslav
+      family-names: Koča
+      orcid: 'https://orcid.org/0000-0002-2780-4901'
+  title: >-
+    NEEMP: software for validation, accurate calculation and fast
+    parameterization of EEM charges
+  type: article
+  doi: 10.1186/s13321-016-0171-1
+  journal: Journal of Cheminformatics
+  issue: 1
+  volume: 8
+  year: 2016
+  month: 10
