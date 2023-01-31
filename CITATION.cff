@@ -40,7 +40,7 @@ keywords:
   - EEM parameterization
   - wwPDB CCD database
   - Electronegativity Equalization Method
-license: CC-BY-4.0
+license: GPL-3.0
 preferred-citation:
   authors:
     - given-names: Tomáš
